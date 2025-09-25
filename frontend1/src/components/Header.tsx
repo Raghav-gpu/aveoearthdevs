@@ -132,7 +132,7 @@ const Header = () => {
 
               {/* Become Vendor */}
               <Button className="hidden lg:flex btn-secondary text-sm">
-                Become a Vendor
+                Become a Partner
               </Button>
 
               {/* Mobile Menu */}
