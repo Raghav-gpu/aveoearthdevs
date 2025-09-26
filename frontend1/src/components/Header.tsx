@@ -8,8 +8,6 @@ import {
   Heart,
   Menu,
   Leaf,
-  TreePine,
-  Recycle,
   X
 } from 'lucide-react';
 
@@ -20,30 +18,11 @@ const Header = () => {
     { label: 'Categories', href: '#categories' },
     { label: 'New Arrivals', href: '#new' },
     { label: 'Best Sellers', href: '#bestsellers' },
-    { label: 'Impact', href: '#impact' },
-    { label: 'Community', href: '#community' }
+    { label: 'About Us', href: '#community' }
   ];
 
   return (
     <>
-      {/* Impact Banner */}
-      <div className="bg-forest text-primary-foreground py-2 px-4 text-center text-sm">
-        <div className="flex items-center justify-center gap-4 max-w-4xl mx-auto">
-          <div className="flex items-center gap-1">
-            <TreePine className="w-4 h-4" />
-            <span>2,847 trees planted this month</span>
-          </div>
-          <div className="hidden md:flex items-center gap-1">
-            <Recycle className="w-4 h-4" />
-            <span>15.2T CO₂ offset</span>
-          </div>
-          <div className="hidden lg:flex items-center gap-1">
-            <Leaf className="w-4 h-4" />
-            <span>500K+ plastic items saved</span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/20">
         <div className="container mx-auto px-4">
@@ -57,12 +36,13 @@ const Header = () => {
                 <h1 className="text-xl font-headline font-bold text-charcoal">
                   AveoEarth
                 </h1>
-                <div className="text-xs text-moss">Sustainable Marketplace</div>
+                
               </div>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-8">
+            {/* =================== CHANGE: ADDED LEFT MARGIN =================== */}
+            <nav className="hidden lg:flex items-center space-x-8 ml-10">
               {navItems.map((item) => (
                 <a
                   key={item.label}
