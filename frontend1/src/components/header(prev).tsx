@@ -8,43 +8,21 @@ import {
   Heart,
   Menu,
   Leaf,
-  TreePine,
-  Recycle,
   X
 } from 'lucide-react';
-
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { label: 'Categories', href: '\categories' },
-    { label: 'New Arrivals', href: '\new' },
-    { label: 'Best Sellers', href: '\bestsellers' },
-    { label: 'Impact', href: '\impact' },
-    { label: 'Community', href: '\community' }
+    { label: 'Categories', href: '#categories' },
+    { label: 'New Arrivals', href: '#new' },
+    { label: 'Best Sellers', href: '#bestsellers' },
+    { label: 'About Us', href: '#community' }
   ];
 
   return (
     <>
-      {/* Impact Banner */}
-      <div className="bg-forest text-primary-foreground py-2 px-4 text-center text-sm">
-        <div className="flex items-center justify-center gap-4 max-w-4xl mx-auto">
-          <div className="flex items-center gap-1">
-            <TreePine className="w-4 h-4" />
-            <span>2,847 trees planted this month</span>
-          </div>
-          <div className="hidden md:flex items-center gap-1">
-            <Recycle className="w-4 h-4" />
-            <span>15.2T CO₂ offset</span>
-          </div>
-          <div className="hidden lg:flex items-center gap-1">
-            <Leaf className="w-4 h-4" />
-            <span>500K+ plastic items saved</span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/20">
         <div className="container mx-auto px-4">
@@ -58,12 +36,13 @@ const Header = () => {
                 <h1 className="text-xl font-headline font-bold text-charcoal">
                   AveoEarth
                 </h1>
-                <div className="text-xs text-moss">Sustainable Marketplace</div>
+                
               </div>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-8">
+            {/* =================== CHANGE: ADDED LEFT MARGIN =================== */}
+            <nav className="hidden lg:flex items-center space-x-8 ml-10">
               {navItems.map((item) => (
                 <a
                   key={item.label}
@@ -104,23 +83,11 @@ const Header = () => {
                 size="sm"
                 className="hidden md:flex text-muted-foreground hover:text-forest relative"
               >
-                <link to="" />
                 <Heart className="w-5 h-5" />
                 <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">
                   3
                 </Badge>
               </Button>
-
-              <Button
-              className="hidden md:flex text-muted-foreground hover:text-forest relative"
-            >
-              <Link to="/wishlist">
-                <Heart className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">
-                  3
-                </Badge>
-              </Link>
-            </Button>
 
               {/* Cart */}
               <Button
@@ -143,7 +110,7 @@ const Header = () => {
                 <User className="w-5 h-5" />
               </Button>
 
-              {/* Become Partner */}
+              {/* Become Vendor */}
               <Button className="hidden lg:flex btn-secondary text-sm">
                 Become a Partner
               </Button>
@@ -202,7 +169,7 @@ const Header = () => {
               </div>
 
               <Button className="w-full btn-secondary">
-                Become a Partner
+                Become a Vendor
               </Button>
             </div>
           </div>
@@ -213,5 +180,3 @@ const Header = () => {
 };
 
 export default Header;
-
-
