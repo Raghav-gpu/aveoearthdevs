@@ -104,7 +104,7 @@ const Header = () => {
                 size="sm"
                 className="hidden md:flex text-muted-foreground hover:text-forest relative"
               >
-                <link to="" />
+                <linto="" />
                 <Heart className="w-5 h-5" />
                 <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">
                   3
