@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,6 @@ import {
   Recycle,
   X
 } from 'lucide-react';
-
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -104,23 +104,11 @@ const Header = () => {
                 size="sm"
                 className="hidden md:flex text-muted-foreground hover:text-forest relative"
               >
-                <linto="" />
                 <Heart className="w-5 h-5" />
                 <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">
                   3
                 </Badge>
               </Button>
-
-              <Button
-              className="hidden md:flex text-muted-foreground hover:text-forest relative"
-            >
-              <Link to="/wishlist">
-                <Heart className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">
-                  3
-                </Badge>
-              </Link>
-            </Button>
 
               {/* Cart */}
               <Button
