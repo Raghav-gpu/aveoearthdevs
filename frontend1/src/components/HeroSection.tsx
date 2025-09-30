@@ -173,8 +173,8 @@ const HeroSection = () => {
           <div className="lg:col-span-2 space-y-6 slide-up text-center lg:text-left">
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-6xl font-headline font-bold text-charcoal leading-tight">
-                Shop
-                <span className="text-forest block">Sustainable</span>
+                Sustainability
+                <span className="text-forest block">Simplified</span>
               </h1>
               
               <div className="h-12 flex items-center justify-center lg:justify-start">

@@ -47,25 +47,25 @@ const AboutPage = () => {
 
   const team = [
     {
-      name: 'Arjun Patel',
+      name: 'Anand Bharadwaj',
       role: 'Founder & CEO',
       image: '/api/placeholder/200/200',
       bio: 'Environmental engineer turned entrepreneur, passionate about sustainable innovation.'
     },
     {
-      name: 'Priya Singh',
+      name: 'Sample 1',
       role: 'Head of Sustainability',
       image: '/api/placeholder/200/200',
       bio: 'Former climate scientist with 10+ years in sustainable product development.'
     },
     {
-      name: 'Raj Kumar',
+      name: 'Sample 2',
       role: 'Chief Technology Officer',
       image: '/api/placeholder/200/200',
       bio: 'Tech leader building scalable solutions for sustainable e-commerce.'
     },
     {
-      name: 'Sarah Johnson',
+      name: 'Sample 3',
       role: 'Head of Partnerships',
       image: '/api/placeholder/200/200',
       bio: 'Connecting eco-conscious brands with customers who care about impact.'
@@ -357,7 +357,7 @@ const AboutPage = () => {
                 Start Shopping Sustainably
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-              <Button variant="outline" className="border-white text-white hover:bg-white hover:text-forest">
+              <Button variant="outline" className="border-white text-forest hover:bg-white hover:text-forest">
                 Partner With Us
               </Button>
             </div>

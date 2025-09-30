@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Link } from "react-router-dom"; 
 import { 
   Search, 
   ShoppingCart, 
@@ -18,11 +18,12 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { label: 'Categories', href: '\categories' },
-    { label: 'New Arrivals', href: '\new' },
-    { label: 'Best Sellers', href: '\bestsellers' },
-    { label: 'Impact', href: '\impact' },
-    { label: 'Community', href: '\community' }
+    { label: 'Categories', href: '/category' },
+    { label: 'New Arrivals', href: '/products' },
+    { label: 'Best Sellers', href: '/products' },
+    { label: 'Community', href: '/community' },
+    { label: 'About Us', href: '/about' },
+    
   ];
 
   return (
@@ -50,7 +51,7 @@ const Header = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-moss rounded-xl flex items-center justify-center">
                 <Leaf className="w-6 h-6 text-white" />
               </div>
@@ -60,18 +61,18 @@ const Header = () => {
                 </h1>
                 <div className="text-xs text-moss">Sustainable Marketplace</div>
               </div>
-            </div>
+            </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-8">
               {navItems.map((item) => (
-                <a
+                <Link
                   key={item.label}
-                  href={item.href}
+                  to={item.href}
                   className="text-muted-foreground hover:text-forest transition-colors duration-200 font-medium"
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </nav>
 
@@ -90,51 +91,35 @@ const Header = () => {
             {/* Actions */}
             <div className="flex items-center gap-3">
               {/* Mobile Search */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="md:hidden text-muted-foreground hover:text-forest"
-              >
+              <Button variant="ghost" size="sm" className="md:hidden text-muted-foreground hover:text-forest">
                 <Search className="w-5 h-5" />
               </Button>
 
               {/* Wishlist */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden md:flex text-muted-foreground hover:text-forest relative"
-              >
-                <Heart className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">
-                  3
-                </Badge>
+              <Button asChild variant="ghost" size="sm" className="hidden md:flex text-muted-foreground hover:text-forest relative">
+                <Link to="/wishlist">
+                  <Heart className="w-5 h-5" />
+                  <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">3</Badge>
+                </Link>
               </Button>
 
               {/* Cart */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-forest relative"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-forest text-white text-xs p-0 flex items-center justify-center">
-                  2
-                </Badge>
+              <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-forest relative">
+                <Link to="/cart">
+                  <ShoppingCart className="w-5 h-5" />
+                  <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-forest text-white text-xs p-0 flex items-center justify-center">2</Badge>
+                </Link>
               </Button>
 
               {/* User Account */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden md:flex text-muted-foreground hover:text-forest"
-              >
-                <User className="w-5 h-5" />
+              <Button asChild variant="ghost" size="sm" className="hidden md:flex text-muted-foreground hover:text-forest">
+                <Link to="/profile">
+                  <User className="w-5 h-5" />
+                </Link>
               </Button>
 
               {/* Become Partner */}
-              <Button className="hidden lg:flex btn-secondary text-sm">
-                Become a Partner
-              </Button>
+              <Button className="hidden lg:flex btn-secondary text-sm">Become a Partner</Button>
 
               {/* Mobile Menu */}
               <Button
@@ -166,32 +151,32 @@ const Header = () => {
               {/* Mobile Navigation */}
               <nav className="space-y-2">
                 {navItems.map((item) => (
-                  <a
+                  <Link
                     key={item.label}
-                    href={item.href}
+                    to={item.href}
                     className="block py-2 text-muted-foreground hover:text-forest transition-colors duration-200 font-medium"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 ))}
               </nav>
 
               {/* Mobile Actions */}
               <div className="flex items-center gap-4 pt-4 border-t border-border/20">
-                <Button variant="ghost" className="flex-1 justify-start">
-                  <User className="w-4 h-4 mr-2" />
-                  Account
+                <Button asChild variant="ghost" className="flex-1 justify-start">
+                  <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                    <User className="w-4 h-4 mr-2" /> Account
+                  </Link>
                 </Button>
-                <Button variant="ghost" className="flex-1 justify-start">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Wishlist
+                <Button asChild variant="ghost" className="flex-1 justify-start">
+                  <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Heart className="w-4 h-4 mr-2" /> Wishlist
+                  </Link>
                 </Button>
               </div>
 
-              <Button className="w-full btn-secondary">
-                Become a Partner
-              </Button>
+              <Button className="w-full btn-secondary">Become a Partner</Button>
             </div>
           </div>
         )}
@@ -201,5 +186,3 @@ const Header = () => {
 };
 
 export default Header;
-
-

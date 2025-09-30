@@ -15,7 +15,12 @@ import OrdersPage from "./pages/OrdersPage";
 import WishlistPage from "./pages/WishlistPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
-
+import Layout from "./components/Layout";
+import TermsPage from "./pages/TermsPage.tsx";
+import PrivacyPage from "./pages/PrivacyPage.tsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
+import CheckoutPage from "./pages/CheckoutPage.tsx";
+import CommunityPage from "./pages/CommunityPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -26,19 +31,26 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="frontend1\src\pages\CategoryPage.tsx" element={<CategoryPage />} />
-          <Route path="frontend1\src\pages\AllProductsPage.tsx" element={<AllProductsPage />} />
-          <Route path="frontend1\src\pages\ProductPage.tsx" element={<ProductPage />} />
-          <Route path="frontend1\src\pages\CartPage.tsx" element={<CartPage />} />
-          <Route path="frontend1\src\pages\ProfilePage.tsx" element={<ProfilePage />} />
-          <Route path="frontend1\src\pages\LoginPage.tsx" element={<LoginPage />} />
-          <Route path="frontend1\src\pages\OrdersPage.tsx" element={<OrdersPage />} />
-          <Route path="frontend1\src\pages\WishlistPage.tsx" element={<WishlistPage />} />
-          <Route path="frontend1\src\pages\AboutPage.tsx" element={<AboutPage />} />
-          <Route path="frontend1\src\pages\ContactPage.tsx" element={<ContactPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route element={<Layout />}>
+            <Route index element={<Index />} />
+            <Route path="category" element={<CategoryPage />} />
+            <Route path="category/:slug" element={<CategoryPage />} />
+            <Route path="products" element={<AllProductsPage />} />
+            <Route path="product/:productId" element={<ProductPage />} />
+            <Route path="cart" element={<CartPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="login" element={<LoginPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="wishlist" element={<WishlistPage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="community" element={<CommunityPage />} />
+            <Route path="terms" element={<TermsPage />} />
+            <Route path="privacy" element={<PrivacyPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
@@ -46,3 +58,37 @@ const App = () => (
 );
 
 export default App;
+
+/*
+// App.tsx
+import React from "react";
+import { BrowserRouter } from "react-router-dom";  // <-- Add this
+
+// Providers
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Pages
+import CartPage from "./pages/CartPage";
+import Layout from "@/components/layout";
+
+const queryClient = new QueryClient();
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Layout>
+            <CartPage />
+          </Layout>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+*/
