@@ -9,37 +9,37 @@ const EcoBadge = ({
     certified: {
       icon: "🌱",
       text: "Eco Certified",
-      bgColor: "bg-eco-subtle",
-      textColor: "text-eco-primary",
-      borderColor: "border-eco-accent"
+      bgColor: "bg-emerald-50",
+      textColor: "text-emerald-700",
+      borderColor: "border-emerald-200"
     },
     organic: {
       icon: "🌿",
       text: "Organic",
-      bgColor: "bg-green-50",
-      textColor: "text-organic",
-      borderColor: "border-organic"
+      bgColor: "bg-emerald-50",
+      textColor: "text-emerald-600",
+      borderColor: "border-emerald-200"
     },
     carbonNeutral: {
       icon: "🌍",
       text: "Carbon Neutral",
-      bgColor: "bg-blue-50",
-      textColor: "text-carbon-neutral",
-      borderColor: "border-carbon-neutral"
+      bgColor: "bg-emerald-50",
+      textColor: "text-emerald-800",
+      borderColor: "border-emerald-300"
     },
     renewable: {
       icon: "♻️",
       text: "Renewable",
-      bgColor: "bg-green-50",
-      textColor: "text-renewable",
-      borderColor: "border-renewable"
+      bgColor: "bg-emerald-50",
+      textColor: "text-emerald-600",
+      borderColor: "border-emerald-200"
     },
     verified: {
       icon: "✓",
       text: "Verified Vendor",
-      bgColor: "bg-eco-subtle",
-      textColor: "text-eco-primary",
-      borderColor: "border-eco-accent"
+      bgColor: "bg-emerald-50",
+      textColor: "text-emerald-700",
+      borderColor: "border-emerald-200"
     },
     local: {
       icon: "📍",

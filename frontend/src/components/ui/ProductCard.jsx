@@ -21,10 +21,10 @@ function StarRating({ rating = 4.9, reviews = 524 }) {
           </div>
         </div>
       ))}
-      <div className="font-poppins leading-[0] not-italic relative shrink-0 text-[#7e7e7e] text-[11.952px] text-nowrap ml-1">
+      <div className="font-poppins leading-[0] not-italic relative shrink-0 text-gray-600 text-[11.952px] text-nowrap ml-1">
         <p className="leading-[1.3] whitespace-pre">{rating}</p>
       </div>
-      <div className="font-poppins leading-[0] not-italic relative shrink-0 text-[#7e7e7e] text-[11.952px] text-nowrap">
+      <div className="font-poppins leading-[0] not-italic relative shrink-0 text-gray-600 text-[11.952px] text-nowrap">
         <p className="leading-[1.3] whitespace-pre">{` (${reviews} Feedback)`}</p>
       </div>
     </div>
@@ -44,7 +44,7 @@ function ProgressDots({ images = [], currentIndex = 0, isHovered = false }) {
         <div 
           key={index}
           className={`basis-0 grow h-[5.976px] min-h-px min-w-px rounded-[49.802px] shrink-0 transition-colors duration-300 ${
-            index === currentIndex ? 'bg-[#52494a]' : 'bg-[#f8f7f8]'
+            index === currentIndex ? 'bg-emerald-600' : 'bg-gray-200'
           }`} 
         />
       ))}
@@ -54,9 +54,9 @@ function ProgressDots({ images = [], currentIndex = 0, isHovered = false }) {
 
 // Add to Cart Button Component
 function AddButton({ variant = "dark", onClick, disabled = false }) {
-  const bgColor = variant === "dark" ? "bg-[#272727]" : "bg-[#52494a]";
-  const hoverBgColor = variant === "dark" ? "hover:bg-[#1a1a1a]" : "hover:bg-[#3d2008]";
-  const borderColor = variant === "dark" ? "border-[#1a4032]" : "border-[#52494a]";
+  const bgColor = variant === "dark" ? "bg-gray-800" : "bg-emerald-600";
+  const hoverBgColor = variant === "dark" ? "hover:bg-gray-900" : "hover:bg-emerald-700";
+  const borderColor = variant === "dark" ? "border-gray-700" : "border-emerald-600";
   
   const handleClick = (e) => {
     e.stopPropagation(); // Prevent event bubbling to parent card
@@ -211,17 +211,17 @@ export default function ProductCard({
     }
   }, [isHovered]);
 
-  const cardWidth = size === "wide" ? "w-full sm:w-[280px] lg:w-[305px]" : "w-full sm:w-[240px] lg:w-[265px]";
-  const cardHeight = variant === "featured" ? "h-[380px] sm:h-[400px] lg:h-[420px]" : "h-[370px] sm:h-[390px] lg:h-[410px]";
-  const imageHeight = variant === "featured" ? "h-[140px] sm:h-[160px] lg:h-[180px]" : "h-[120px] sm:h-[130px] lg:h-[150px]";
+  const cardWidth = size === "wide" ? "w-full sm:w-[280px] lg:w-[305px]" : size === "small" ? "w-full sm:w-[200px] lg:w-[220px]" : "w-full sm:w-[240px] lg:w-[265px]";
+  const cardHeight = variant === "featured" ? "h-[420px]" : size === "small" ? "h-[360px]" : "h-[410px]";
+  const imageHeight = variant === "featured" ? "h-[180px]" : size === "small" ? "h-[140px]" : "h-[150px]";
   const contentPadding = "p-3 sm:p-4 lg:p-[20px]"; // Responsive padding
   const contentGap = "gap-3 sm:gap-4 lg:gap-[14px]"; // Responsive gap
 
-  const textColor = variant === "featured" ? "text-[#52494a]" : "text-[dimgrey]";
-  const titleColor = "text-[#52494a]";
-  const descColor = variant === "featured" ? "text-[#847577]" : "text-[dimgrey]";
-  const priceColor = variant === "featured" ? "text-[#52494a]" : "text-[#272727]";
-  const originalPriceColor = variant === "featured" ? "text-[#847577]" : "text-[dimgrey]";
+  const textColor = variant === "featured" ? "text-gray-800" : "text-gray-600";
+  const titleColor = "text-gray-800";
+  const descColor = variant === "featured" ? "text-gray-600" : "text-gray-600";
+  const priceColor = variant === "featured" ? "text-gray-800" : "text-gray-900";
+  const originalPriceColor = variant === "featured" ? "text-gray-600" : "text-gray-600";
 
   const handleCardClick = (e) => {
     // Don't navigate if user clicked on Add to Cart button or if onClick handler exists
@@ -237,7 +237,7 @@ export default function ProductCard({
 
   return (
     <div 
-      className={`bg-[#e9eceb] content-stretch flex flex-col overflow-clip relative rounded-[12px] shrink-0 ${cardWidth} ${cardHeight} cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] ${className}`}
+      className={`bg-white border border-gray-100 content-stretch flex flex-col overflow-clip relative rounded-[12px] shrink-0 ${cardWidth} ${cardHeight} cursor-pointer hover:shadow-xl transition-all duration-200 hover:scale-[1.02] ${className}`}
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -263,14 +263,14 @@ export default function ProductCard({
             <div className={`flex flex-col font-poppins font-bold justify-center not-italic relative shrink-0 ${textColor} text-[10px] sm:text-[11px] lg:text-[11.952px] w-full`}>
               <p className="leading-[normal]">{category}</p>
             </div>
-            <div className={`flex flex-col font-reem font-semibold justify-center relative shrink-0 ${titleColor} text-[16px] sm:text-[18px] lg:text-[19.921px] w-full`}>
-              <p className="leading-[normal]">{title}</p>
+            <div className={`flex flex-col font-reem font-semibold justify-start relative shrink-0 ${titleColor} text-[16px] sm:text-[18px] lg:text-[19.921px] w-full h-12 overflow-hidden`}>
+              <p className="leading-[normal] line-clamp-2">{title}</p>
             </div>
           </div>
 
           {/* Description */}
-          <div className={`flex flex-col font-poppins justify-center leading-[0] not-italic relative shrink-0 ${descColor} text-[10px] sm:text-[11px] lg:text-[11.952px] w-full`}>
-            <p className="leading-[normal]">{description}</p>
+          <div className={`flex flex-col font-poppins justify-start leading-[0] not-italic relative shrink-0 ${descColor} text-[10px] sm:text-[11px] lg:text-[11.952px] w-full h-8 overflow-hidden`}>
+            <p className="leading-[normal] line-clamp-2">{description}</p>
           </div>
 
           {/* Rating */}
@@ -305,8 +305,8 @@ export default function ProductCard({
 
           {/* Add Button or Quantity Controls */}
           {addedToCart ? (
-            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-[11.952px] px-3 py-2">
-              <Check className="w-3 h-3 text-green-600" />
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-[11.952px] px-3 py-2">
+              <Check className="w-3 h-3 text-emerald-600" />
               <div className="flex items-center gap-1">
                 <button
                   onClick={(e) => {

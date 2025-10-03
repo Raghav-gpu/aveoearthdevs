@@ -8,22 +8,36 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Brand colors - sustainable theme
-        'green-primary': 'var(--color-green-primary)',
-        'green-secondary': 'var(--color-green-secondary)',
-        'green-accent': 'var(--color-green-accent)',
-        'green-light': 'var(--color-green-light)',
-        'green-subtle': 'var(--color-green-subtle)',
+        // Modern emerald-based brand colors
+        'brand': {
+          50: '#ecfdf5',
+          100: '#d1fae5', 
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981', // emerald-500 - primary brand color
+          600: '#059669', // emerald-600 - primary action color
+          700: '#047857', // emerald-700 - primary text/logo color
+          800: '#065f46',
+          900: '#064e3b',
+        },
         
-        // Eco colors - new sustainability palette
-        'eco-primary': 'var(--color-eco-primary)',
-        'eco-secondary': 'var(--color-eco-secondary)',
-        'eco-accent': 'var(--color-eco-accent)',
-        'eco-light': 'var(--color-eco-light)',
-        'eco-subtle': 'var(--color-eco-subtle)',
-        'carbon-neutral': 'var(--color-carbon-neutral)',
-        'organic': 'var(--color-organic)',
-        'renewable': 'var(--color-renewable)',
+        // Legacy support - map to emerald equivalents
+        'green-primary': '#047857', // emerald-700
+        'green-secondary': '#059669', // emerald-600
+        'green-accent': '#10b981', // emerald-500
+        'green-light': '#d1fae5', // emerald-100
+        'green-subtle': '#ecfdf5', // emerald-50
+        
+        // Eco colors - modern emerald palette
+        'eco-primary': '#047857', // emerald-700
+        'eco-secondary': '#059669', // emerald-600
+        'eco-accent': '#10b981', // emerald-500
+        'eco-light': '#d1fae5', // emerald-100
+        'eco-subtle': '#ecfdf5', // emerald-50
+        'carbon-neutral': '#065f46', // emerald-800
+        'organic': '#34d399', // emerald-400
+        'renewable': '#6ee7b7', // emerald-300
         
         // Semantic colors
         'success': 'var(--color-success)',
@@ -31,15 +45,15 @@ module.exports = {
         'error': 'var(--color-error)',
         'info': 'var(--color-info)',
         
-        // Surface colors
-        'background': 'var(--color-background)',
-        'surface': 'var(--color-surface)',
-        'surface-elevated': 'var(--color-surface-elevated)',
+        // Modern surface colors
+        'background': '#f9fafb', // gray-50
+        'surface': '#ffffff', // white
+        'surface-elevated': '#f3f4f6', // gray-100
         
-        // Text colors
-        'text-primary': 'var(--color-text-primary)',
-        'text-secondary': 'var(--color-text-secondary)',
-        'text-tertiary': 'var(--color-text-tertiary)',
+        // Modern text colors
+        'text-primary': '#111827', // gray-900
+        'text-secondary': '#374151', // gray-700
+        'text-tertiary': '#6b7280', // gray-500
         
         // Neutral scale
         'neutral': {
@@ -97,6 +111,47 @@ module.exports = {
         '16': 'var(--spacing-16)',
         '20': 'var(--spacing-20)',
         '24': 'var(--spacing-24)',
+      },
+      boxShadow: {
+        card: "0 6px 24px rgba(0,0,0,0.06)",
+        'card-hover': "0 12px 32px rgba(0,0,0,0.10)",
+      },
+      backgroundImage: {
+        'gradient-moss': 'linear-gradient(135deg, #10b981 0%, #047857 100%)', // emerald-500 to emerald-700
+        'gradient-emerald': 'linear-gradient(135deg, #059669 0%, #047857 100%)', // emerald-600 to emerald-700
+        'gradient-brand': 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', // emerald-50 to emerald-100
+      },
+      keyframes: {
+        blob: {
+          '0%': { transform: 'translate(0px, 0px) scale(1)' },
+          '33%': { transform: 'translate(10px, -10px) scale(1.05)' },
+          '66%': { transform: 'translate(-10px, 10px) scale(0.95)' },
+          '100%': { transform: 'translate(0px, 0px) scale(1)' },
+        },
+        float: {
+          '0%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-6px)' },
+          '100%': { transform: 'translateY(0px)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        'slide-in-up': {
+          '0%': { opacity: 0, transform: 'translateY(10px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' },
+        },
+        'slideInUp': {
+          '0%': { opacity: 0, transform: 'translateY(30px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        blob: 'blob 12s ease-in-out infinite',
+        float: 'float 6s ease-in-out infinite',
+        shimmer: 'shimmer 1.8s linear infinite',
+        'slide-in-up': 'slide-in-up 300ms ease-out both',
+        'slideInUp': 'slideInUp 0.6s ease-out forwards',
       }
     },
   },

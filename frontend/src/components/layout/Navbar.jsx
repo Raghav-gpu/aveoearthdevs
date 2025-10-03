@@ -67,7 +67,7 @@ const VendorProfile = ({ isLoggedIn, userProfile }) => {
               <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <div className="absolute -top-1 -right-1 bg-[#12b74f] text-white text-[12px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+          <div className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[12px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
             6
           </div>
         </div>
@@ -78,7 +78,7 @@ const VendorProfile = ({ isLoggedIn, userProfile }) => {
         // Vendor Profile - show when logged in
         <div className="relative" ref={dropdownRef}>
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsVendorPopupOpen(!isVendorPopupOpen)}>
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-[#76c7c0] flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-emerald-500 flex items-center justify-center">
               {userProfile?.avatar_url ? (
                 <img 
                   src={userProfile.avatar_url} 
@@ -93,13 +93,13 @@ const VendorProfile = ({ isLoggedIn, userProfile }) => {
               )}
             </div>
             <div className="text-right">
-              <div className="text-[14px] text-neutral-700 font-bold font-poppins">
+              <div className="text-[14px] text-gray-800 font-bold font-poppins">
                 {userProfile?.first_name && userProfile?.last_name 
                   ? `${userProfile.first_name} ${userProfile.last_name}`
                   : userProfile?.first_name || "User"
                 }
               </div>
-              <div className="text-[12px] text-[#565656] font-semibold font-poppins">
+              <div className="text-[12px] text-gray-600 font-semibold font-poppins">
                 {userProfile?.user_type?.charAt(0).toUpperCase() + userProfile?.user_type?.slice(1) || "User"}
               </div>
             </div>
@@ -141,7 +141,7 @@ const VendorProfile = ({ isLoggedIn, userProfile }) => {
         </div>
       ) : (
         // Sign Up Button - show when not logged in
-        <Link href="/signup" className="bg-[var(--action-primary)] hover:bg-[var(--action-primary-hover)] text-white px-6 py-2 rounded-[5px] font-poppins font-semibold text-[14px] tracking-[0.3px] transition-colors shadow-md hover:shadow-lg">
+        <Link href="/signup" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-[5px] font-poppins font-semibold text-[14px] tracking-[0.3px] transition-colors shadow-md hover:shadow-lg">
           Join Green Community
         </Link>
       )}
@@ -217,14 +217,34 @@ export default function Navbar() {
   }, []);
 
   return (
-    <div className={`w-full fixed top-0 left-0 z-20 ${isVendorDashboard ? 'glass-green border-b border-[var(--color-eco-accent)]/30 backdrop-blur-xl' : 'glass-green backdrop-blur-xl border-b border-white/10'}`}>
-      <div className="flex items-center justify-between px-6 py-3 max-w-[1400px] mx-auto">
+    <div className="w-full fixed top-0 left-0 z-20">
+      {/* Impact Banner */}
+      {!isVendorDashboard && (
+        <div className="bg-emerald-700 text-white py-2 px-4 text-center text-sm">
+          <div className="flex items-center justify-center gap-4 max-w-4xl mx-auto">
+            <div className="flex items-center gap-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l2 7h7l-5.5 4 2 7-5.5-4-5.5 4 2-7L3 9h7l2-7z" fill="currentColor"/></svg>
+              <span>2,847 trees planted this month</span>
+            </div>
+            <div className="hidden md:flex items-center gap-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 16V8a2 2 0 0 0-2-2h-3l-1-2H9L8 6H5a2 2 0 0 0-2 2v8" stroke="currentColor" strokeWidth="2"/></svg>
+              <span>15.2T CO₂ offset</span>
+            </div>
+            <div className="hidden lg:flex items-center gap-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 2l3 3-9 9H10v-3l9-9z" stroke="currentColor" strokeWidth="2"/></svg>
+              <span>500K+ plastic items saved</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`bg-white/90 backdrop-blur-xl border-b border-gray-200 flex items-center justify-between px-6 py-3 w-full`}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="w-6 h-6">
             <Image src="/logo.png" alt="AveoEarth Logo" width={24} height={24} className="w-full h-full object-contain" />
           </div>
-          <span className="text-[24px] font-eb-garamond font-medium tracking-[-0.72px] hidden sm:block text-[var(--color-eco-primary)]">AveoEarth</span>
+          <span className="text-[24px] font-eb-garamond font-medium tracking-[-0.72px] hidden sm:block text-emerald-700">AveoEarth</span>
         </Link>
 
         {/* Search Bar - only show for non-vendor pages */}
@@ -244,6 +264,17 @@ export default function Navbar() {
           </div>
         )}
 
+        {/* Desktop Navigation */}
+        {!isVendorDashboard && (
+          <nav className="hidden lg:flex items-center space-x-8">
+            <Link href="/category" className="text-gray-700 hover:text-emerald-700 transition-colors font-medium">Categories</Link>
+            <Link href="/explore?sort=new" className="text-gray-700 hover:text-emerald-700 transition-colors font-medium">New Arrivals</Link>
+            <Link href="/explore?sort=popular" className="text-gray-700 hover:text-emerald-700 transition-colors font-medium">Best Sellers</Link>
+            <Link href="/community" className="text-gray-700 hover:text-emerald-700 transition-colors font-medium">Community</Link>
+            <Link href="/about" className="text-gray-700 hover:text-emerald-700 transition-colors font-medium">About Us</Link>
+          </nav>
+        )}
+
         {/* Right Side Items */}
         <div className="flex items-center gap-6">
           {isClient && (
@@ -261,33 +292,16 @@ export default function Navbar() {
                     {isClient ? (
                       <>
                         {isLoggedIn ? (
-                          <button 
-                            onClick={() => setIsUserPopupOpen(!isUserPopupOpen)}
-                            className="relative focus:outline-none"
-                          >
-                            <div className="w-[32px] h-[32px] bg-[#76c7c0] rounded-full flex items-center justify-center overflow-hidden">
-                              {userProfile?.profileImage ? (
-                                <Image 
-                                  src={userProfile.profileImage} 
-                                  alt="Profile" 
-                                  width={32} 
-                                  height={32} 
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <circle cx="12" cy="7" r="4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              )}
-                            </div>
+                          <button onClick={() => setIsUserPopupOpen(!isUserPopupOpen)} className="relative focus:outline-none text-gray-700 hover:text-emerald-700">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/>
+                            </svg>
                           </button>
                         ) : (
-                          <button 
-                            onClick={() => setIsUserPopupOpen(!isUserPopupOpen)}
-                            className="relative focus:outline-none"
-                          >
-                            <UserIcon />
+                          <button onClick={() => setIsUserPopupOpen(!isUserPopupOpen)} className="relative focus:outline-none text-gray-700 hover:text-emerald-700">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/>
+                            </svg>
                           </button>
                         )}
                         
@@ -300,7 +314,7 @@ export default function Navbar() {
                       </>
                     ) : (
                       // Fallback during SSR
-                      <div className="w-[32px] h-[32px] bg-[#76c7c0] rounded-full"></div>
+                      <div className="w-[32px] h-[32px] bg-emerald-500 rounded-full"></div>
                     )}
                   </div>
                 </>

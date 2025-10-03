@@ -31,7 +31,7 @@ const AddressCard = ({ address, onEdit, onDelete, onSetDefault }) => {
 
   const getTypeColor = (type) => {
     const colors = {
-      home: 'bg-green-100 text-green-800',
+      home: 'bg-emerald-100 text-emerald-800',
       work: 'bg-blue-100 text-blue-800',
       billing: 'bg-purple-100 text-purple-800',
       shipping: 'bg-orange-100 text-orange-800',
