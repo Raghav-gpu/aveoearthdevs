@@ -29,10 +29,14 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    window.addEventListener('ae_tokens_changed', handleTokenChange);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ae_tokens_changed', handleTokenChange);
+    }
     
     return () => {
-      window.removeEventListener('ae_tokens_changed', handleTokenChange);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('ae_tokens_changed', handleTokenChange);
+      }
     };
   }, []);
 
@@ -149,10 +153,14 @@ export const useAuthToken = () => {
     };
     
     updateToken();
-    window.addEventListener('ae_tokens_changed', updateToken);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ae_tokens_changed', updateToken);
+    }
     
     return () => {
-      window.removeEventListener('ae_tokens_changed', updateToken);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('ae_tokens_changed', updateToken);
+      }
     };
   }, []);
   

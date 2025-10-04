@@ -198,7 +198,7 @@ export default function ProductRecommendations({
             </div>
             <p className="text-gray-600 font-poppins">Unable to load recommendations</p>
             <button 
-              onClick={() => window.location.reload()} 
+              onClick={() => typeof window !== 'undefined' && window.location.reload()} 
               className="mt-4 text-[#1a4032] hover:text-[#2d5a45] font-medium underline"
             >
               Try again

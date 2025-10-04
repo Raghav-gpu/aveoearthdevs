@@ -553,7 +553,9 @@ export const tokens = {
       localStorage.setItem("ae_tokens", JSON.stringify(toks));
       try {
         // Notify listeners in this window that tokens changed
-        window.dispatchEvent(new CustomEvent('ae_tokens_changed', { detail: toks }));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('ae_tokens_changed', { detail: toks }));
+        }
       } catch (e) {}
     } catch {}
   },
@@ -570,7 +572,9 @@ export const tokens = {
       localStorage.removeItem("ae_tokens");
       try {
         // Notify listeners that tokens were cleared
-        window.dispatchEvent(new CustomEvent('ae_tokens_changed', { detail: null }));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('ae_tokens_changed', { detail: null }));
+        }
       } catch (e) {}
     } catch {}
   },

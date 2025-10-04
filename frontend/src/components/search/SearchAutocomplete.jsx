@@ -195,19 +195,21 @@ export default function SearchAutocomplete({
   };
 
   const handleSelectSuggestion = (suggestion) => {
-    if (suggestion.type === 'product') {
-      // Navigate to product page
-      window.location.href = `/products/${suggestion.slug || suggestion.id}`;
-    } else if (suggestion.type === 'category') {
-      // Navigate to category page
-      window.location.href = `/explore?category=${suggestion.slug || suggestion.name}`;
-    } else {
-      // Set search query and submit
-      onSearchChange(suggestion.name || suggestion.title || suggestion.query);
-      setShowSuggestions(false);
-      setTimeout(() => {
-        onSearchSubmit({ preventDefault: () => {} });
-      }, 100);
+    if (typeof window !== 'undefined') {
+      if (suggestion.type === 'product') {
+        // Navigate to product page
+        window.location.href = `/products/${suggestion.slug || suggestion.id}`;
+      } else if (suggestion.type === 'category') {
+        // Navigate to category page
+        window.location.href = `/explore?category=${suggestion.slug || suggestion.name}`;
+      } else {
+        // Set search query and submit
+        onSearchChange(suggestion.name || suggestion.title || suggestion.query);
+        setShowSuggestions(false);
+        setTimeout(() => {
+          onSearchSubmit({ preventDefault: () => {} });
+        }, 100);
+      }
     }
     onSelectItem?.(suggestion);
   };

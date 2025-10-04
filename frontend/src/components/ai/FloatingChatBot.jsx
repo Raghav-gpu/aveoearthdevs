@@ -9,6 +9,7 @@ const FloatingChatBot = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [userType, setUserType] = useState("buyer");
   const [isClient, setIsClient] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const pathname = usePathname();
 
   const isVendorDashboard = pathname?.startsWith('/vendor');
@@ -68,23 +69,46 @@ const FloatingChatBot = () => {
           boxShadow: 'none'
         }}
       >
-        <video
-          src="/AveoBuddy.mp4"
-          width={160}
-          height={160}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-contain"
-          style={{ 
-            border: 'none', 
-            background: 'transparent',
-            backgroundColor: 'transparent',
-            outline: 'none',
-            display: 'block'
-          }}
-        />
+        {!videoError ? (
+          <video
+            src="/AveoBuddy.mp4"
+            width={160}
+            height={160}
+            autoPlay
+            loop
+            muted
+            playsInline
+            onError={() => {
+              console.error('Failed to load AveoBuddy.mp4');
+              setVideoError(true);
+            }}
+            className="w-full h-full object-contain"
+            style={{ 
+              border: 'none', 
+              background: 'transparent',
+              backgroundColor: 'transparent',
+              outline: 'none',
+              display: 'block'
+            }}
+          />
+        ) : (
+          <div className="w-40 h-40 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+            <svg
+              className="w-20 h-20 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              />
+            </svg>
+          </div>
+        )}
         <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full opacity-80 animate-pulse"></div>
       </div>
 

@@ -39,7 +39,9 @@ const VendorProfile = ({ isLoggedIn, userProfile }) => {
     // Clear tokens
     tokens.clear();
     // Reload the page or redirect to login
-    window.location.href = '/';
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   // Close dropdown when clicking outside
@@ -209,10 +211,14 @@ export default function Navbar() {
       }
     };
 
-    window.addEventListener('ae_tokens_changed', onTokensChanged);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ae_tokens_changed', onTokensChanged);
+    }
 
     return () => {
-      window.removeEventListener('ae_tokens_changed', onTokensChanged);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('ae_tokens_changed', onTokensChanged);
+      }
     };
   }, []);
 

@@ -77,7 +77,7 @@ export default function BottomNavigation() {
       const category = href.split('category=')[1];
       return pathname.includes('explore') && (
         pathname.includes(category) || 
-        (new URLSearchParams(window?.location?.search || '')).get('category') === category
+        (typeof window !== 'undefined' && (new URLSearchParams(window?.location?.search || '')).get('category') === category)
       );
     }
     return pathname === href;

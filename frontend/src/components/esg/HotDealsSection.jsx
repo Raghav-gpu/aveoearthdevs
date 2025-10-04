@@ -268,7 +268,12 @@ export default function App() {
         <div className="absolute bottom-32 right-16 w-32 h-32 bg-emerald-300/15 rounded-full animate-[float_8s_ease-in-out_infinite]" style={{ animationDelay: '3s' }}></div>
         <div className="absolute top-1/3 right-1/4 w-24 h-24 bg-emerald-400/10 rounded-full animate-[blob_12s_reverse_ease-in-out_infinite]" style={{ animationDelay: '1.5s' }}></div>
         {/* Grid Pattern: The SVG is fully encoded to prevent compilation errors */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23059669%22%20fill-opacity%3D%220.03%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-40"></div>
+        <div className="absolute inset-0 opacity-40">
+          <div className="w-full h-full" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23059669' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundRepeat: 'repeat'
+          }}></div>
+        </div>
       </div>
 
       <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">

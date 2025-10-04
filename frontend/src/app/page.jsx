@@ -130,15 +130,247 @@ export default function HomePage() {
       images: ["/hero1.png", "/hero1.png", "/hero1.png"],
       ecoScore: "94%",
       badges: ["Plastic-Free"]
+    },
+    {
+      id: 5,
+      name: "Recycled Glass Jars",
+      price: "₹599",
+      originalPrice: "₹799",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "96%",
+      badges: ["Recycled"]
+    },
+    {
+      id: 6,
+      name: "Bamboo Cutlery Set",
+      price: "₹399",
+      originalPrice: "₹599",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "93%",
+      badges: ["Biodegradable"]
+    },
+    {
+      id: 7,
+      name: "Hemp Tote Bag",
+      price: "₹799",
+      originalPrice: "₹999",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "91%",
+      badges: ["Hemp"]
+    },
+    {
+      id: 8,
+      name: "Solar Phone Charger",
+      price: "₹1,599",
+      originalPrice: "₹2,199",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "97%",
+      badges: ["Solar"]
+    },
+    {
+      id: 9,
+      name: "Eco-Friendly Yoga Mat",
+      price: "₹1,899",
+      originalPrice: "₹2,499",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "94%",
+      badges: ["Natural Rubber"]
+    },
+    {
+      id: 10,
+      name: "Bamboo Phone Case",
+      price: "₹699",
+      originalPrice: "₹999",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "96%",
+      badges: ["Biodegradable"]
+    },
+    {
+      id: 11,
+      name: "Organic Tea Collection",
+      price: "₹1,299",
+      originalPrice: "₹1,599",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "98%",
+      badges: ["Fair Trade"]
+    },
+    {
+      id: 12,
+      name: "Reusable Food Wraps",
+      price: "₹899",
+      originalPrice: "₹1,199",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "95%",
+      badges: ["Beeswax"]
+    },
+    {
+      id: 13,
+      name: "Solar Garden Lights",
+      price: "₹1,499",
+      originalPrice: "₹1,999",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "97%",
+      badges: ["Solar Powered"]
+    },
+    {
+      id: 14,
+      name: "Cork Coasters Set",
+      price: "₹599",
+      originalPrice: "₹799",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "93%",
+      badges: ["Cork"]
+    },
+    {
+      id: 15,
+      name: "Organic Cotton Towels",
+      price: "₹1,199",
+      originalPrice: "₹1,599",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "96%",
+      badges: ["Organic"]
+    },
+    {
+      id: 16,
+      name: "Bamboo Straw Set",
+      price: "₹299",
+      originalPrice: "₹399",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "98%",
+      badges: ["Biodegradable"]
+    },
+    {
+      id: 17,
+      name: "Natural Loofah Sponge",
+      price: "₹199",
+      originalPrice: "₹299",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "100%",
+      badges: ["Natural"]
+    },
+    {
+      id: 18,
+      name: "Eco Laundry Detergent",
+      price: "₹899",
+      originalPrice: "₹1,199",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "94%",
+      badges: ["Plant-Based"]
+    },
+    {
+      id: 19,
+      name: "Recycled Paper Notebook",
+      price: "₹399",
+      originalPrice: "₹599",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "92%",
+      badges: ["Recycled"]
+    },
+    {
+      id: 20,
+      name: "Organic Herbal Tea",
+      price: "₹599",
+      originalPrice: "₹799",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "97%",
+      badges: ["Organic"]
+    },
+    {
+      id: 21,
+      name: "Bamboo Toothbrush",
+      price: "₹199",
+      originalPrice: "₹299",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "99%",
+      badges: ["Biodegradable"]
+    },
+    {
+      id: 22,
+      name: "Natural Soap Bar",
+      price: "₹149",
+      originalPrice: "₹199",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "95%",
+      badges: ["Handmade"]
+    },
+    {
+      id: 23,
+      name: "Cork Yoga Block",
+      price: "₹1,299",
+      originalPrice: "₹1,599",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "93%",
+      badges: ["Cork"]
+    },
+    {
+      id: 24,
+      name: "Organic Face Oil",
+      price: "₹799",
+      originalPrice: "₹999",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "96%",
+      badges: ["Organic"]
+    },
+    {
+      id: 25,
+      name: "Bamboo Utensil Set",
+      price: "₹699",
+      originalPrice: "₹899",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "97%",
+      badges: ["Bamboo"]
+    },
+    {
+      id: 26,
+      name: "Natural Beeswax Candles",
+      price: "₹1,499",
+      originalPrice: "₹1,999",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "98%",
+      badges: ["Beeswax"]
+    },
+    {
+      id: 27,
+      name: "Organic Cotton Socks",
+      price: "₹399",
+      originalPrice: "₹599",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "94%",
+      badges: ["Organic"]
+    },
+    {
+      id: 28,
+      name: "Recycled Glass Vase",
+      price: "₹899",
+      originalPrice: "₹1,199",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "91%",
+      badges: ["Recycled"]
+    },
+    {
+      id: 29,
+      name: "Natural Deodorant",
+      price: "₹349",
+      originalPrice: "₹499",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "96%",
+      badges: ["Natural"]
+    },
+    {
+      id: 30,
+      name: "Bamboo Cutting Board",
+      price: "₹1,199",
+      originalPrice: "₹1,599",
+      images: ["/hero1.png", "/hero1.png", "/hero1.png"],
+      ecoScore: "95%",
+      badges: ["Bamboo"]
     }
   ];
 
   const [currentTagline, setCurrentTagline] = useState(0);
   const [isTaglineVisible, setIsTaglineVisible] = useState(true);
-  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [cardImageIndexes, setCardImageIndexes] = useState({});
-
-  const carouselRef = useRef(null);
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
 
   // Tagline animation effect
   useEffect(() => {
@@ -153,30 +385,23 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Carousel auto-scroll effect
-  useEffect(() => {
-    const autoScrollInterval = setInterval(() => {
-      handleNext();
-    }, 5000);
-
-    return () => clearInterval(autoScrollInterval);
-  }, [currentCarouselIndex]);
-
-  const productsPerView = 3;
-  const totalPages = Math.ceil(topProducts.length / productsPerView);
-
-  const handleNext = () => {
-    setCurrentCarouselIndex((prevIndex) => {
-      const nextIndex = (prevIndex + productsPerView);
-      return nextIndex >= topProducts.length ? 0 : nextIndex;
-    });
+  // Manual carousel navigation
+  const nextCarousel = () => {
+    setCurrentCarouselIndex((prevIndex) => 
+      (prevIndex + 1) % Math.ceil(topProducts.length / 14)
+    );
   };
 
-  const handlePrev = () => {
-    setCurrentCarouselIndex((prevIndex) => {
-      const prevStartIndex = prevIndex - productsPerView;
-      return prevStartIndex < 0 ? (totalPages - 1) * productsPerView : prevStartIndex;
-    });
+  const prevCarousel = () => {
+    setCurrentCarouselIndex((prevIndex) => 
+      prevIndex === 0 ? Math.ceil(topProducts.length / 14) - 1 : prevIndex - 1
+    );
+  };
+
+  // Get visible products for current carousel view
+  const getVisibleProducts = () => {
+    const startIndex = currentCarouselIndex * 14; // Changed from 15 to 14 to match grid layout
+    return topProducts.slice(startIndex, startIndex + 14);
   };
 
   const handleImageIndicatorClick = (e, productId, imageIndex) => {
@@ -184,11 +409,6 @@ export default function HomePage() {
     e.stopPropagation();
     setCardImageIndexes(prev => ({ ...prev, [productId]: imageIndex }));
   };
-
-  const visibleProducts = topProducts.slice(currentCarouselIndex, currentCarouselIndex + productsPerView);
-  if (visibleProducts.length < productsPerView && topProducts.length >= productsPerView) {
-    visibleProducts.push(...topProducts.slice(0, productsPerView - visibleProducts.length));
-  }
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
@@ -198,19 +418,19 @@ export default function HomePage() {
         {/* Parallax Background */}
         <div className="absolute inset-0 parallax-layer">
           <Image
-            src="/hero1.png"
+            src="/hero-sustainable-products.jpg"
             alt="Sustainable lifestyle products"
             fill
-            className="object-cover opacity-30"
+            className="object-cover opacity-50"
             priority
           />
-          <div className="absolute inset-0 bg-white/70" />
+          <div className="absolute inset-0 bg-white/50" />
         </div>
         
         <div className="relative z-10 container mx-auto px-10 pt-24 pb-16">
           <div className="grid lg:grid-cols-5 gap-12 items-center">
             {/* Hero Content (left side, taking 2 of 5 columns) */}
-            <div className="lg:col-span-2 space-y-6 slide-up text-center lg:text-left">
+            <div className="lg:col-span-2 space-y-6 slide-up text-center lg:text-left -ml-5">
               <div className="space-y-4">
                 <h1 className="text-4xl lg:text-6xl font-bold text-gray-800 leading-tight">
                   Sustainability
@@ -228,7 +448,7 @@ export default function HomePage() {
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="flex flex-col gap-4 justify-center lg:justify-start">
                 <Button
                   as={Link}
                   href="/explore"
@@ -246,136 +466,123 @@ export default function HomePage() {
                   size="lg"
                   className="rounded-full"
                 >
-                  Learn Impact
+                  Become a Partner
                 </Button>
-              </div>
+            </div>
 
-              {/* Impact Stats */}
-              <div className="grid grid-cols-3 gap-4 pt-6 mt-8 border-t border-gray-200">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-700">50K+</div>
-                  <div className="text-sm text-gray-600">Trees Planted</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-700">25T</div>
-                  <div className="text-sm text-gray-600">CO₂ Offset</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-700">1M+</div>
-                  <div className="text-sm text-gray-600">Plastic Saved</div>
-                </div>
-              </div>
           </div>
           
             {/* Top Eco Picks Carousel (right side, taking 3 of 5 columns) */}
             <div className="lg:col-span-3 slide-up">
               <div className="lg:-ml-12 space-y-4">
-                <h2 className="text-xl font-bold text-gray-800 text-center lg:text-left">
-                  Top Picks
-                </h2>
-                
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-gray-800 text-center lg:text-left">
+                    Top Picks
+                  </h2>
+                  <Button variant="ghost" className="text-emerald-700 hover:text-emerald-600 text-sm">
+                    View All  →
+                  </Button>
+          </div>
+          
+                {/* Hexagonal Honeycomb Grid with Side Navigation */}
                 <div className="relative">
-                  {/* Carousel Container */}
-                  <div ref={carouselRef} className="flex overflow-hidden relative -mx-3">
-                    {visibleProducts.map((product) => (
+                  {/* Left Navigation Button - Moved up by another 10px */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={prevCarousel}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 text-emerald-700 hover:text-emerald-600 bg-white/80 backdrop-blur-sm shadow-lg"
+                    style={{ top: 'calc(50% + 20px)' }}
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  
+                  {/* Right Navigation Button - Moved up by another 10px */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={nextCarousel}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 text-emerald-700 hover:text-emerald-600 bg-white/80 backdrop-blur-sm shadow-lg"
+                    style={{ top: 'calc(50% + 20px)' }}
+                  >
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                  
+                  {/* Hexagonal Grid - Pushed upward significantly and moved right more */}
+                  <div className="honeycomb-grid -mt-24 ml-5">
+                    {getVisibleProducts().map((product, index) => (
                       <div 
                         key={`${product.id}-${currentCarouselIndex}`}
-                        className="flex-none w-[calc(33.333%-12px)] px-3"
+                        className={`hexagon-wrapper ${index % 2 === 0 ? 'hexagon-even' : 'hexagon-odd'}`}
+                        style={{
+                          '--hex-delay': `${index * 150}ms`,
+                          animationDelay: `${index * 150}ms`
+                        }}
                       >
-                        <div className="group flex flex-col h-full bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-gray-300 overflow-hidden">
-                          {/* Image Section with Gallery */}
-                          <div className="relative">
+                        <div className="hexagon-card group">
+                          {/* Product Image */}
+                          <div className="hexagon-image-container">
                             <Image 
                               src={product.images[cardImageIndexes[product.id] || 0]}
                               alt={product.name}
-                              width={300}
-                              height={160}
-                              className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
+                              width={80}
+                              height={80}
+                              className="hexagon-image"
                             />
-                            <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-emerald-700 bg-white/80 px-2 py-1 rounded-full shadow-md">
-                              <span>🌱</span>
-                              <span>{product.ecoScore}</span>
+                            <div className="hexagon-eco-badge">
+                              <span className="text-xs">🌱</span>
+                              <span className="text-xs font-semibold">{product.ecoScore}</span>
                             </div>
-                            {/* Image Gallery Indicators */}
-                            <div className="absolute bottom-2 left-0 right-0 flex justify-center items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                               {product.images.map((_, index) => (
-                                <button
-                                  key={index}
-                                  onClick={(e) => handleImageIndicatorClick(e, product.id, index)}
-                                  className={`h-2 w-2 rounded-full transition-all duration-200 ${
-                                    (cardImageIndexes[product.id] || 0) === index 
-                                      ? 'bg-emerald-600 scale-110' 
-                                      : 'bg-gray-400 hover:bg-gray-600'
-                                  }`}
-                                  aria-label={`View image ${index + 1}`}
-                                />
-                              ))}
+                          </div>
+                          
+                          {/* Product Info */}
+                          <div className="hexagon-content">
+                            <h3 className="hexagon-title">{product.name}</h3>
+                            <div className="hexagon-price">
+                              <span className="price-current">{product.price}</span>
+                              <span className="price-original">{product.originalPrice}</span>
                   </div>
                 </div>
                 
-                          {/* Content Section */}
-                          <div className="flex-1 flex flex-col p-3">
-                            <div className="flex items-baseline gap-1.5 mb-1">
-                              <span className="text-lg font-bold text-emerald-700">{product.price}</span>
-                              <span className="text-xs text-gray-500 line-through">
-                                {product.originalPrice}
-                              </span>
-                            </div>
-                            
-                            <h3 className="font-semibold text-gray-800 text-sm leading-tight h-10 line-clamp-2">
-                              {product.name}
-                            </h3>
-
-                            <div className="flex-1"></div>
-
-                            <div className="pt-2 border-t border-gray-200 mt-2">
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="w-full text-sm h-9"
-                              >
-                                <ShoppingCart className="w-4 h-4 mr-2" />
-                                Add to Cart
-                              </Button>
-                            </div>
+                          {/* Hover Overlay */}
+                          <div className="hexagon-overlay">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="hexagon-button"
+                            >
+                              <ShoppingCart className="w-3 h-3 mr-1" />
+                              Add
+                            </Button>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  {/* Carousel Navigation Buttons */}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="absolute top-1/2 left-[-42px] transform -translate-y-1/2 text-gray-800 hover:text-emerald-700 bg-white/50 hover:bg-white/80 rounded-full transition-all duration-300 z-20"
-                    onClick={handlePrev}
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="absolute top-1/2 right-[-42px] transform -translate-y-1/2 text-gray-800 hover:text-emerald-700 bg-white/50 hover:bg-white/80 rounded-full transition-all duration-300 z-20"
-                    onClick={handleNext}
-                  >
-                    <ArrowRight className="w-5 h-5" />
-                  </Button>
                 </div>
                 
-                <div className="text-center pt-1">
-                  <Button variant="ghost" className="text-emerald-700 hover:text-emerald-600 text-sm">
-                    View All  →
-                  </Button>
+                {/* Dot Indicators */}
+                <div className="flex justify-center mt-6">
+                  <div className="flex space-x-2">
+                    {Array.from({ length: Math.ceil(topProducts.length / 14) }).map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentCarouselIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          index === currentCarouselIndex ? 'bg-emerald-600' : 'bg-emerald-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
       </section>
 
       {/* Top Categories Section - Hover Bubbles with animations */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-50 mt-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-800 mb-4">Explore Our <span className="text-emerald-700">Categories</span></h2>
@@ -478,9 +685,9 @@ export default function HomePage() {
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-base text-emerald-700">{p.price}</span>
                           <span className={`text-xs px-1.5 py-0.5 rounded-full ${cat.badgeBg} ${cat.color} border border-current`}>{p.eco}</span>
-                        </div>
-                      </div>
-                    </div>
+          </div>
+        </div>
+      </div>
                   ))}
                 </div>
               </div>
@@ -524,6 +731,337 @@ export default function HomePage() {
       </div>
 
       {/* Footer is globally rendered in RootLayout */}
+      
+      {/* Honeycomb Grid Styles */}
+      <style jsx>{`
+        .honeycomb-grid {
+          position: relative;
+          width: 100%;
+          max-width: 1000px;
+          margin: 0 auto;
+          padding: 20px 0;
+          height: 700px; /* Significantly increased height to prevent cropping */
+        }
+        
+        .hexagon-wrapper {
+          position: absolute;
+          width: 174px; /* 144px + 30px */
+          height: 282.4px; /* (121.2 + 20px) * 2 = doubled height */
+          animation: hexagonSlideIn 0.8s ease-out forwards;
+          opacity: 0;
+        }
+        
+        /* First row - straight line */
+        .hexagon-wrapper:nth-child(1) { top: 0; left: 0; }
+        .hexagon-wrapper:nth-child(2) { top: 0; left: 180px; } /* 174px + 6px gap */
+        .hexagon-wrapper:nth-child(3) { top: 0; left: 360px; }
+        .hexagon-wrapper:nth-child(4) { top: 0; left: 540px; }
+        .hexagon-wrapper:nth-child(5) { top: 0; left: 720px; }
+        
+        /* Second row - staggered (shifted by half width, increased spacing) */
+        .hexagon-wrapper:nth-child(6) { top: 220px; left: 90px; } /* Increased from 200px to 220px */
+        .hexagon-wrapper:nth-child(7) { top: 220px; left: 270px; }
+        .hexagon-wrapper:nth-child(8) { top: 220px; left: 450px; }
+        .hexagon-wrapper:nth-child(9) { top: 220px; left: 630px; }
+        
+        /* Third row - straight line again (adjusted for larger container) */
+        .hexagon-wrapper:nth-child(10) { top: 440px; left: 0; } /* Kept at 440px - now has more space below */
+        .hexagon-wrapper:nth-child(11) { top: 440px; left: 180px; }
+        .hexagon-wrapper:nth-child(12) { top: 440px; left: 360px; }
+        .hexagon-wrapper:nth-child(13) { top: 440px; left: 540px; }
+        .hexagon-wrapper:nth-child(14) { top: 440px; left: 720px; }
+        
+        .hexagon-card {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%);
+          backdrop-filter: blur(12px);
+          border: 2px solid rgba(16, 185, 129, 0.15);
+          clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 12px 12px 12px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        .hexagon-card:hover {
+          transform: scale(1.08) translateY(-3px);
+          border-color: rgba(16, 185, 129, 0.3);
+          box-shadow: 0 12px 28px rgba(16, 185, 129, 0.2);
+        }
+        
+        .hexagon-image-container {
+          position: relative;
+          width: 70px;
+          height: 70px;
+          margin-bottom: 8px;
+          border-radius: 50%;
+          overflow: hidden;
+          background: white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        .hexagon-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.3s ease;
+        }
+        
+        .hexagon-card:hover .hexagon-image {
+          transform: scale(1.15);
+        }
+        
+        .hexagon-eco-badge {
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 8px;
+          font-weight: bold;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .hexagon-content {
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          width: 100%;
+          flex: 1;
+        }
+        
+        .hexagon-title {
+          font-size: 11px;
+          font-weight: 600;
+          color: #1f2937;
+          margin: 0 0 4px 0;
+          line-height: 1.2;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        
+        .hexagon-price {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          margin: 2px 0;
+        }
+        
+        .price-current {
+          font-size: 12px;
+          font-weight: 700;
+          color: #10b981;
+        }
+        
+        .price-original {
+          font-size: 8px;
+          color: #9ca3af;
+          text-decoration: line-through;
+        }
+        
+        .hexagon-badges {
+          display: flex;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 2px;
+          margin-top: 2px;
+        }
+        
+        .hexagon-badge {
+          font-size: 6px;
+          padding: 2px 4px;
+          background: rgba(16, 185, 129, 0.1);
+          color: #059669;
+          border-radius: 4px;
+          font-weight: 500;
+        }
+        
+        .hexagon-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(16, 185, 129, 0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+        
+        .hexagon-card:hover .hexagon-overlay {
+          opacity: 1;
+        }
+        
+        .hexagon-button {
+          background: white !important;
+          color: #10b981 !important;
+          border: none !important;
+          font-size: 10px !important;
+          padding: 4px 8px !important;
+          border-radius: 10px !important;
+          font-weight: 600 !important;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
+        .hexagon-button:hover {
+          background: #f0fdf4 !important;
+          transform: scale(1.05) !important;
+        }
+        
+        @keyframes hexagonSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+          .honeycomb-grid {
+            max-width: 800px;
+            height: 600px;
+          }
+          
+          .hexagon-wrapper {
+            width: 154px; /* 124px + 30px */
+            height: 247.8px; /* (103.9 + 20px) * 2 = doubled height */
+          }
+          
+          /* First row - 4 columns */
+          .hexagon-wrapper:nth-child(1) { top: 0; left: 0; }
+          .hexagon-wrapper:nth-child(2) { top: 0; left: 160px; } /* 154px + 6px */
+          .hexagon-wrapper:nth-child(3) { top: 0; left: 320px; }
+          .hexagon-wrapper:nth-child(4) { top: 0; left: 480px; }
+          
+          /* Second row - staggered (increased spacing) */
+          .hexagon-wrapper:nth-child(5) { top: 200px; left: 80px; } /* Increased from 180px */
+          .hexagon-wrapper:nth-child(6) { top: 200px; left: 240px; }
+          .hexagon-wrapper:nth-child(7) { top: 200px; left: 400px; }
+          .hexagon-wrapper:nth-child(8) { top: 200px; left: 560px; }
+          
+          /* Third row - straight line (increased spacing) */
+          .hexagon-wrapper:nth-child(9) { top: 400px; left: 0; } /* Increased from 360px */
+          .hexagon-wrapper:nth-child(10) { top: 400px; left: 160px; }
+          .hexagon-wrapper:nth-child(11) { top: 400px; left: 320px; }
+          .hexagon-wrapper:nth-child(12) { top: 400px; left: 480px; }
+          
+          .hexagon-image-container {
+            width: 60px;
+            height: 60px;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .honeycomb-grid {
+            max-width: 600px;
+            height: 500px;
+          }
+          
+          .hexagon-wrapper {
+            width: 134px; /* 104px + 30px */
+            height: 213.2px; /* (86.6 + 20px) * 2 = doubled height */
+          }
+          
+          /* First row - 3 columns */
+          .hexagon-wrapper:nth-child(1) { top: 0; left: 0; }
+          .hexagon-wrapper:nth-child(2) { top: 0; left: 140px; } /* 134px + 6px */
+          .hexagon-wrapper:nth-child(3) { top: 0; left: 280px; }
+          
+          /* Second row - staggered (increased spacing) */
+          .hexagon-wrapper:nth-child(4) { top: 170px; left: 70px; } /* Increased from 150px */
+          .hexagon-wrapper:nth-child(5) { top: 170px; left: 210px; }
+          .hexagon-wrapper:nth-child(6) { top: 170px; left: 350px; }
+          
+          /* Third row - straight line (increased spacing) */
+          .hexagon-wrapper:nth-child(7) { top: 340px; left: 0; } /* Increased from 300px */
+          .hexagon-wrapper:nth-child(8) { top: 340px; left: 140px; }
+          .hexagon-wrapper:nth-child(9) { top: 340px; left: 280px; }
+          
+          .hexagon-image-container {
+            width: 50px;
+            height: 50px;
+          }
+          
+          .hexagon-title {
+            font-size: 9px;
+          }
+          
+          .price-current {
+            font-size: 10px;
+          }
+          
+          .price-original {
+            font-size: 7px;
+          }
+        }
+        
+        @media (max-width: 640px) {
+          .honeycomb-grid {
+            max-width: 400px;
+            height: 450px;
+          }
+          
+          .hexagon-wrapper {
+            width: 114px; /* 84px + 30px */
+            height: 178.6px; /* (69.3 + 20px) * 2 = doubled height */
+          }
+          
+          /* First row - 2 columns */
+          .hexagon-wrapper:nth-child(1) { top: 0; left: 0; }
+          .hexagon-wrapper:nth-child(2) { top: 0; left: 120px; } /* 114px + 6px */
+          
+          /* Second row - staggered (increased spacing) */
+          .hexagon-wrapper:nth-child(3) { top: 150px; left: 60px; } /* Increased from 130px */
+          .hexagon-wrapper:nth-child(4) { top: 150px; left: 180px; }
+          
+          /* Third row - straight line (increased spacing) */
+          .hexagon-wrapper:nth-child(5) { top: 300px; left: 0; } /* Increased from 260px */
+          .hexagon-wrapper:nth-child(6) { top: 300px; left: 120px; }
+          
+          .hexagon-image-container {
+            width: 40px;
+            height: 40px;
+          }
+          
+          .hexagon-title {
+            font-size: 8px;
+          }
+          
+          .price-current {
+            font-size: 9px;
+          }
+          
+          .price-original {
+            font-size: 6px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
