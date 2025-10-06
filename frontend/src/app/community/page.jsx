@@ -36,12 +36,12 @@ export default function CommunityPage() {
     {
       id: 1,
       author: "Sarah Chen",
-      avatar: "/hero1.png",
+      avatar: "/assets/hero-sustainable-products.jpg",
       role: "Eco Warrior",
       time: "2 hours ago",
       title: "Just completed my 30-day zero waste challenge! 🌱",
       content: "Sharing my journey and the amazing tips I learned along the way. The impact on my carbon footprint has been incredible!",
-      image: "/hero1.png",
+      image: "/assets/hero-sustainable-products.jpg",
       likes: 234,
       comments: 45,
       shares: 12,
@@ -50,12 +50,12 @@ export default function CommunityPage() {
     {
       id: 2,
       author: "Mike Rodriguez",
-      avatar: "/hero1.png",
+      avatar: "/assets/product-bamboo-bottle.jpg",
       role: "Green Innovator",
       time: "5 hours ago",
       title: "DIY Solar Panel Installation - Step by Step Guide",
       content: "Finally got my home running on 100% renewable energy! Here's how you can do it too with detailed instructions and cost breakdown.",
-      image: "/hero1.png",
+      image: "/assets/product-bamboo-bottle.jpg",
       likes: 189,
       comments: 67,
       shares: 23,
@@ -64,12 +64,12 @@ export default function CommunityPage() {
     {
       id: 3,
       author: "Emma Thompson",
-      avatar: "/hero1.png",
+      avatar: "/assets/product-cotton-bags.jpg",
       role: "Community Leader",
       time: "1 day ago",
       title: "Community Garden Update - Spring Planting Season",
       content: "Our community garden is thriving! Check out the progress and join us for the next planting session this weekend.",
-      image: "/hero1.png",
+      image: "/assets/product-cotton-bags.jpg",
       likes: 156,
       comments: 34,
       shares: 8,
@@ -111,11 +111,11 @@ export default function CommunityPage() {
   ];
 
   const topContributors = [
-    { name: "Sarah Chen", points: 2847, level: "Eco Master", avatar: "/hero1.png" },
-    { name: "Mike Rodriguez", points: 2156, level: "Green Innovator", avatar: "/hero1.png" },
-    { name: "Emma Thompson", points: 1923, level: "Community Leader", avatar: "/hero1.png" },
-    { name: "Alex Kumar", points: 1754, level: "Sustainability Expert", avatar: "/hero1.png" },
-    { name: "Lisa Park", points: 1632, level: "Eco Warrior", avatar: "/hero1.png" }
+    { name: "Sarah Chen", points: 2847, level: "Eco Master", avatar: "/assets/hero-sustainable-products.jpg" },
+    { name: "Mike Rodriguez", points: 2156, level: "Green Innovator", avatar: "/assets/product-bamboo-bottle.jpg" },
+    { name: "Emma Thompson", points: 1923, level: "Community Leader", avatar: "/assets/product-cotton-bags.jpg" },
+    { name: "Alex Kumar", points: 1754, level: "Sustainability Expert", avatar: "/assets/product-skincare-set.jpg" },
+    { name: "Lisa Park", points: 1632, level: "Eco Warrior", avatar: "/assets/category-zero-waste(1).jpg" }
   ];
 
   return (

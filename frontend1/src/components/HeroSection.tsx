@@ -124,7 +124,7 @@ const HeroSection = () => {
   }, [currentCarouselIndex]);
 
   const handleAddToCart = (productName: string) => {
-    console.log(`Added ${productName} to cart`);
+    // TODO: Implement add to cart functionality
   };
 
   const productsPerView = 4;

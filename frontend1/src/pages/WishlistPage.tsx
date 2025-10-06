@@ -124,8 +124,7 @@ const WishlistPage = () => {
   };
 
   const moveToCart = (id: number) => {
-    // In a real app, this would add to cart and optionally remove from wishlist
-    console.log(`Moving item ${id} to cart`);
+    // TODO: Implement move to cart functionality
   };
 
   const sortOptions = [
