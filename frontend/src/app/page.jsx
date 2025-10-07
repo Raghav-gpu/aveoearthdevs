@@ -388,20 +388,20 @@ export default function HomePage() {
   // Manual carousel navigation
   const nextCarousel = () => {
     setCurrentCarouselIndex((prevIndex) => 
-      (prevIndex + 1) % Math.ceil(topProducts.length / 14)
+      (prevIndex + 1) % Math.ceil(topProducts.length / 7)
     );
   };
 
   const prevCarousel = () => {
     setCurrentCarouselIndex((prevIndex) => 
-      prevIndex === 0 ? Math.ceil(topProducts.length / 14) - 1 : prevIndex - 1
+      prevIndex === 0 ? Math.ceil(topProducts.length / 7) - 1 : prevIndex - 1
     );
   };
 
   // Get visible products for current carousel view
   const getVisibleProducts = () => {
-    const startIndex = currentCarouselIndex * 14; // Changed from 15 to 14 to match grid layout
-    return topProducts.slice(startIndex, startIndex + 14);
+    const startIndex = currentCarouselIndex * 7;
+    return topProducts.slice(startIndex, startIndex + 7);
   };
 
   const handleImageIndicatorClick = (e, productId, imageIndex) => {
@@ -427,7 +427,7 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-white/50" />
         </div>
         
-        <div className="relative z-10 container mx-auto px-10 pt-24 pb-16">
+        <div className="relative z-10 container mx-auto px-10 pt-24 pb-16" style={{ marginLeft: '30px', marginRight: '30px' }}>
           <div className="grid lg:grid-cols-5 gap-12 items-center">
             {/* Hero Content (left side, taking 2 of 5 columns) */}
             <div className="lg:col-span-2 space-y-6 slide-up text-center lg:text-left -ml-5">
@@ -448,13 +448,13 @@ export default function HomePage() {
                 </div>
               </div>
               
-              <div className="flex flex-col gap-4 justify-center lg:justify-start">
+              <div className="flex flex-col gap-4 justify-center lg:justify-center items-center">
                 <Button
                   as={Link}
                   href="/explore"
                   variant="primary"
                   size="lg"
-                  className="rounded-full gap-3 group hover:scale-105 transition-transform"
+                  className="rounded-full gap-3 group hover:scale-105 transition-transform w-3/4 self-center"
                 >
                   Shop Collections
                   <ShoppingCart className="ml-2 w-5 h-5" />
@@ -464,7 +464,7 @@ export default function HomePage() {
                   href="/about"
                   variant="outline"
                   size="lg"
-                  className="rounded-full"
+                  className="rounded-full w-3/4 self-center"
                 >
                   Become a Partner
                 </Button>
@@ -473,8 +473,8 @@ export default function HomePage() {
           </div>
           
             {/* Top Eco Picks Carousel (right side, taking 3 of 5 columns) */}
-            <div className="lg:col-span-3 slide-up">
-              <div className="lg:-ml-12 space-y-4">
+            <div className="lg:col-span-3 slide-up flex items-center justify-center">
+              <div className="space-y-4 w-full">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-gray-800 text-center lg:text-left">
                     Top Picks
@@ -485,31 +485,31 @@ export default function HomePage() {
           </div>
           
                 {/* Hexagonal Honeycomb Grid with Side Navigation */}
-                <div className="relative">
-                  {/* Left Navigation Button - Moved up by another 10px */}
+                <div className="relative flex items-center justify-center">
+                  {/* Left Navigation Button - Centered with the 2-row grid */}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={prevCarousel}
                     className="absolute left-0 top-1/2 -translate-y-1/2 z-10 text-emerald-700 hover:text-emerald-600 bg-white/80 backdrop-blur-sm shadow-lg"
-                    style={{ top: 'calc(50% + 20px)' }}
+                    style={{ top: 'calc(50% - 20px)' }}
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </Button>
                   
-                  {/* Right Navigation Button - Moved up by another 10px */}
+                  {/* Right Navigation Button - Centered with the 2-row grid */}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={nextCarousel}
                     className="absolute right-0 top-1/2 -translate-y-1/2 z-10 text-emerald-700 hover:text-emerald-600 bg-white/80 backdrop-blur-sm shadow-lg"
-                    style={{ top: 'calc(50% + 20px)' }}
+                    style={{ top: 'calc(50% - 20px)' }}
                   >
                     <ArrowRight className="w-5 h-5" />
                   </Button>
                   
-                  {/* Hexagonal Grid - Pushed upward significantly and moved right more */}
-                  <div className="honeycomb-grid -mt-24 ml-5">
+                  {/* Hexagonal Grid - centered between arrows, 2 rows (4 + 3) */}
+                  <div className="honeycomb-grid mx-auto" style={{ marginLeft: '60px', marginRight: '60px' }}>
                     {getVisibleProducts().map((product, index) => (
                       <div 
                         key={`${product.id}-${currentCarouselIndex}`}
@@ -564,7 +564,7 @@ export default function HomePage() {
                 {/* Dot Indicators */}
                 <div className="flex justify-center mt-6">
                   <div className="flex space-x-2">
-                    {Array.from({ length: Math.ceil(topProducts.length / 14) }).map((_, index) => (
+                    {Array.from({ length: Math.ceil(topProducts.length / 7) }).map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentCarouselIndex(index)}
@@ -737,10 +737,10 @@ export default function HomePage() {
         .honeycomb-grid {
           position: relative;
           width: 100%;
-          max-width: 1000px;
+          max-width: 820px;
           margin: 0 auto;
           padding: 20px 0;
-          height: 700px; /* Significantly increased height to prevent cropping */
+          height: 360px; /* Two rows layout */
         }
         
         .hexagon-wrapper {
@@ -751,25 +751,16 @@ export default function HomePage() {
           opacity: 0;
         }
         
-        /* First row - straight line */
+        /* First row - 4 cards */
         .hexagon-wrapper:nth-child(1) { top: 0; left: 0; }
-        .hexagon-wrapper:nth-child(2) { top: 0; left: 180px; } /* 174px + 6px gap */
+        .hexagon-wrapper:nth-child(2) { top: 0; left: 180px; }
         .hexagon-wrapper:nth-child(3) { top: 0; left: 360px; }
         .hexagon-wrapper:nth-child(4) { top: 0; left: 540px; }
-        .hexagon-wrapper:nth-child(5) { top: 0; left: 720px; }
-        
-        /* Second row - staggered (shifted by half width, increased spacing) */
-        .hexagon-wrapper:nth-child(6) { top: 220px; left: 90px; } /* Increased from 200px to 220px */
-        .hexagon-wrapper:nth-child(7) { top: 220px; left: 270px; }
-        .hexagon-wrapper:nth-child(8) { top: 220px; left: 450px; }
-        .hexagon-wrapper:nth-child(9) { top: 220px; left: 630px; }
-        
-        /* Third row - straight line again (adjusted for larger container) */
-        .hexagon-wrapper:nth-child(10) { top: 440px; left: 0; } /* Kept at 440px - now has more space below */
-        .hexagon-wrapper:nth-child(11) { top: 440px; left: 180px; }
-        .hexagon-wrapper:nth-child(12) { top: 440px; left: 360px; }
-        .hexagon-wrapper:nth-child(13) { top: 440px; left: 540px; }
-        .hexagon-wrapper:nth-child(14) { top: 440px; left: 720px; }
+
+        /* Second row - 3 cards centered */
+        .hexagon-wrapper:nth-child(5) { top: 220px; left: 90px; }
+        .hexagon-wrapper:nth-child(6) { top: 220px; left: 270px; }
+        .hexagon-wrapper:nth-child(7) { top: 220px; left: 450px; }
         
         .hexagon-card {
           position: absolute;
@@ -944,64 +935,38 @@ export default function HomePage() {
         /* Responsive adjustments */
         @media (max-width: 1024px) {
           .honeycomb-grid {
-            max-width: 800px;
-            height: 600px;
+            max-width: 640px;
+            height: 320px;
           }
-          
           .hexagon-wrapper {
             width: 154px; /* 124px + 30px */
-            height: 247.8px; /* (103.9 + 20px) * 2 = doubled height */
+            height: 247.8px; /* (103.9 + 20px) * 2 */
           }
-          
-          /* First row - 4 columns */
+          /* 4 + 3 layout */
           .hexagon-wrapper:nth-child(1) { top: 0; left: 0; }
-          .hexagon-wrapper:nth-child(2) { top: 0; left: 160px; } /* 154px + 6px */
+          .hexagon-wrapper:nth-child(2) { top: 0; left: 160px; }
           .hexagon-wrapper:nth-child(3) { top: 0; left: 320px; }
           .hexagon-wrapper:nth-child(4) { top: 0; left: 480px; }
-          
-          /* Second row - staggered (increased spacing) */
-          .hexagon-wrapper:nth-child(5) { top: 200px; left: 80px; } /* Increased from 180px */
+          .hexagon-wrapper:nth-child(5) { top: 200px; left: 80px; }
           .hexagon-wrapper:nth-child(6) { top: 200px; left: 240px; }
           .hexagon-wrapper:nth-child(7) { top: 200px; left: 400px; }
-          .hexagon-wrapper:nth-child(8) { top: 200px; left: 560px; }
-          
-          /* Third row - straight line (increased spacing) */
-          .hexagon-wrapper:nth-child(9) { top: 400px; left: 0; } /* Increased from 360px */
-          .hexagon-wrapper:nth-child(10) { top: 400px; left: 160px; }
-          .hexagon-wrapper:nth-child(11) { top: 400px; left: 320px; }
-          .hexagon-wrapper:nth-child(12) { top: 400px; left: 480px; }
-          
-          .hexagon-image-container {
-            width: 60px;
-            height: 60px;
-          }
+          .hexagon-image-container { width: 60px; height: 60px; }
         }
         
         @media (max-width: 768px) {
-          .honeycomb-grid {
-            max-width: 600px;
-            height: 500px;
-          }
+          .honeycomb-grid { max-width: 480px; height: 300px; }
           
           .hexagon-wrapper {
             width: 134px; /* 104px + 30px */
             height: 213.2px; /* (86.6 + 20px) * 2 = doubled height */
           }
           
-          /* First row - 3 columns */
+          /* 3 + 2 layout for small screens */
           .hexagon-wrapper:nth-child(1) { top: 0; left: 0; }
-          .hexagon-wrapper:nth-child(2) { top: 0; left: 140px; } /* 134px + 6px */
+          .hexagon-wrapper:nth-child(2) { top: 0; left: 140px; }
           .hexagon-wrapper:nth-child(3) { top: 0; left: 280px; }
-          
-          /* Second row - staggered (increased spacing) */
-          .hexagon-wrapper:nth-child(4) { top: 170px; left: 70px; } /* Increased from 150px */
+          .hexagon-wrapper:nth-child(4) { top: 170px; left: 70px; }
           .hexagon-wrapper:nth-child(5) { top: 170px; left: 210px; }
-          .hexagon-wrapper:nth-child(6) { top: 170px; left: 350px; }
-          
-          /* Third row - straight line (increased spacing) */
-          .hexagon-wrapper:nth-child(7) { top: 340px; left: 0; } /* Increased from 300px */
-          .hexagon-wrapper:nth-child(8) { top: 340px; left: 140px; }
-          .hexagon-wrapper:nth-child(9) { top: 340px; left: 280px; }
           
           .hexagon-image-container {
             width: 50px;
@@ -1022,27 +987,18 @@ export default function HomePage() {
         }
         
         @media (max-width: 640px) {
-          .honeycomb-grid {
-            max-width: 400px;
-            height: 450px;
-          }
+          .honeycomb-grid { max-width: 360px; height: 280px; }
           
           .hexagon-wrapper {
             width: 114px; /* 84px + 30px */
             height: 178.6px; /* (69.3 + 20px) * 2 = doubled height */
           }
           
-          /* First row - 2 columns */
+          /* 2 + 2 layout for mobile */
           .hexagon-wrapper:nth-child(1) { top: 0; left: 0; }
-          .hexagon-wrapper:nth-child(2) { top: 0; left: 120px; } /* 114px + 6px */
-          
-          /* Second row - staggered (increased spacing) */
-          .hexagon-wrapper:nth-child(3) { top: 150px; left: 60px; } /* Increased from 130px */
+          .hexagon-wrapper:nth-child(2) { top: 0; left: 120px; }
+          .hexagon-wrapper:nth-child(3) { top: 150px; left: 60px; }
           .hexagon-wrapper:nth-child(4) { top: 150px; left: 180px; }
-          
-          /* Third row - straight line (increased spacing) */
-          .hexagon-wrapper:nth-child(5) { top: 300px; left: 0; } /* Increased from 260px */
-          .hexagon-wrapper:nth-child(6) { top: 300px; left: 120px; }
           
           .hexagon-image-container {
             width: 40px;

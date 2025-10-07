@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from "react-router-dom"; 
+import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
 import { 
   Search, 
   ShoppingCart, 
@@ -11,11 +14,15 @@ import {
   Leaf,
   TreePine,
   Recycle,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const { getTotalItems } = useCart();
+  const { data: wishlist } = useWishlist();
 
   const navItems = [
     { label: 'Categories', href: '/category' },
@@ -23,8 +30,15 @@ const Header = () => {
     { label: 'Best Sellers', href: '/products' },
     { label: 'Community', href: '/community' },
     { label: 'About Us', href: '/about' },
-    
   ];
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <>
@@ -100,7 +114,11 @@ const Header = () => {
               <Button asChild variant="ghost" size="sm" className="hidden md:flex text-muted-foreground hover:text-forest relative">
                 <Link to="/wishlist">
                   <Heart className="w-5 h-5" />
-                  <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">3</Badge>
+                  {wishlist && wishlist.length > 0 && (
+                    <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">
+                      {wishlist.length}
+                    </Badge>
+                  )}
                 </Link>
               </Button>
 
@@ -108,16 +126,38 @@ const Header = () => {
               <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-forest relative">
                 <Link to="/cart">
                   <ShoppingCart className="w-5 h-5" />
-                  <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-forest text-white text-xs p-0 flex items-center justify-center">2</Badge>
+                  {getTotalItems() > 0 && (
+                    <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-forest text-white text-xs p-0 flex items-center justify-center">
+                      {getTotalItems()}
+                    </Badge>
+                  )}
                 </Link>
               </Button>
 
-              {/* User Account */}
-              <Button asChild variant="ghost" size="sm" className="hidden md:flex text-muted-foreground hover:text-forest">
-                <Link to="/profile">
-                  <User className="w-5 h-5" />
-                </Link>
-              </Button>
+              {/* User Account / Auth */}
+              {user ? (
+                <div className="hidden md:flex items-center gap-2">
+                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-forest">
+                    <Link to="/profile">
+                      <User className="w-5 h-5" />
+                    </Link>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-muted-foreground hover:text-forest"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </Button>
+                </div>
+              ) : (
+                <Button asChild variant="ghost" size="sm" className="hidden md:flex text-muted-foreground hover:text-forest">
+                  <Link to="/login">
+                    <User className="w-5 h-5" />
+                  </Link>
+                </Button>
+              )}
 
               {/* Become Partner */}
               <Button className="hidden lg:flex btn-secondary text-sm">Become a Partner</Button>

@@ -1,7 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Leaf, Award, ArrowLeft, ArrowRight } from 'lucide-react';
+import { ShoppingCart, Leaf, Award, ArrowLeft, ArrowRight, Heart } from 'lucide-react';
+import { useFeaturedProducts } from '@/hooks/useProducts';
+import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useAuth } from '@/contexts/AuthContext';
 import heroImage from '@/assets/hero-sustainable-products.jpg';
 import bambooBottle from '@/assets/product-bamboo-bottle.jpg';
 import cottonBags from '@/assets/product-cotton-bags.jpg';
@@ -16,82 +20,8 @@ const taglines = [
 // All available product images for cycling
 const allImages = [bambooBottle, cottonBags, skincareSet];
 
-// Updated topProducts array with multiple images and expanded to 8 items
-const topProducts = [
-    {
-    id: 1,
-    name: "Eco Bamboo Water Bottle",
-    price: "₹1,299",
-    originalPrice: "₹1,599",
-    images: [bambooBottle, cottonBags, skincareSet],
-    ecoScore: "95%",
-    badges: ["Zero Waste"]
-  },
-  {
-    id: 2,
-    name: "Organic Cotton Bag Set (Set of 5)",
-    price: "₹899",
-    originalPrice: "₹1,199",
-    images: [cottonBags, skincareSet, bambooBottle],
-    ecoScore: "92%",
-    badges: ["Organic"]
-  },
-  {
-    id: 3,
-    name: "Natural Skincare Bundle",
-    price: "₹2,499",
-    originalPrice: "₹3,199",
-    images: [skincareSet, bambooBottle, cottonBags],
-    ecoScore: "98%",
-    badges: ["Cruelty-Free"]
-  },
-  {
-    id: 4,
-    name: "Eco Bamboo Water Bottle", // Duplicated item
-    price: "₹1,299",
-    originalPrice: "₹1,599",
-    images: [bambooBottle, skincareSet, cottonBags],
-    ecoScore: "95%",
-    badges: ["Zero Waste"]
-  },
-  {
-    id: 5,
-    name: "Organic Cotton Bag Set (Set of 5)", // Duplicated item
-    price: "₹899",
-    originalPrice: "₹1,199",
-    images: [cottonBags, bambooBottle, skincareSet],
-    ecoScore: "92%",
-    badges: ["Organic"]
-  },
-  {
-    id: 6,
-    name: "Natural Skincare Bundle", // Duplicated item
-    price: "₹2,499",
-    originalPrice: "₹3,199",
-    images: [skincareSet, cottonBags, bambooBottle],
-    ecoScore: "98%",
-    badges: ["Cruelty-Free"]
-  },
-  {
-    id: 7,
-    name: "Eco Bamboo Water Bottle", // Duplicated item
-    price: "₹1,299",
-    originalPrice: "₹1,599",
-    images: [bambooBottle, cottonBags, skincareSet],
-    ecoScore: "95%",
-    badges: ["Zero Waste"]
-  },
-  {
-    id: 8,
-    name: "Organic Cotton Bag Set (Set of 5)", // Duplicated item
-    price: "₹899",
-    originalPrice: "₹1,199",
-    images: [cottonBags, skincareSet, bambooBottle],
-    ecoScore: "92%",
-    badges: ["Organic"]
-  }
-];
-
+// Fallback images for products without images
+const fallbackImages = [bambooBottle, cottonBags, skincareSet];
 
 const HeroSection = () => {
   const [currentTagline, setCurrentTagline] = React.useState(0);
@@ -100,6 +30,12 @@ const HeroSection = () => {
   const [cardImageIndexes, setCardImageIndexes] = React.useState<{ [key: number]: number }>({});
 
   const carouselRef = React.useRef<HTMLDivElement>(null);
+
+  // Supabase integration
+  const { data: featuredProducts, isLoading, error } = useFeaturedProducts(8);
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist } = useWishlist();
+  const { user } = useAuth();
 
   // Tagline animation effect
   React.useEffect(() => {
@@ -116,21 +52,55 @@ const HeroSection = () => {
 
   // Carousel auto-scroll effect
   React.useEffect(() => {
+    if (!featuredProducts || featuredProducts.length === 0) return;
+    
     const autoScrollInterval = setInterval(() => {
       handleNext();
     }, 5000);
 
     return () => clearInterval(autoScrollInterval);
-  }, [currentCarouselIndex]);
+  }, [currentCarouselIndex, featuredProducts]);
 
-  const handleAddToCart = (productName: string) => {
-    // TODO: Implement add to cart functionality
+  const handleAddToCart = (product: any) => {
+    addToCart(product, 1);
+  };
+
+  const handleToggleWishlist = (product: any) => {
+    if (user) {
+      // Check if product is in wishlist (you might need to implement this check)
+      addToWishlist(product);
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const getProductImages = (product: any) => {
+    if (product.image_url) {
+      return [product.image_url, ...fallbackImages];
+    }
+    return fallbackImages;
+  };
+
+  const getProductBadges = (product: any) => {
+    const badges = [];
+    if (product.sustainability_score >= 95) badges.push("Zero Waste");
+    if (product.sustainability_score >= 90) badges.push("Organic");
+    if (product.sustainability_score >= 85) badges.push("Cruelty-Free");
+    return badges;
   };
 
   const productsPerView = 4;
+  const topProducts = featuredProducts || [];
   const totalPages = Math.ceil(topProducts.length / productsPerView);
 
   const handleNext = () => {
+    if (topProducts.length === 0) return;
     setCurrentCarouselIndex((prevIndex) => {
       const nextIndex = (prevIndex + productsPerView);
       return nextIndex >= topProducts.length ? 0 : nextIndex;
@@ -138,9 +108,10 @@ const HeroSection = () => {
   };
 
   const handlePrev = () => {
+    if (topProducts.length === 0) return;
     setCurrentCarouselIndex((prevIndex) => {
       const prevStartIndex = prevIndex - productsPerView;
-      return prevStartIndex < 0 ? (totalPages - 1) * productsPerView : prevStartIndex;
+      return prevStartIndex < 0 ? Math.max(0, (totalPages - 1) * productsPerView) : prevStartIndex;
     });
   };
 
@@ -154,6 +125,26 @@ const HeroSection = () => {
   if (visibleProducts.length < productsPerView && topProducts.length >= productsPerView) {
     visibleProducts.push(...topProducts.slice(0, productsPerView - visibleProducts.length));
   }
+
+  // Loading skeleton component
+  const ProductSkeleton = () => (
+    <div className="flex-none w-[calc(25%-2px)] px-3">
+      <div className="group flex flex-col h-full bg-card/80 backdrop-blur-sm border border-border/20 rounded-xl shadow-lg animate-pulse">
+        <div className="relative">
+          <div className="w-full h-40 bg-gray-200"></div>
+          <div className="absolute top-2 right-2 bg-gray-300 rounded-full w-12 h-6"></div>
+        </div>
+        <div className="flex-1 flex flex-col p-3">
+          <div className="h-6 bg-gray-200 rounded mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div className="flex-1"></div>
+          <div className="pt-2 border-t border-border/20 mt-2">
+            <div className="w-full h-9 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <section className="relative min-h-screen bg-gradient-hero overflow-hidden flex items-start justify-center">
@@ -189,13 +180,17 @@ const HeroSection = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button className="btn-hero">
-                Shop Collections
-                <ShoppingCart className="ml-2 w-5 h-5" />
+              <Button className="btn-hero" asChild>
+                <a href="/products">
+                  Shop Collections
+                  <ShoppingCart className="ml-2 w-5 h-5" />
+                </a>
               </Button>
-              <Button variant="outline" className="btn-outline">
-                Learn Impact
-                <Award className="ml-2 w-5 h-5" />
+              <Button variant="outline" className="btn-outline" asChild>
+                <a href="/about">
+                  Learn Impact
+                  <Award className="ml-2 w-5 h-5" />
+                </a>
               </Button>
             </div>
 
@@ -218,7 +213,6 @@ const HeroSection = () => {
 
           {/* Top Eco Picks Carousel (right side, taking 3 of 5 columns) */}
           <div className="lg:col-span-3 slide-up">
-            {/* ============ CHANGE 1: WRAPPER FOR ALIGNING ALL RIGHT-SIDE CONTENT ============ */}
             <div className="lg:-ml-12 space-y-4">
               <h2 className="text-xl font-headline font-bold text-charcoal text-center lg:text-left">
                 Top Picks
@@ -227,95 +221,132 @@ const HeroSection = () => {
               <div className="relative">
                 {/* Carousel Container */}
                 <div ref={carouselRef} className="flex overflow-hidden relative -mx-3">
-                  {visibleProducts.map((product) => (
-                    <div 
-                      key={`${product.id}-${currentCarouselIndex}`}
-                      // ============== CHANGE 2: CARD WIDTH DECREASED ==============
-                      className="flex-none w-[calc(25%-2px)] px-3"
-                    >
-                      <div className="group flex flex-col h-full bg-card/80 backdrop-blur-sm border border-border/20 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-border/40 overflow-hidden">
-                        {/* Image Section with Gallery */}
-                        <div className="relative">
-                          <img 
-                            src={product.images[cardImageIndexes[product.id] || 0]}
-                            alt={product.name}
-                            className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                          <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-moss bg-background/80 px-2 py-1 rounded-full shadow-md">
-                            <Leaf className="w-3 h-3" />
-                            <span>{product.ecoScore}</span>
-                          </div>
-                          {/* Image Gallery Indicators */}
-                          <div className="absolute bottom-2 left-0 right-0 flex justify-center items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                             {product.images.map((_, index) => (
-                              <button
-                                key={index}
-                                onClick={(e) => handleImageIndicatorClick(e, product.id, index)}
-                                className={`h-2 w-2 rounded-full transition-all duration-200 ${
-                                  (cardImageIndexes[product.id] || 0) === index 
-                                    ? 'bg-black/75 scale-110' 
-                                    : 'bg-black/40 hover:bg-black/60'
-                                }`}
-                                aria-label={`View image ${index + 1}`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        
-                        {/* Content Section */}
-                        <div className="flex-1 flex flex-col p-3">
-                          <div className="flex items-baseline gap-1.5 mb-1">
-                            <span className="text-lg font-bold text-forest">{product.price}</span>
-                            <span className="text-xs text-muted-foreground line-through">
-                              {product.originalPrice}
-                            </span>
-                          </div>
-                          
-                          <h3 className="font-semibold text-charcoal text-sm leading-tight h-10 line-clamp-2">
-                            {product.name}
-                          </h3>
-
-                          <div className="flex-1"></div>
-
-                          <div className="pt-2 border-t border-border/20 mt-2">
-                            <Button
-                              className="w-full btn-secondary text-sm h-9"
-                              onClick={() => handleAddToCart(product.name)}
-                            >
-                              <ShoppingCart className="w-4 h-4 mr-2" />
-                              Add to Cart
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                  {isLoading ? (
+                    // Show loading skeletons
+                    Array.from({ length: 4 }).map((_, index) => (
+                      <ProductSkeleton key={index} />
+                    ))
+                  ) : error ? (
+                    // Show error state
+                    <div className="col-span-4 text-center text-red-500 py-8">
+                      Failed to load products. Please try again.
                     </div>
-                  ))}
+                  ) : (
+                    visibleProducts.map((product) => {
+                      const productImages = getProductImages(product);
+                      const badges = getProductBadges(product);
+                      const currentImageIndex = cardImageIndexes[product.id] || 0;
+                      
+                      return (
+                        <div 
+                          key={`${product.id}-${currentCarouselIndex}`}
+                          className="flex-none w-[calc(25%-2px)] px-3"
+                        >
+                          <div className="group flex flex-col h-full bg-card/80 backdrop-blur-sm border border-border/20 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-border/40 overflow-hidden">
+                            {/* Image Section with Gallery */}
+                            <div className="relative">
+                              <img 
+                                src={productImages[currentImageIndex]}
+                                alt={product.name}
+                                className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                              <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-moss bg-background/80 px-2 py-1 rounded-full shadow-md">
+                                <Leaf className="w-3 h-3" />
+                                <span>{product.sustainability_score}%</span>
+                              </div>
+                              {/* Image Gallery Indicators */}
+                              <div className="absolute bottom-2 left-0 right-0 flex justify-center items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                {productImages.map((_, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={(e) => handleImageIndicatorClick(e, product.id, index)}
+                                    className={`h-2 w-2 rounded-full transition-all duration-200 ${
+                                      currentImageIndex === index 
+                                        ? 'bg-black/75 scale-110' 
+                                        : 'bg-black/40 hover:bg-black/60'
+                                    }`}
+                                    aria-label={`View image ${index + 1}`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            
+                            {/* Content Section */}
+                            <div className="flex-1 flex flex-col p-3">
+                              <div className="flex items-baseline gap-1.5 mb-1">
+                                <span className="text-lg font-bold text-forest">
+                                  {formatPrice(product.price)}
+                                </span>
+                                {product.discount > 0 && (
+                                  <span className="text-xs text-muted-foreground line-through">
+                                    {formatPrice(product.price / (1 - product.discount / 100))}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <h3 className="font-semibold text-charcoal text-sm leading-tight h-10 line-clamp-2">
+                                {product.name}
+                              </h3>
+
+                              <div className="flex-1"></div>
+
+                              <div className="pt-2 border-t border-border/20 mt-2">
+                                <div className="flex gap-2">
+                                  <Button
+                                    className="flex-1 btn-secondary text-sm h-9"
+                                    onClick={() => handleAddToCart(product)}
+                                  >
+                                    <ShoppingCart className="w-4 h-4 mr-2" />
+                                    Add to Cart
+                                  </Button>
+                                  {user && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="w-9 h-9 rounded-full border-forest/30 text-forest hover:bg-forest/10"
+                                      onClick={() => handleToggleWishlist(product)}
+                                    >
+                                      <Heart className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
 
                 {/* Carousel Navigation Buttons */}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  // ============== CHANGE 3: ARROWS SHIFTED ==============
-                  className="absolute top-1/2 left-[-42px] transform -translate-y-1/2 text-charcoal hover:text-forest bg-background/50 hover:bg-background/80 rounded-full transition-all duration-300 z-20"
-                  onClick={handlePrev}
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  // ============== CHANGE 3: ARROWS SHIFTED ==============
-                  className="absolute top-1/2 right-[-42px] transform -translate-y-1/2 text-charcoal hover:text-forest bg-background/50 hover:bg-background/80 rounded-full transition-all duration-300 z-20"
-                  onClick={handleNext}
-                >
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
+                {!isLoading && !error && topProducts.length > productsPerView && (
+                  <>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="absolute top-1/2 left-[-42px] transform -translate-y-1/2 text-charcoal hover:text-forest bg-background/50 hover:bg-background/80 rounded-full transition-all duration-300 z-20"
+                      onClick={handlePrev}
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="absolute top-1/2 right-[-42px] transform -translate-y-1/2 text-charcoal hover:text-forest bg-background/50 hover:bg-background/80 rounded-full transition-all duration-300 z-20"
+                      onClick={handleNext}
+                    >
+                      <ArrowRight className="w-5 h-5" />
+                    </Button>
+                  </>
+                )}
               </div>
 
               <div className="text-center pt-1">
-                <Button variant="ghost" className="text-forest hover:text-forest/80 text-sm">
-                  View All  →
+                <Button variant="ghost" className="text-forest hover:text-forest/80 text-sm" asChild>
+                  <a href="/products">
+                    View All  →
+                  </a>
                 </Button>
               </div>
             </div>

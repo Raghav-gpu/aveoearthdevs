@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Mail, 
   Lock, 
@@ -22,27 +24,137 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    phone: '',
+    confirmPassword: ''
+  });
+
+  const { signIn, signUp, signInWithGoogle, signInWithFacebook } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Mock login process
-    setTimeout(() => {
+    try {
+      const { error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Welcome Back!",
+          description: "You've successfully logged in.",
+        });
+        navigate('/');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-      // Redirect to dashboard/profile
-    }, 2000);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     
-    // Mock signup process
-    setTimeout(() => {
+    try {
+      const { error } = await signUp(formData.email, formData.password, formData.name);
+      
+      if (error) {
+        toast({
+          title: "Signup Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "Please check your email to verify your account.",
+        });
+        navigate('/');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-      // Redirect to dashboard/profile
-    }, 2000);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        toast({
+          title: "Google Sign In Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithFacebook();
+      if (error) {
+        toast({
+          title: "Facebook Sign In Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -139,9 +251,12 @@ const LoginPage = () => {
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="email"
+                          name="email"
                           type="email"
                           placeholder="Enter your email"
                           className="pl-10"
+                          value={formData.email}
+                          onChange={handleInputChange}
                           required
                         />
                       </div>
@@ -153,9 +268,12 @@ const LoginPage = () => {
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="password"
+                          name="password"
                           type={showPassword ? "text" : "password"}
                           placeholder="Enter your password"
                           className="pl-10 pr-10"
+                          value={formData.password}
+                          onChange={handleInputChange}
                           required
                         />
                         <Button
@@ -212,9 +330,12 @@ const LoginPage = () => {
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="name"
+                          name="name"
                           type="text"
                           placeholder="Enter your full name"
                           className="pl-10"
+                          value={formData.name}
+                          onChange={handleInputChange}
                           required
                         />
                       </div>
@@ -226,9 +347,12 @@ const LoginPage = () => {
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="email-signup"
+                          name="email"
                           type="email"
                           placeholder="Enter your email"
                           className="pl-10"
+                          value={formData.email}
+                          onChange={handleInputChange}
                           required
                         />
                       </div>
@@ -240,9 +364,12 @@ const LoginPage = () => {
                         <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="phone"
+                          name="phone"
                           type="tel"
                           placeholder="+91 98765 43210"
                           className="pl-10"
+                          value={formData.phone}
+                          onChange={handleInputChange}
                           required
                         />
                       </div>
@@ -254,9 +381,12 @@ const LoginPage = () => {
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="password-signup"
+                          name="password"
                           type={showPassword ? "text" : "password"}
                           placeholder="Create a strong password"
                           className="pl-10 pr-10"
+                          value={formData.password}
+                          onChange={handleInputChange}
                           required
                         />
                         <Button
@@ -277,9 +407,12 @@ const LoginPage = () => {
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="confirm-password"
+                          name="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="Confirm your password"
                           className="pl-10 pr-10"
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
                           required
                         />
                         <Button
@@ -350,7 +483,12 @@ const LoginPage = () => {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3 mt-4">
-                  <Button variant="outline" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                  >
                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                       <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                       <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -359,7 +497,12 @@ const LoginPage = () => {
                     </svg>
                     Google
                   </Button>
-                  <Button variant="outline" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleFacebookSignIn}
+                    disabled={isLoading}
+                  >
                     <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                     </svg>
