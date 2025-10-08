@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Link } from "react-router-dom"; 
+import { Link } from "react-router-dom";
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearch } from '@/contexts/SearchContext';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
-import { 
-  Search, 
-  ShoppingCart, 
-  User, 
+import SearchAutocomplete from './SearchAutocomplete';
+import {
+  Search,
+  ShoppingCart,
+  User,
   Heart,
   Menu,
   Leaf,
@@ -43,20 +44,6 @@ const Header = () => {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigateToSearch(searchQuery.trim());
-    }
-  };
-
-  const handleMobileSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigateToSearch(searchQuery.trim());
-      setIsMobileMenuOpen(false);
-    }
-  };
 
   return (
     <>
@@ -109,19 +96,16 @@ const Header = () => {
               ))}
             </nav>
 
-            {/* Search Bar */}
-            <div className="hidden md:flex items-center max-w-md flex-1 mx-8">
-              <form onSubmit={handleSearch} className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search sustainable products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-2xl border border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest transition-all duration-200"
-                />
-              </form>
-            </div>
+                {/* Search Bar */}
+                <div className="hidden md:flex items-center max-w-md flex-1 mx-8">
+                  <SearchAutocomplete
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    onSubmit={(query) => navigateToSearch(query)}
+                    placeholder="Search sustainable products..."
+                    className="w-full"
+                  />
+                </div>
 
             {/* Actions */}
             <div className="flex items-center gap-3">
@@ -204,17 +188,17 @@ const Header = () => {
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-border/20 bg-background">
             <div className="container mx-auto px-4 py-4 space-y-4">
-              {/* Mobile Search */}
-              <form onSubmit={handleMobileSearch} className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search sustainable products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-2xl border border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest"
-                />
-              </form>
+                  {/* Mobile Search */}
+                  <SearchAutocomplete
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    onSubmit={(query) => {
+                      navigateToSearch(query);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    placeholder="Search sustainable products..."
+                    className="w-full"
+                  />
 
               {/* Mobile Navigation */}
               <nav className="space-y-2">

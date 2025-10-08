@@ -8,13 +8,15 @@ import { useProducts, useSearchProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  Search, 
-  Filter, 
-  Star, 
-  Heart, 
-  ShoppingCart, 
-  Leaf, 
+import { useSearch } from '@/contexts/SearchContext';
+import SearchAutocomplete from '@/components/SearchAutocomplete';
+import {
+  Search,
+  Filter,
+  Star,
+  Heart,
+  ShoppingCart,
+  Leaf,
   SlidersHorizontal,
   Grid3X3,
   LayoutList,
@@ -34,6 +36,7 @@ const AllProductsPage = () => {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
+  const { navigateToSearch } = useSearch();
 
   // Determine which data to use
   const products = isSearching ? searchResults : (productsData?.data || []);
@@ -196,15 +199,19 @@ const AllProductsPage = () => {
             {/* Search */}
             <div className="space-y-2">
               <h3 className="font-semibold text-charcoal">Search</h3>
-              <form onSubmit={handleSearch} className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </form>
+              <SearchAutocomplete
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onSubmit={(query) => {
+                  if (query.trim()) {
+                    setIsSearching(true);
+                  } else {
+                    setIsSearching(false);
+                  }
+                }}
+                placeholder="Search products..."
+                className="w-full"
+              />
               {isSearching && (
                 <Button 
                   variant="outline" 

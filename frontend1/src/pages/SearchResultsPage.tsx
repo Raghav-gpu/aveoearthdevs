@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useSearch } from '@/contexts/SearchContext';
+import { useSearchProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,26 +27,17 @@ const SearchResultsPage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('relevance');
   
-  const { 
-    searchResults, 
-    isSearching, 
-    searchError, 
-    performSearch, 
-    navigateToSearch 
-  } = useSearch();
-  
+  const { navigateToSearch } = useSearch();
+  const { data: searchResults, isLoading: isSearching, error: searchError } = useSearchProducts(searchQuery);
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
 
   // Get search query from URL
   useEffect(() => {
-    const query = searchParams.get('q') || '';
+    const query = searchParams.get('query') || searchParams.get('q') || '';
     setSearchQuery(query);
-    if (query) {
-      performSearch(query);
-    }
-  }, [searchParams, performSearch]);
+  }, [searchParams]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

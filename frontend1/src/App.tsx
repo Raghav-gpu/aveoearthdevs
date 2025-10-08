@@ -23,7 +23,7 @@ import PrivacyPage from "./pages/PrivacyPage.tsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
 import CheckoutPage from "./pages/CheckoutPage.tsx";
 import CommunityPage from "./pages/CommunityPage.tsx";
-// import SearchResultsPage from "./pages/SearchResultsPage";
+import SearchResultsPage from "./pages/SearchResultsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,7 +52,7 @@ const App = () => (
                 <Route path="category/:slug" element={<CategoryPage />} />
                 <Route path="products" element={<AllProductsPage />} />
                 <Route path="product/:productId" element={<ProductPage />} />
-                {/* <Route path="search" element={<SearchResultsPage />} /> */}
+                <Route path="search" element={<SearchResultsPage />} />
                 <Route path="cart" element={<CartPage />} />
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="login" element={<LoginPage />} />
