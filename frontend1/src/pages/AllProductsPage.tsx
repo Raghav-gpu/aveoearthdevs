@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts, useSearchProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,11 +27,17 @@ const AllProductsPage = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState('grid');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSearching, setIsSearching] = useState(false);
 
   const { data: productsData, isLoading, error } = useProducts(currentPage, 12, selectedCategory);
+  const { data: searchResults, isLoading: isSearchLoading } = useSearchProducts(searchQuery, selectedCategory);
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
+
+  // Determine which data to use
+  const products = isSearching ? searchResults : (productsData?.data || []);
+  const isLoadingProducts = isSearching ? isSearchLoading : isLoading;
 
   const handleAddToCart = (product: any) => {
     addToCart(product, 1);
@@ -43,9 +49,23 @@ const AllProductsPage = () => {
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setIsSearching(true);
+    } else {
+      setIsSearching(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setIsSearching(false);
+  };
+
   const formatPrice = (price: number) => `₹${price.toLocaleString('en-IN')}`;
 
-  if (isLoading) {
+  if (isLoadingProducts) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -65,8 +85,6 @@ const AllProductsPage = () => {
       </div>
     );
   }
-
-  const products = productsData?.data || [];
 
   const ProductCard = ({ product }: { product: any }) => (
     <Card className="product-card group cursor-pointer">
@@ -178,7 +196,7 @@ const AllProductsPage = () => {
             {/* Search */}
             <div className="space-y-2">
               <h3 className="font-semibold text-charcoal">Search</h3>
-              <div className="relative">
+              <form onSubmit={handleSearch} className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search products..."
@@ -186,7 +204,17 @@ const AllProductsPage = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
-              </div>
+              </form>
+              {isSearching && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleClearSearch}
+                  className="w-full"
+                >
+                  Clear Search
+                </Button>
+              )}
             </div>
 
             {/* Categories */}

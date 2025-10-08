@@ -104,6 +104,57 @@ const Footer: React.FC = () => {
         </div>
       </div>
 
+      {/* Payment Methods */}
+      <div className="border-t border-border/20">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">We Accept:</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap justify-center md:justify-end">
+              {/* UPI */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border/20">
+                <span className="text-sm font-semibold text-blue-400">UPI</span>
+              </div>
+              
+              {/* Visa */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border/20">
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-3 bg-gradient-to-r from-blue-600 to-orange-500 rounded-sm"></div>
+                  <span className="text-sm font-semibold text-blue-400">VISA</span>
+                </div>
+              </div>
+              
+              {/* Mastercard */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border/20">
+                <div className="flex items-center gap-1">
+                  <div className="flex -space-x-1">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-red-400">Mastercard</span>
+                </div>
+              </div>
+              
+              {/* American Express */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border/20">
+                <span className="text-sm font-semibold text-blue-400">AMEX</span>
+              </div>
+              
+              {/* RuPay */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border/20">
+                <span className="text-sm font-semibold text-green-400">RuPay</span>
+              </div>
+              
+              {/* Diners */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border/20">
+                <span className="text-sm font-semibold text-blue-400">Diners</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Bottom */}
       <div className="border-t border-border/20">
         <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4">

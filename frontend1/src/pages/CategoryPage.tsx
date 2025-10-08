@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts, useSearchProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,12 +38,18 @@ const CategoryPage = () => {
   const [selectedRating, setSelectedRating] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isSearching, setIsSearching] = useState(false);
 
   const currentCategory = category || 'all';
   const { data: productsData, isLoading, error } = useProducts(1, 50);
+  const { data: searchResults, isLoading: isSearchLoading } = useSearchProducts(searchTerm);
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
+
+  // Determine which data to use
+  const products = isSearching ? searchResults : (productsData?.data || []);
+  const isLoadingProducts = isSearching ? isSearchLoading : isLoading;
 
   const handleAddToCart = (product: any) => {
     addToCart(product, 1);
@@ -71,11 +77,26 @@ const CategoryPage = () => {
     setSelectedBadges([]);
     setSelectedRating([]);
     setSearchTerm('');
+    setIsSearching(false);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      setIsSearching(true);
+    } else {
+      setIsSearching(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setIsSearching(false);
   };
 
   const formatPrice = (price: number) => `₹${price.toLocaleString('en-IN')}`;
 
-  if (isLoading) {
+  if (isLoadingProducts) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -95,8 +116,6 @@ const CategoryPage = () => {
       </div>
     );
   }
-
-  const products = productsData?.data || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,7 +141,7 @@ const CategoryPage = () => {
               {/* Search */}
               <Card>
                 <CardContent className="p-4">
-                  <div className="relative">
+                  <form onSubmit={handleSearch} className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       placeholder="Search products..."
@@ -130,7 +149,17 @@ const CategoryPage = () => {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
-                  </div>
+                  </form>
+                  {isSearching && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleClearSearch}
+                      className="w-full mt-2"
+                    >
+                      Clear Search
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 

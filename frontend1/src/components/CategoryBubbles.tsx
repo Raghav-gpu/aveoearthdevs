@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Home, Shirt, Palette, Sparkles, Cpu } from "lucide-react";
+import { Home, Shirt, Palette, Sparkles, Dumbbell, Heart } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 // 1. 🖼️ CORRECT IMAGE IMPORTS (using relative paths)
-import zeroWasteImage from "../assets/category-zero-waste(1).jpg"; 
+import homeLivingImage from "../assets/category-zero-waste(1).jpg"; 
 import fashionImage from "../assets/category-zero-waste(2).jpg";   
 import beautyImage from "../assets/category-zero-waste(3).jpg";
 import upcycledImage from "../assets/category-zero-waste(4).jpg";
-import greenTechImage from "../assets/category-zero-waste(5).jpg";
+import fitnessImage from "../assets/category-zero-waste(5).jpg";
+import petsImage from "../assets/category-zero-waste(1).jpg"; // Using same image for now
 
 
 // --- Custom Tailwind Colors (Simulated for Cohesion) ---
@@ -23,68 +24,81 @@ const customColors = {
 // --- Category Data (Using imported variables) ---
 const categories = [
     {
-        id: "zero-waste",
-        name: "Zero-Waste Home",
-        description: "Refillables, compostables, plastic-free daily goods",
+        id: "home-living",
+        name: "Home & Living",
+        description: "Eco-friendly home essentials, kitchenware, and living products",
         icon: Home,
-        image: zeroWasteImage, 
+        image: homeLivingImage, 
         colorKey: "moss-accent",
         products: [
-            { name: "Bamboo Brush Set", price: "₹299", eco: "Biodegradable" },
-            { name: "Glass Jars", price: "₹899", eco: "Reusable" },
-            { name: "Beeswax Wraps", price: "₹549", eco: "Compostable" }
+            { name: "Bamboo Kitchen Set", price: "₹1,299", eco: "Biodegradable" },
+            { name: "Organic Cotton Towels", price: "₹899", eco: "Organic" },
+            { name: "Beeswax Food Wraps", price: "₹549", eco: "Compostable" }
         ]
     },
     {
-        id: "fashion",
+        id: "sustainable-fashion",
         name: "Sustainable Fashion",
-        description: "Ethically made wardrobe staples, repair kits",
+        description: "Ethically made wardrobe staples, organic clothing",
         icon: Shirt,
         image: fashionImage,
         colorKey: "clay-accent",
         products: [
-            { name: "Organic Tees", price: "₹1,299", eco: "Organic" },
-            { name: "Hemp Jacket", price: "₹3,499", eco: "Sustainable" },
-            { name: "Repair Kit", price: "₹699", eco: "Circular" }
+            { name: "Organic Cotton Tees", price: "₹1,299", eco: "Organic" },
+            { name: "Hemp Denim Jacket", price: "₹3,499", eco: "Sustainable" },
+            { name: "Linen Trousers", price: "₹2,199", eco: "Natural" }
         ]
     },
     {
-        id: "upcycled",
+        id: "upcycled-handmade",
         name: "Upcycled & Handmade",
         description: "Artisan goods made from reclaimed materials",
         icon: Palette,
         image: upcycledImage,
         colorKey: "forest-deep",
         products: [
-            { name: "Reclaimed Shelf", price: "₹2,899", eco: "Upcycled" },
+            { name: "Reclaimed Wood Shelf", price: "₹2,899", eco: "Upcycled" },
             { name: "Handwoven Basket", price: "₹899", eco: "Handmade" },
-            { name: "Clay Pottery", price: "₹1,599", eco: "Artisan" }
+            { name: "Vintage Silk Scarf", price: "₹1,599", eco: "Artisan" }
         ]
     },
     {
-        id: "beauty",
+        id: "clean-beauty",
         name: "Clean Beauty",
-        description: "Cruelty-free, minimal packaging skincare",
+        description: "Cruelty-free, natural skincare and beauty products",
         icon: Sparkles,
         image: beautyImage,
         colorKey: "sage",
         products: [
-            { name: "Natural Serum", price: "₹1,899", eco: "Cruelty-Free" },
-            { name: "Bamboo Skincare", price: "₹2,499", eco: "Zero-Waste" },
-            { name: "Face Roller", price: "₹799", eco: "Natural" }
+            { name: "Natural Face Serum", price: "₹1,899", eco: "Cruelty-Free" },
+            { name: "Organic Lip Balm", price: "₹299", eco: "Natural" },
+            { name: "Bamboo Face Roller", price: "₹799", eco: "Sustainable" }
         ]
     },
     {
-        id: "green-tech",
-        name: "Green Tech & Tools",
-        description: "Energy-saving gadgets, solar accessories, durable gear",
-        icon: Cpu,
-        image: greenTechImage,
+        id: "fitness",
+        name: "Fitness",
+        description: "Eco-friendly fitness gear, yoga accessories, and activewear",
+        icon: Dumbbell,
+        image: fitnessImage,
         colorKey: "moss-accent",
         products: [
-            { name: "Solar Power Bank", price: "₹2,299", eco: "Solar Powered" },
-            { name: "Bamboo Phone Case", price: "₹699", eco: "Biodegradable" },
-            { name: "Energy Monitor", price: "₹1,599", eco: "Energy Saving" }
+            { name: "Hemp Yoga Mat", price: "₹2,199", eco: "Natural" },
+            { name: "Organic Activewear", price: "₹1,799", eco: "Sustainable" },
+            { name: "Bamboo Water Bottle", price: "₹699", eco: "Biodegradable" }
+        ]
+    },
+    {
+        id: "pets",
+        name: "Pets",
+        description: "Sustainable pet care products, eco-friendly toys and accessories",
+        icon: Heart,
+        image: petsImage,
+        colorKey: "clay-accent",
+        products: [
+            { name: "Organic Pet Food", price: "₹1,499", eco: "Organic" },
+            { name: "Hemp Pet Bed", price: "₹2,299", eco: "Natural" },
+            { name: "Bamboo Pet Bowl", price: "₹599", eco: "Sustainable" }
         ]
     }
 ];
