@@ -124,9 +124,9 @@ const Header = () => {
                 <Link to="/wishlist">
                   <Heart className="w-5 h-5" />
                   {wishlist && wishlist.length > 0 && (
-                    <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs p-0 flex items-center justify-center">
-                      {wishlist.length}
-                    </Badge>
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-clay text-white text-xs flex items-center justify-center font-semibold animate-pulse">
+                      {wishlist.length > 99 ? '99+' : wishlist.length}
+                    </span>
                   )}
                 </Link>
               </Button>
@@ -136,9 +136,9 @@ const Header = () => {
                 <Link to="/cart">
                   <ShoppingCart className="w-5 h-5" />
                   {getTotalItems() > 0 && (
-                    <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-forest text-white text-xs p-0 flex items-center justify-center">
-                      {getTotalItems()}
-                    </Badge>
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-forest text-white text-xs flex items-center justify-center font-semibold animate-pulse">
+                      {getTotalItems() > 99 ? '99+' : getTotalItems()}
+                    </span>
                   )}
                 </Link>
               </Button>
@@ -169,7 +169,9 @@ const Header = () => {
               )}
 
               {/* Become Partner */}
-              <Button className="hidden lg:flex btn-secondary text-sm">Become a Partner</Button>
+              <Button asChild className="hidden lg:flex btn-secondary text-sm">
+                <Link to="/vendor">Become a Partner</Link>
+              </Button>
 
               {/* Mobile Menu */}
               <Button
@@ -221,14 +223,31 @@ const Header = () => {
                     <User className="w-4 h-4 mr-2" /> Account
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" className="flex-1 justify-start">
+                <Button asChild variant="ghost" className="flex-1 justify-start relative">
                   <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)}>
                     <Heart className="w-4 h-4 mr-2" /> Wishlist
+                    {wishlist && wishlist.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-clay text-white text-xs flex items-center justify-center font-semibold">
+                        {wishlist.length > 9 ? '9+' : wishlist.length}
+                      </span>
+                    )}
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" className="flex-1 justify-start relative">
+                  <Link to="/cart" onClick={() => setIsMobileMenuOpen(false)}>
+                    <ShoppingCart className="w-4 h-4 mr-2" /> Cart
+                    {getTotalItems() > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-forest text-white text-xs flex items-center justify-center font-semibold">
+                        {getTotalItems() > 9 ? '9+' : getTotalItems()}
+                      </span>
+                    )}
                   </Link>
                 </Button>
               </div>
 
-              <Button className="w-full btn-secondary">Become a Partner</Button>
+              <Button asChild className="w-full btn-secondary">
+                <Link to="/vendor" onClick={() => setIsMobileMenuOpen(false)}>Become a Partner</Link>
+              </Button>
             </div>
           </div>
         )}

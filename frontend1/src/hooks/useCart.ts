@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { cartApi } from '../services/api'
 import { Product } from '../lib/supabase'
+import { useToast } from './use-toast'
 
 export interface CartItem {
   product: Product
@@ -10,6 +11,7 @@ export interface CartItem {
 export const useCart = () => {
   const [cart, setCart] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
   useEffect(() => {
     const loadCart = () => {
@@ -41,9 +43,19 @@ export const useCart = () => {
     try {
       const updatedCart = cartApi.addToCart(product, quantity)
       setCart(updatedCart)
+      toast({
+        title: "Added to cart successfully!",
+        description: `${product.name} has been added to your cart.`,
+        duration: 3000,
+      })
       return updatedCart
     } catch (error) {
       console.error('Error adding to cart:', error)
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart. Please try again.",
+        variant: "destructive",
+      })
       return cart
     }
   }

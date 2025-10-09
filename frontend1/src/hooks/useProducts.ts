@@ -10,6 +10,10 @@ export const useProducts = (page: number = 1, limit: number = 12, categoryId?: s
     retry: 1,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    // Add timeout to prevent hanging
+    meta: {
+      timeout: 5000, // 5 second timeout
+    },
   })
 }
 
@@ -25,15 +29,29 @@ export const useSearchProducts = (query: string, categoryId?: string) => {
   return useQuery({
     queryKey: ['products', 'search', query, categoryId],
     queryFn: () => productsApi.search(query, categoryId),
-    enabled: query.length > 2,
+    enabled: query.length > 1, // Reduced from 2 to 1 for better UX
     staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: 1,
+    refetchOnWindowFocus: false,
   })
 }
 
-export const useFeaturedProducts = (limit: number = 8) => {
+export const useFeaturedProducts = (limit: number = 12) => {
   return useQuery({
     queryKey: ['products', 'featured', limit],
     queryFn: () => productsApi.getFeatured(limit),
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  })
+}
+
+export const useEcoFriendlyProducts = (limit: number = 12) => {
+  return useQuery({
+    queryKey: ['products', 'eco-friendly', limit],
+    queryFn: () => productsApi.getEcoFriendly(limit),
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 2 * 60 * 60 * 1000, // 2 hours
     retry: 1,

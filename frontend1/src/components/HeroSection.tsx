@@ -1,10 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 import { ShoppingCart, Leaf, Award, ArrowLeft, ArrowRight, Heart } from 'lucide-react';
 import { useFeaturedProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
-import { useWishlist } from '@/hooks/useWishlist';
+import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
 import heroImage from '@/assets/hero-sustainable-products.jpg';
 import bambooBottle from '@/assets/product-bamboo-bottle.jpg';
@@ -28,13 +29,16 @@ const HeroSection = () => {
   const [isTaglineVisible, setIsTaglineVisible] = React.useState(true);
   const [currentCarouselIndex, setCurrentCarouselIndex] = React.useState(0);
   const [cardImageIndexes, setCardImageIndexes] = React.useState<{ [key: number]: number }>({});
+  const [isTransitioning, setIsTransitioning] = React.useState(false);
+  const [cardsLoaded, setCardsLoaded] = React.useState(false);
 
   const carouselRef = React.useRef<HTMLDivElement>(null);
 
   // Supabase integration
-  const { data: featuredProducts, isLoading, error } = useFeaturedProducts(8);
+  const { data: featuredProducts, isLoading, error } = useFeaturedProducts(16);
   const { addToCart } = useCart();
-  const { addToWishlist, removeFromWishlist } = useWishlist();
+  const addToWishlist = useAddToWishlist();
+  const removeFromWishlist = useRemoveFromWishlist();
   const { user } = useAuth();
 
   // Tagline animation effect
@@ -61,14 +65,23 @@ const HeroSection = () => {
     return () => clearInterval(autoScrollInterval);
   }, [currentCarouselIndex, featuredProducts]);
 
+  // Cards loaded animation effect
+  React.useEffect(() => {
+    if (featuredProducts && featuredProducts.length > 0 && !isLoading) {
+      const timer = setTimeout(() => {
+        setCardsLoaded(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [featuredProducts, isLoading]);
+
   const handleAddToCart = (product: any) => {
     addToCart(product, 1);
   };
 
   const handleToggleWishlist = (product: any) => {
     if (user) {
-      // Check if product is in wishlist (you might need to implement this check)
-      addToWishlist(product);
+      addToWishlist.mutate(product.id);
     }
   };
 
@@ -98,21 +111,28 @@ const HeroSection = () => {
   const productsPerView = 4;
   const topProducts = featuredProducts || [];
   const totalPages = Math.ceil(topProducts.length / productsPerView);
+  
+  // Ensure we have at least 4 pages for pagination dots
+  const displayPages = Math.max(4, totalPages);
 
   const handleNext = () => {
-    if (topProducts.length === 0) return;
+    if (topProducts.length === 0 || isTransitioning) return;
+    setIsTransitioning(true);
     setCurrentCarouselIndex((prevIndex) => {
       const nextIndex = (prevIndex + productsPerView);
       return nextIndex >= topProducts.length ? 0 : nextIndex;
     });
+    setTimeout(() => setIsTransitioning(false), 300);
   };
 
   const handlePrev = () => {
-    if (topProducts.length === 0) return;
+    if (topProducts.length === 0 || isTransitioning) return;
+    setIsTransitioning(true);
     setCurrentCarouselIndex((prevIndex) => {
       const prevStartIndex = prevIndex - productsPerView;
       return prevStartIndex < 0 ? Math.max(0, (totalPages - 1) * productsPerView) : prevStartIndex;
     });
+    setTimeout(() => setIsTransitioning(false), 300);
   };
 
   const handleImageIndicatorClick = (e: React.MouseEvent, productId: number, imageIndex: number) => {
@@ -220,7 +240,7 @@ const HeroSection = () => {
               
               <div className="relative">
                 {/* Carousel Container */}
-                <div ref={carouselRef} className="flex overflow-hidden relative -mx-3">
+                <div ref={carouselRef} className="flex overflow-hidden relative -mx-3 transition-transform duration-300 ease-in-out">
                   {isLoading ? (
                     // Show loading skeletons
                     Array.from({ length: 4 }).map((_, index) => (
@@ -232,7 +252,7 @@ const HeroSection = () => {
                       Failed to load products. Please try again.
                     </div>
                   ) : (
-                    visibleProducts.map((product) => {
+                    visibleProducts.map((product, index) => {
                       const productImages = getProductImages(product);
                       const badges = getProductBadges(product);
                       const currentImageIndex = cardImageIndexes[product.id] || 0;
@@ -240,9 +260,17 @@ const HeroSection = () => {
                       return (
                         <div 
                           key={`${product.id}-${currentCarouselIndex}`}
-                          className="flex-none w-[calc(25%-2px)] px-3"
+                          className={`flex-none w-[calc(25%-2px)] px-3 transition-all duration-500 ease-out ${
+                            cardsLoaded 
+                              ? 'opacity-100 translate-y-0' 
+                              : 'opacity-0 translate-y-8'
+                          }`}
+                          style={{ transitionDelay: `${index * 100}ms` }}
                         >
-                          <div className="group flex flex-col h-full bg-card/80 backdrop-blur-sm border border-border/20 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-border/40 overflow-hidden">
+                          <Link 
+                            to={`/product/${product.id}`}
+                            className="group flex flex-col h-full bg-card/80 backdrop-blur-sm border border-border/20 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-border/40 overflow-hidden hover:scale-[1.02] origin-center block"
+                          >
                             {/* Image Section with Gallery */}
                             <div className="relative">
                               <img 
@@ -291,10 +319,14 @@ const HeroSection = () => {
                               <div className="flex-1"></div>
 
                               <div className="pt-2 border-t border-border/20 mt-2">
-                                <div className="flex gap-2">
+                                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                                   <Button
                                     className="flex-1 btn-secondary text-sm h-9"
-                                    onClick={() => handleAddToCart(product)}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleAddToCart(product);
+                                    }}
                                   >
                                     <ShoppingCart className="w-4 h-4 mr-2" />
                                     Add to Cart
@@ -304,7 +336,11 @@ const HeroSection = () => {
                                       size="sm"
                                       variant="outline"
                                       className="w-9 h-9 rounded-full border-forest/30 text-forest hover:bg-forest/10"
-                                      onClick={() => handleToggleWishlist(product)}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleToggleWishlist(product);
+                                      }}
                                     >
                                       <Heart className="w-4 h-4" />
                                     </Button>
@@ -312,7 +348,7 @@ const HeroSection = () => {
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          </Link>
                         </div>
                       );
                     })
@@ -327,6 +363,7 @@ const HeroSection = () => {
                       variant="ghost"
                       className="absolute top-1/2 left-[-42px] transform -translate-y-1/2 text-charcoal hover:text-forest bg-background/50 hover:bg-background/80 rounded-full transition-all duration-300 z-20"
                       onClick={handlePrev}
+                      disabled={isTransitioning}
                     >
                       <ArrowLeft className="w-5 h-5" />
                     </Button>
@@ -335,10 +372,41 @@ const HeroSection = () => {
                       variant="ghost"
                       className="absolute top-1/2 right-[-42px] transform -translate-y-1/2 text-charcoal hover:text-forest bg-background/50 hover:bg-background/80 rounded-full transition-all duration-300 z-20"
                       onClick={handleNext}
+                      disabled={isTransitioning}
                     >
                       <ArrowRight className="w-5 h-5" />
                     </Button>
                   </>
+                )}
+
+                {/* Pagination Dots */}
+                {!isLoading && !error && topProducts.length > 0 && (
+                  <div className="flex justify-center items-center space-x-2 mt-4">
+                    {Array.from({ length: displayPages }).map((_, pageIndex) => {
+                      const isActive = Math.floor(currentCarouselIndex / productsPerView) === pageIndex;
+                      const isVisible = pageIndex < totalPages; // Only show dots for actual pages
+                      return (
+                        <button
+                          key={pageIndex}
+                          onClick={() => {
+                            if (isTransitioning || !isVisible) return;
+                            setIsTransitioning(true);
+                            setCurrentCarouselIndex(pageIndex * productsPerView);
+                            setTimeout(() => setIsTransitioning(false), 300);
+                          }}
+                          className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                            isActive 
+                              ? 'bg-forest scale-110' 
+                              : isVisible 
+                                ? 'bg-forest/30 hover:bg-forest/50' 
+                                : 'bg-forest/10 cursor-not-allowed'
+                          }`}
+                          disabled={isTransitioning || !isVisible}
+                          aria-label={`Go to page ${pageIndex + 1}`}
+                        />
+                      );
+                    })}
+                  </div>
                 )}
               </div>
 

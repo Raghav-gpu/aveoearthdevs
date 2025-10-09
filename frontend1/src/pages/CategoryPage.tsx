@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useProducts, useSearchProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
-import { useWishlist } from '@/hooks/useWishlist';
+import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Filter, 
@@ -41,10 +41,11 @@ const CategoryPage = () => {
   const [isSearching, setIsSearching] = useState(false);
 
   const currentCategory = category || 'all';
-  const { data: productsData, isLoading, error } = useProducts(1, 50);
+  const { data: productsData, isLoading, error } = useProducts(1, 100);
   const { data: searchResults, isLoading: isSearchLoading } = useSearchProducts(searchTerm);
   const { addToCart } = useCart();
-  const { addToWishlist, removeFromWishlist } = useWishlist();
+  const addToWishlist = useAddToWishlist();
+  const removeFromWishlist = useRemoveFromWishlist();
   const { user } = useAuth();
 
   // Determine which data to use

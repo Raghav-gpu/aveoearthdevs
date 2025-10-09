@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useProducts, useSearchProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
-import { useWishlist } from '@/hooks/useWishlist';
+import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearch } from '@/contexts/SearchContext';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
@@ -31,10 +31,11 @@ const AllProductsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
 
-  const { data: productsData, isLoading, error } = useProducts(currentPage, 12, selectedCategory);
+  const { data: productsData, isLoading, error } = useProducts(currentPage, 50, selectedCategory);
   const { data: searchResults, isLoading: isSearchLoading } = useSearchProducts(searchQuery, selectedCategory);
   const { addToCart } = useCart();
-  const { addToWishlist, removeFromWishlist } = useWishlist();
+  const addToWishlist = useAddToWishlist();
+  const removeFromWishlist = useRemoveFromWishlist();
   const { user } = useAuth();
   const { navigateToSearch } = useSearch();
 
