@@ -29,6 +29,7 @@ const CartPage = () => {
     cart, 
     getTotalItems, 
     getTotalPrice, 
+    getSubtotal,
     updateQuantity, 
     removeFromCart, 
     clearCart 
@@ -62,10 +63,12 @@ const CartPage = () => {
 
   const formatPrice = (price: number) => `₹${price.toLocaleString('en-IN')}`;
 
-  const subtotal = getTotalPrice();
-  const shipping = subtotal > 2000 ? 0 : 100;
-  const discount = appliedCoupon ? subtotal * 0.1 : 0;
-  const total = subtotal + shipping - discount;
+  const subtotal = getSubtotal(); // Original price before any discounts
+  const productDiscounts = getTotalPrice(); // Price after product discounts
+  const productDiscountAmount = subtotal - productDiscounts;
+  const shipping = productDiscounts > 2000 ? 0 : 100;
+  const couponDiscount = appliedCoupon ? productDiscounts * 0.1 : 0;
+  const total = productDiscounts + shipping - couponDiscount;
 
   if (cart.length === 0) {
     return (
@@ -158,11 +161,20 @@ const CartPage = () => {
                       <div className="flex flex-col items-end space-y-2">
                         <div className="text-right">
                           <div className="text-lg font-bold text-charcoal">
-                            {formatPrice(item.product.price * item.quantity)}
+                            {formatPrice((item.product.discount > 0 
+                              ? item.product.price * (1 - item.product.discount / 100) 
+                              : item.product.price) * item.quantity)}
                           </div>
                           {item.quantity > 1 && (
                             <div className="text-sm text-muted-foreground">
-                              {formatPrice(item.product.price)} each
+                              {formatPrice(item.product.discount > 0 
+                                ? item.product.price * (1 - item.product.discount / 100) 
+                                : item.product.price)} each
+                            </div>
+                          )}
+                          {item.product.discount > 0 && (
+                            <div className="text-xs text-green-600">
+                              {item.product.discount}% off
                             </div>
                           )}
                         </div>
@@ -248,6 +260,12 @@ const CartPage = () => {
                     <span>Subtotal</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
+                  {productDiscountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Product Discounts</span>
+                      <span>-{formatPrice(productDiscountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
                     <span>
@@ -258,10 +276,10 @@ const CartPage = () => {
                       )}
                     </span>
                   </div>
-                  {discount > 0 && (
+                  {couponDiscount > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
-                      <span>Discount</span>
-                      <span>-{formatPrice(discount)}</span>
+                      <span>Coupon Discount ({appliedCoupon})</span>
+                      <span>-{formatPrice(couponDiscount)}</span>
                     </div>
                   )}
                   <div className="border-t pt-2">

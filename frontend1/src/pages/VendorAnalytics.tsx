@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useVendorAuth } from '@/hooks/useVendorAuth';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -16,11 +18,37 @@ import {
   Download,
   Filter,
   Leaf,
-  Zap
+  Zap,
+  LogOut
 } from 'lucide-react';
 
 const VendorAnalytics = () => {
   const [timeRange, setTimeRange] = useState('30d');
+  const { vendor, loading, signOut, isAuthenticated } = useVendorAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated()) {
+      navigate('/vendor');
+    }
+  }, [loading, isAuthenticated, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-forest/5 via-moss/10 to-clay/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-forest rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <BarChart3 className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-forest text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated()) {
+    return null;
+  }
 
   // Mock analytics data
   const analyticsData = {
@@ -81,7 +109,7 @@ const VendorAnalytics = () => {
       </div>
 
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-screen w-64 bg-white/95 backdrop-blur-md border-r border-forest/30 shadow-2xl z-[100] flex flex-col">
+      <div className="fixed left-0 top-0 h-screen w-64 bg-white/95 backdrop-blur-md border-r border-forest/30 shadow-2xl z-[100] flex flex-col pb-20">
         {/* Logo Section */}
         <div className="flex items-center gap-3 px-6 py-6">
           <div className="w-10 h-10 bg-forest rounded-2xl flex items-center justify-center">
@@ -115,12 +143,20 @@ const VendorAnalytics = () => {
         <div className="p-4 border-t border-forest/20">
           <div className="flex items-center gap-3 p-3 rounded-2xl bg-forest/10">
             <div className="w-10 h-10 bg-forest rounded-full flex items-center justify-center">
-              <span className="text-white font-bold">V</span>
+              <span className="text-white font-bold">{vendor?.businessName?.charAt(0) || 'V'}</span>
             </div>
-            <div>
-              <div className="font-semibold text-forest">Vendor Name</div>
-              <div className="text-sm text-muted-foreground">vendor@example.com</div>
+            <div className="flex-1">
+              <div className="font-semibold text-forest">{vendor?.businessName || 'Vendor'}</div>
+              <div className="text-sm text-muted-foreground">{vendor?.email || 'vendor@example.com'}</div>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="text-forest hover:text-moss hover:bg-forest/20 p-2"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>

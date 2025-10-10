@@ -95,8 +95,17 @@ export const useCart = () => {
 
   const getTotalPrice = () => {
     return cart.reduce((total, item) => {
-      const price = item.product.price * (1 - item.product.discount / 100)
-      return total + (price * item.quantity)
+      // Calculate discounted price per item
+      const discountedPrice = item.product.discount > 0 
+        ? item.product.price * (1 - item.product.discount / 100)
+        : item.product.price
+      return total + (discountedPrice * item.quantity)
+    }, 0)
+  }
+
+  const getSubtotal = () => {
+    return cart.reduce((total, item) => {
+      return total + (item.product.price * item.quantity)
     }, 0)
   }
 
@@ -121,6 +130,7 @@ export const useCart = () => {
     updateQuantity,
     clearCart,
     getTotalPrice,
+    getSubtotal,
     getTotalItems,
     isInCart,
     getItemQuantity

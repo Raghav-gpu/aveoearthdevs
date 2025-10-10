@@ -70,14 +70,14 @@ const App = () => (
                 <Route path="terms" element={<TermsPage />} />
                 <Route path="privacy" element={<PrivacyPage />} />
                 <Route path="forgot-password" element={<ForgotPasswordPage />} />
-                {/* Vendor Routes - No Layout */}
-                <Route path="vendor" element={<VendorPage />} />
-                <Route path="vendor/dashboard" element={<VendorDashboard />} />
-                <Route path="vendor/products" element={<VendorProducts />} />
-                <Route path="vendor/orders" element={<VendorOrders />} />
-                <Route path="vendor/analytics" element={<VendorAnalytics />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
+              {/* Vendor Routes - No Layout */}
+              <Route path="vendor" element={<VendorPage />} />
+              <Route path="vendor/dashboard" element={<VendorDashboard />} />
+              <Route path="vendor/products" element={<VendorProducts />} />
+              <Route path="vendor/orders" element={<VendorOrders />} />
+              <Route path="vendor/analytics" element={<VendorAnalytics />} />
             </Routes>
           </SearchProvider>
         </BrowserRouter>

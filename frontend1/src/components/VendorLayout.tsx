@@ -10,3 +10,6 @@ const VendorLayout = () => {
 };
 
 export default VendorLayout;
+
+
+
