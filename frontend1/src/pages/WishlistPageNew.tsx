@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { useWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
+import { useWishlistNew, useRemoveFromWishlistNew } from '@/hooks/useWishlistNew';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -19,13 +19,13 @@ import {
   LayoutList
 } from 'lucide-react';
 
-const WishlistPage = () => {
+const WishlistPageNew = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('newest');
 
-  const { data: wishlist, isLoading, error } = useWishlist();
+  const { data: wishlist, isLoading, error } = useWishlistNew();
   const { addToCart } = useCart();
-  const removeFromWishlist = useRemoveFromWishlist();
+  const removeFromWishlist = useRemoveFromWishlistNew();
   const { user } = useAuth();
 
   const handleAddToCart = (product: any) => {
@@ -67,8 +67,13 @@ const WishlistPage = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive">Error loading wishlist. Please try again.</p>
+        <div className="text-center space-y-4">
+          <Heart className="w-16 h-16 text-muted-foreground mx-auto" />
+          <h2 className="text-2xl font-semibold text-charcoal">Error Loading Wishlist</h2>
+          <p className="text-muted-foreground">There was an error loading your wishlist. Please try again.</p>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -162,22 +167,23 @@ const WishlistPage = () => {
                 <CardContent className="p-0">
                   <div className="relative overflow-hidden rounded-t-2xl">
                     <img 
-                      src={item.image_url || '/api/placeholder/300/300'} 
-                      alt={item.name}
+                      src={item.products?.image_url || '/api/placeholder/300/300'} 
+                      alt={item.products?.name}
                       className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                     <Button
                       size="sm"
                       variant="ghost"
                       className="absolute top-2 right-2 text-white hover:text-red-500 bg-black/20 hover:bg-white/90 rounded-full"
-                      onClick={() => handleRemoveFromWishlist(item.id)}
+                      onClick={() => handleRemoveFromWishlist(item.product_id)}
+                      disabled={removeFromWishlist.isPending}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                     <div className="absolute top-2 left-2 flex gap-1">
                       <Badge className="bg-forest/90 text-white text-xs">
                         <Leaf className="w-3 h-3 mr-1" />
-                        {item.sustainability_score}%
+                        {item.products?.sustainability_score || 85}%
                       </Badge>
                     </div>
                   </div>
@@ -185,11 +191,8 @@ const WishlistPage = () => {
                   <div className="p-4 space-y-3">
                     <div>
                       <h3 className="font-semibold text-charcoal group-hover:text-forest transition-colors line-clamp-2">
-                        {item.name}
+                        {item.products?.name}
                       </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                        {item.description}
-                      </p>
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -202,22 +205,24 @@ const WishlistPage = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <Leaf className="w-4 h-4 text-moss" />
-                        <span className="text-sm font-medium text-moss">{item.sustainability_score}%</span>
+                        <span className="text-sm font-medium text-moss">{item.products?.sustainability_score || 85}%</span>
                       </div>
                     </div>
                     
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-charcoal">{formatPrice(item.price)}</span>
-                        {item.discount > 0 && (
+                        <span className="text-lg font-bold text-charcoal">
+                          {formatPrice(item.products?.price || 0)}
+                        </span>
+                        {item.products?.discount && item.products.discount > 0 && (
                           <span className="text-sm text-muted-foreground line-through">
-                            {formatPrice(item.price / (1 - item.discount / 100))}
+                            {formatPrice(item.products.price / (1 - item.products.discount / 100))}
                           </span>
                         )}
                       </div>
-                      {item.discount > 0 && (
+                      {item.products?.discount && item.products.discount > 0 && (
                         <Badge className="bg-clay text-white">
-                          {item.discount}% OFF
+                          {item.products.discount}% OFF
                         </Badge>
                       )}
                     </div>
@@ -225,13 +230,13 @@ const WishlistPage = () => {
                     <div className="flex gap-2">
                       <Button 
                         className="flex-1 btn-primary"
-                        onClick={() => handleAddToCart(item)}
+                        onClick={() => handleAddToCart(item.products)}
                       >
                         <ShoppingCart className="w-4 h-4 mr-2" />
                         Add to Cart
                       </Button>
                       <Button asChild variant="outline" className="px-3">
-                        <Link to={`/product/${item.id}`}>
+                        <Link to={`/product/${item.product_id}`}>
                           View
                         </Link>
                       </Button>
@@ -266,4 +271,4 @@ const WishlistPage = () => {
   );
 };
 
-export default WishlistPage;
+export default WishlistPageNew;

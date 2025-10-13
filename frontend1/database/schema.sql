@@ -11,6 +11,12 @@ CREATE TABLE public.users (
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     role user_role DEFAULT 'buyer',
+    phone TEXT,
+    address TEXT,
+    city TEXT,
+    state TEXT,
+    zip_code TEXT,
+    alternate_address TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

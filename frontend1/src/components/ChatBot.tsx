@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import AveoBuddyVideo from '@/assets/AveoBuddy.webm';
 import { 
   MessageCircle, 
   X, 
@@ -35,7 +36,7 @@ const ChatBot = () => {
   const [messages, setMessages] = useState([
     {
       type: 'bot',
-      text: "Hi! I'm your sustainable shopping assistant 🌱 How can I help you make better choices today?",
+      text: "Hi! I'm AveoBuddy, your sustainable shopping companion 🌱 How can I help you make better choices today?",
       time: '12:34'
     }
   ]);
@@ -99,12 +100,38 @@ const ChatBot = () => {
 
   if (!isOpen) {
     return (
-      <Button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full btn-hero shadow-hero hover:scale-110 z-50"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </Button>
+      <div className="fixed bottom-4 right-4 z-50" style={{ 
+        paddingBottom: '20px',
+        paddingRight: '20px',
+        maxWidth: 'calc(100vw - 20px)',
+        maxHeight: 'calc(100vh - 20px)'
+      }}>
+        <div
+          onClick={() => setIsOpen(true)}
+          className="w-56 h-64 cursor-pointer hover:scale-105 transition-all duration-300"
+          style={{
+            overflow: 'visible',
+            transformOrigin: 'center center'
+          }}
+        >
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-contain"
+            title="AveoBuddy - Your Sustainable Shopping Companion"
+            style={{ 
+              transform: 'translate(0, 0)',
+              maxWidth: '100%',
+              maxHeight: '100%'
+            }}
+          >
+            <source src={AveoBuddyVideo} type="video/webm" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </div>
     );
   }
 
@@ -116,12 +143,21 @@ const ChatBot = () => {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/20 bg-forest rounded-t-lg">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-moss rounded-full flex items-center justify-center">
-              <Leaf className="w-4 h-4 text-white" />
+            <div className="w-12 h-12 flex items-center justify-center">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-contain"
+                title="AveoBuddy"
+              >
+                <source src={AveoBuddyVideo} type="video/webm" />
+              </video>
             </div>
             <div>
-              <div className="text-sm font-semibold text-white">EcoBot</div>
-              <div className="text-xs text-moss/80">Sustainable Shopping Assistant</div>
+              <div className="text-sm font-semibold text-white">AveoBuddy</div>
+              <div className="text-xs text-moss/80">Sustainable Shopping Companion</div>
             </div>
           </div>
           

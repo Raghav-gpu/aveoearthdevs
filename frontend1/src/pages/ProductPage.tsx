@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProduct } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
-import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
+import { useAddToWishlistNew, useRemoveFromWishlistNew, useIsInWishlistNew } from '@/hooks/useWishlistNew';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Star, 
@@ -34,8 +34,9 @@ const ProductPage = () => {
 
   const { data: product, isLoading, error } = useProduct(productId!);
   const { addToCart } = useCart();
-  const addToWishlist = useAddToWishlist();
-  const removeFromWishlist = useRemoveFromWishlist();
+  const addToWishlist = useAddToWishlistNew();
+  const removeFromWishlist = useRemoveFromWishlistNew();
+  const { data: isInWishlist } = useIsInWishlistNew(productId!);
   const { user } = useAuth();
 
 
@@ -47,7 +48,11 @@ const ProductPage = () => {
 
   const handleToggleWishlist = () => {
     if (user && product) {
-      addToWishlist.mutate(product.id);
+      if (isInWishlist) {
+        removeFromWishlist.mutate(product.id);
+      } else {
+        addToWishlist.mutate(product.id);
+      }
     }
   };
 
@@ -220,8 +225,9 @@ const ProductPage = () => {
                     size="lg"
                     onClick={handleToggleWishlist}
                     className="px-6"
+                    disabled={addToWishlist.isPending || removeFromWishlist.isPending}
                   >
-                    <Heart className="w-5 h-5" />
+                    <Heart className={`w-5 h-5 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
                   </Button>
                 )}
                 <Button variant="outline" size="lg" className="px-6">

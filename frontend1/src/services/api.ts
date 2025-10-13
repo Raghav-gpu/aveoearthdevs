@@ -776,50 +776,117 @@ export const reviewsApi = {
 // Wishlist API
 export const wishlistApi = {
   async getByUserId(userId: string) {
-    const { data, error } = await supabase
-      .from('wishlist')
-      .select(`
-        *,
-        products(*)
-      `)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+    try {
+      console.log('🔄 Fetching wishlist for user:', userId)
+      
+      const { data, error } = await supabase
+        .from('wishlist')
+        .select(`
+          *,
+          products(*)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
 
-    if (error) throw error
-    return data || []
+      if (error) {
+        console.error('❌ Error fetching wishlist:', error)
+        throw error
+      }
+      
+      console.log('✅ Wishlist fetched successfully:', data?.length || 0, 'items')
+      return data || []
+    } catch (error) {
+      console.error('❌ Wishlist fetch failed:', error)
+      throw error
+    }
   },
 
   async add(userId: string, productId: string) {
-    const { data, error } = await supabase
-      .from('wishlist')
-      .insert({ user_id: userId, product_id: productId })
-      .select()
-      .single()
+    try {
+      console.log('🔄 Adding to wishlist:', { userId, productId })
+      
+      // First check if item already exists in wishlist
+      const { data: existingItem, error: checkError } = await supabase
+        .from('wishlist')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('product_id', productId)
+        .single()
 
-    if (error) throw error
-    return data
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('❌ Error checking existing wishlist item:', checkError)
+        throw checkError
+      }
+
+      if (existingItem) {
+        console.log('⚠️ Item already in wishlist, skipping add')
+        return existingItem
+      }
+      
+      const { data, error } = await supabase
+        .from('wishlist')
+        .insert({ user_id: userId, product_id: productId })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Error adding to wishlist:', error)
+        throw error
+      }
+      
+      console.log('✅ Added to wishlist successfully:', data)
+      return data
+    } catch (error) {
+      console.error('❌ Add to wishlist failed:', error)
+      throw error
+    }
   },
 
   async remove(userId: string, productId: string) {
-    const { error } = await supabase
-      .from('wishlist')
-      .delete()
-      .eq('user_id', userId)
-      .eq('product_id', productId)
+    try {
+      console.log('🔄 Removing from wishlist:', { userId, productId })
+      
+      const { error } = await supabase
+        .from('wishlist')
+        .delete()
+        .eq('user_id', userId)
+        .eq('product_id', productId)
 
-    if (error) throw error
+      if (error) {
+        console.error('❌ Error removing from wishlist:', error)
+        throw error
+      }
+      
+      console.log('✅ Removed from wishlist successfully')
+    } catch (error) {
+      console.error('❌ Remove from wishlist failed:', error)
+      throw error
+    }
   },
 
   async isInWishlist(userId: string, productId: string) {
-    const { data, error } = await supabase
-      .from('wishlist')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('product_id', productId)
-      .single()
+    try {
+      console.log('🔄 Checking if in wishlist:', { userId, productId })
+      
+      const { data, error } = await supabase
+        .from('wishlist')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('product_id', productId)
+        .single()
 
-    if (error && error.code !== 'PGRST116') throw error
-    return !!data
+      if (error && error.code !== 'PGRST116') {
+        console.error('❌ Error checking wishlist status:', error)
+        throw error
+      }
+      
+      const isInWishlist = !!data
+      console.log('✅ Wishlist check result:', isInWishlist)
+      return isInWishlist
+    } catch (error) {
+      console.error('❌ Wishlist check failed:', error)
+      throw error
+    }
   }
 }
 

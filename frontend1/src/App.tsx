@@ -14,7 +14,7 @@ import CartPage from "./pages/CartPage";
 import ProfilePage from "./pages/ProfilePage";
 import LoginPage from "./pages/LoginPage";
 import OrdersPage from "./pages/OrdersPage";
-import WishlistPage from "./pages/WishlistPage";
+import WishlistPageNew from "./pages/WishlistPageNew";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import Layout from "./components/Layout";
@@ -24,11 +24,14 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
 import CheckoutPage from "./pages/CheckoutPage.tsx";
 import CommunityPage from "./pages/CommunityPage.tsx";
 import SearchResultsPage from "./pages/SearchResultsPage";
-import VendorPage from "./pages/VendorPage";
-import VendorDashboard from "./pages/VendorDashboard";
-import VendorProducts from "./pages/VendorProducts";
-import VendorOrders from "./pages/VendorOrders";
-import VendorAnalytics from "./pages/VendorAnalytics";
+import VendorLoginPage from "./pages/VendorLoginPage";
+import VendorOnboardingPage from "./pages/VendorOnboardingPage";
+import VendorDashboardPage from "./pages/VendorDashboardPage";
+import VendorProductsPage from "./pages/VendorProductsPage";
+import VendorOrdersPage from "./pages/VendorOrdersPage";
+import VendorAnalyticsPage from "./pages/VendorAnalyticsPage";
+import VendorLayout from "./components/VendorLayout";
+import DebugAuth from "./components/DebugAuth";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,7 +65,7 @@ const App = () => (
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="login" element={<LoginPage />} />
                 <Route path="orders" element={<OrdersPage />} />
-                <Route path="wishlist" element={<WishlistPage />} />
+                <Route path="wishlist" element={<WishlistPageNew />} />
                 <Route path="about" element={<AboutPage />} />
                 <Route path="contact" element={<ContactPage />} />
                 <Route path="checkout" element={<CheckoutPage />} />
@@ -72,13 +75,17 @@ const App = () => (
                 <Route path="forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
-              {/* Vendor Routes - No Layout */}
-              <Route path="vendor" element={<VendorPage />} />
-              <Route path="vendor/dashboard" element={<VendorDashboard />} />
-              <Route path="vendor/products" element={<VendorProducts />} />
-              <Route path="vendor/orders" element={<VendorOrders />} />
-              <Route path="vendor/analytics" element={<VendorAnalytics />} />
+              {/* Vendor Routes */}
+              <Route path="vendor" element={<VendorLoginPage />} />
+              <Route path="vendor/onboarding" element={<VendorOnboardingPage />} />
+              <Route path="vendor" element={<VendorLayout />}>
+                <Route path="dashboard" element={<VendorDashboardPage />} />
+                <Route path="products" element={<VendorProductsPage />} />
+                <Route path="orders" element={<VendorOrdersPage />} />
+                <Route path="analytics" element={<VendorAnalyticsPage />} />
+              </Route>
             </Routes>
+            <DebugAuth />
           </SearchProvider>
         </BrowserRouter>
       </TooltipProvider>

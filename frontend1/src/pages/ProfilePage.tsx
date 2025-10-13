@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -37,12 +37,29 @@ const ProfilePage = () => {
     address: '',
     city: '',
     state: '',
-    zipCode: ''
+    zip_code: '',
+    alternate_address: ''
   });
 
-  const { user, updateProfile, signOut } = useAuth();
+  const { user, userProfile, updateProfile, signOut, loadUserProfile } = useAuth();
   const { getTotalItems } = useCart();
   const { data: wishlist } = useWishlist();
+
+  // Load profile data when userProfile changes
+  useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        name: userProfile.name || '',
+        email: userProfile.email || '',
+        phone: userProfile.phone || '',
+        address: userProfile.address || '',
+        city: userProfile.city || '',
+        state: userProfile.state || '',
+        zip_code: userProfile.zip_code || '',
+        alternate_address: userProfile.alternate_address || ''
+      });
+    }
+  }, [userProfile]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,10 +68,19 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     try {
-      await updateProfile(formData);
-      setIsEditing(false);
+      console.log('🔄 Saving profile with data:', formData);
+      const { error } = await updateProfile(formData);
+      if (error) {
+        console.error('❌ Error updating profile:', error);
+        alert(`Failed to update profile: ${error.message || 'Unknown error'}`);
+      } else {
+        console.log('✅ Profile updated successfully');
+        setIsEditing(false);
+        alert('Profile updated successfully!');
+      }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('❌ Exception updating profile:', error);
+      alert(`Failed to update profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -73,6 +99,24 @@ const ProfilePage = () => {
           <User className="w-16 h-16 text-muted-foreground mx-auto" />
           <h2 className="text-2xl font-semibold text-charcoal">Please Sign In</h2>
           <p className="text-muted-foreground">You need to be signed in to view your profile.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <User className="w-16 h-16 text-muted-foreground mx-auto animate-pulse" />
+          <h2 className="text-2xl font-semibold text-charcoal">Loading Profile...</h2>
+          <p className="text-muted-foreground">Please wait while we load your profile data.</p>
+          <button 
+            onClick={() => loadUserProfile()}
+            className="px-4 py-2 bg-forest text-white rounded-lg hover:bg-moss transition-colors"
+          >
+            Retry Loading Profile
+          </button>
         </div>
       </div>
     );
@@ -106,7 +150,7 @@ const ProfilePage = () => {
                 <div className="text-center space-y-4">
                   <div className="relative inline-block">
                     <div className="w-20 h-20 bg-gradient-moss rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                      {user.name?.charAt(0) || 'U'}
+                      {userProfile.name?.charAt(0) || 'U'}
                     </div>
                     <Button
                       size="sm"
@@ -117,14 +161,14 @@ const ProfilePage = () => {
                   </div>
                   
                   <div>
-                    <h3 className="font-semibold text-charcoal">{user.name || 'User'}</h3>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <h3 className="font-semibold text-charcoal">{userProfile.name || 'User'}</h3>
+                    <p className="text-sm text-muted-foreground">{userProfile.email}</p>
                   </div>
 
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Member since</span>
-                      <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                      <span>{new Date(userProfile.created_at).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Orders</span>
@@ -205,7 +249,7 @@ const ProfilePage = () => {
                         <Input
                           id="name"
                           name="name"
-                          value={isEditing ? formData.name : user.name || ''}
+                          value={isEditing ? formData.name : userProfile.name || ''}
                           onChange={handleInputChange}
                           disabled={!isEditing}
                         />
@@ -216,7 +260,7 @@ const ProfilePage = () => {
                           id="email"
                           name="email"
                           type="email"
-                          value={user.email || ''}
+                          value={userProfile.email || ''}
                           disabled
                         />
                       </div>
@@ -225,7 +269,7 @@ const ProfilePage = () => {
                         <Input
                           id="phone"
                           name="phone"
-                          value={isEditing ? formData.phone : ''}
+                          value={isEditing ? formData.phone : userProfile.phone || ''}
                           onChange={handleInputChange}
                           disabled={!isEditing}
                         />
@@ -235,7 +279,7 @@ const ProfilePage = () => {
                         <Input
                           id="address"
                           name="address"
-                          value={isEditing ? formData.address : ''}
+                          value={isEditing ? formData.address : userProfile.address || ''}
                           onChange={handleInputChange}
                           disabled={!isEditing}
                         />
@@ -245,7 +289,7 @@ const ProfilePage = () => {
                         <Input
                           id="city"
                           name="city"
-                          value={isEditing ? formData.city : ''}
+                          value={isEditing ? formData.city : userProfile.city || ''}
                           onChange={handleInputChange}
                           disabled={!isEditing}
                         />
@@ -255,9 +299,35 @@ const ProfilePage = () => {
                         <Input
                           id="state"
                           name="state"
-                          value={isEditing ? formData.state : ''}
+                          value={isEditing ? formData.state : userProfile.state || ''}
                           onChange={handleInputChange}
                           disabled={!isEditing}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="zip_code">ZIP Code</Label>
+                        <Input
+                          id="zip_code"
+                          name="zip_code"
+                          value={isEditing ? formData.zip_code : userProfile.zip_code || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Alternate Address Section */}
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <h4 className="text-lg font-semibold text-charcoal mb-4">Alternate Address</h4>
+                      <div className="space-y-2">
+                        <Label htmlFor="alternate_address">Alternate Address</Label>
+                        <Input
+                          id="alternate_address"
+                          name="alternate_address"
+                          value={isEditing ? formData.alternate_address : userProfile.alternate_address || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          placeholder="Enter alternate address (optional)"
                         />
                       </div>
                     </div>

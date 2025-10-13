@@ -7,6 +7,7 @@ import { useSearch } from '@/contexts/SearchContext';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import SearchAutocomplete from './SearchAutocomplete';
+import logoImage from '@/assets/logo.webp';
 import {
   Search,
   ShoppingCart,
@@ -71,15 +72,18 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-moss rounded-xl flex items-center justify-center">
-                <Leaf className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
+                <img 
+                  src={logoImage} 
+                  alt="AveoEarth Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
                 <h1 className="text-xl font-headline font-bold text-charcoal">
                   AveoEarth
                 </h1>
                 <div className="text-xs text-moss">Sustainable Marketplace</div>
-                
               </div>
             </Link>
 

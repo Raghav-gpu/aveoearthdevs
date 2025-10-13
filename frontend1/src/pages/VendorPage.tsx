@@ -30,7 +30,12 @@ const VendorPage = () => {
   });
 
   const handleChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    console.log('handleChange called:', field, value);
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log('New form data:', newData);
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,6 +43,26 @@ const VendorPage = () => {
     try {
       if (mode === 'register') {
         // Validate form data
+        if (!formData.businessName.trim()) {
+          alert('Please enter your business name!');
+          return;
+        }
+        if (!formData.contactPerson.trim()) {
+          alert('Please enter your contact person name!');
+          return;
+        }
+        if (!formData.phone.trim()) {
+          alert('Please enter your phone number!');
+          return;
+        }
+        if (!formData.email.trim()) {
+          alert('Please enter your email address!');
+          return;
+        }
+        if (!formData.password.trim()) {
+          alert('Please enter a password!');
+          return;
+        }
         if (formData.password !== formData.confirmPassword) {
           alert('Passwords do not match!');
           return;
@@ -51,7 +76,7 @@ const VendorPage = () => {
         alert('Registration successful! Please login with your credentials.');
         setMode('login');
         setFormData({
-          email: '',
+          email: formData.email, // Keep email for convenience
           password: '',
           confirmPassword: '',
           businessName: '',
@@ -68,6 +93,8 @@ const VendorPage = () => {
         localStorage.setItem('vendorSession', JSON.stringify({
           email: formData.email,
           businessName: formData.businessName || 'Demo Business',
+          contactPerson: formData.contactPerson || 'Demo Contact',
+          phone: formData.phone || '+1 (555) 123-4567',
           loginTime: new Date().toISOString()
         }));
         
@@ -82,10 +109,12 @@ const VendorPage = () => {
     }
   };
 
+  console.log('Current form data:', formData);
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-forest/5 via-moss/10 to-clay/5 relative overflow-hidden">
       {/* Enhanced Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-forest/20 to-moss/10 rounded-full blur-3xl animate-float-gentle"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-moss/20 to-clay/10 rounded-full blur-3xl animate-float-gentle" style={{ animationDelay: '2s' }}></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-clay/10 to-forest/5 rounded-full blur-3xl animate-pulse-slow"></div>
@@ -132,7 +161,7 @@ const VendorPage = () => {
 
         {/* Enhanced Auth Form */}
         <Card className="bg-white/95 backdrop-blur-md border-forest/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-forest/5 to-moss/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-forest/5 to-moss/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
           <CardHeader className="pb-4 relative z-10">
             <CardTitle className="text-center text-2xl font-bold text-forest bg-gradient-to-r from-forest to-moss bg-clip-text text-transparent">
               {mode === 'login' ? 'Sign In' : 'Get Started'}
@@ -168,14 +197,14 @@ const VendorPage = () => {
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="businessName" className="text-forest font-semibold">
-                      Business Name
+                      Business Name *
                     </Label>
-                    <Input
+                    <input
                       id="businessName"
                       type="text"
                       value={formData.businessName}
                       onChange={(e) => handleChange('businessName', e.target.value)}
-                      className="border-forest/20 focus:border-forest focus:ring-forest/20"
+                      className="w-full px-4 py-3 border-2 border-forest/20 focus:border-forest focus:ring-4 focus:ring-forest/20 rounded-xl text-lg transition-all duration-300 hover:border-forest/40"
                       placeholder="Enter your business name"
                       required
                     />
@@ -183,14 +212,14 @@ const VendorPage = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="contactPerson" className="text-forest font-semibold">
-                      Contact Person
+                      Contact Person *
                     </Label>
                     <Input
                       id="contactPerson"
                       type="text"
                       value={formData.contactPerson}
                       onChange={(e) => handleChange('contactPerson', e.target.value)}
-                      className="border-forest/20 focus:border-forest focus:ring-forest/20"
+                      className="border-2 border-forest/20 focus:border-forest focus:ring-4 focus:ring-forest/20 rounded-xl py-3 px-4 text-lg transition-all duration-300 hover:border-forest/40"
                       placeholder="Your full name"
                       required
                     />
@@ -198,14 +227,14 @@ const VendorPage = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="text-forest font-semibold">
-                      Phone Number
+                      Phone Number *
                     </Label>
                     <Input
                       id="phone"
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
-                      className="border-forest/20 focus:border-forest focus:ring-forest/20"
+                      className="border-2 border-forest/20 focus:border-forest focus:ring-4 focus:ring-forest/20 rounded-xl py-3 px-4 text-lg transition-all duration-300 hover:border-forest/40"
                       placeholder="+1 (555) 123-4567"
                       required
                     />
@@ -215,14 +244,14 @@ const VendorPage = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-forest font-semibold">
-                  Email Address
+                  Email Address *
                 </Label>
-                <Input
+                <input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
-                  className="border-forest/20 focus:border-forest focus:ring-forest/20"
+                  className="w-full px-4 py-3 border-2 border-forest/20 focus:border-forest focus:ring-4 focus:ring-forest/20 rounded-xl text-lg transition-all duration-300 hover:border-forest/40"
                   placeholder="vendor@business.com"
                   required
                 />
@@ -230,14 +259,14 @@ const VendorPage = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-forest font-semibold">
-                  Password
+                  Password *
                 </Label>
-                <Input
+                <input
                   id="password"
                   type="password"
                   value={formData.password}
                   onChange={(e) => handleChange('password', e.target.value)}
-                  className="border-forest/20 focus:border-forest focus:ring-forest/20"
+                  className="w-full px-4 py-3 border-2 border-forest/20 focus:border-forest focus:ring-4 focus:ring-forest/20 rounded-xl text-lg transition-all duration-300 hover:border-forest/40"
                   placeholder="Create a secure password"
                   required
                 />
@@ -246,14 +275,14 @@ const VendorPage = () => {
               {mode === 'register' && (
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword" className="text-forest font-semibold">
-                    Confirm Password
+                    Confirm Password *
                   </Label>
                   <Input
                     id="confirmPassword"
                     type="password"
                     value={formData.confirmPassword}
                     onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                    className="border-forest/20 focus:border-forest focus:ring-forest/20"
+                    className="border-2 border-forest/20 focus:border-forest focus:ring-4 focus:ring-forest/20 rounded-xl py-3 px-4 text-lg transition-all duration-300 hover:border-forest/40"
                     placeholder="Confirm your password"
                     required
                   />
@@ -261,20 +290,20 @@ const VendorPage = () => {
               )}
 
               {mode === 'register' && (
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-3 p-4 rounded-xl bg-forest/5 border border-forest/20">
                   <Checkbox
                     id="terms"
                     checked={formData.agreeToTerms}
                     onCheckedChange={(checked) => handleChange('agreeToTerms', checked as boolean)}
-                    className="mt-1"
+                    className="mt-1 h-5 w-5 text-forest border-2 border-forest/30 focus:ring-forest/20 focus:ring-4"
                   />
-                  <Label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed">
+                  <Label htmlFor="terms" className="text-sm text-forest leading-relaxed font-medium">
                     I agree to the{' '}
-                    <Link to="/vendor/terms" className="text-forest hover:text-moss font-semibold">
+                    <Link to="/vendor/terms" className="text-forest hover:text-moss font-semibold underline decoration-2 underline-offset-2 hover:decoration-moss transition-all duration-300">
                       Terms of Service
                     </Link>{' '}
                     and{' '}
-                    <Link to="/vendor/privacy" className="text-forest hover:text-moss font-semibold">
+                    <Link to="/vendor/privacy" className="text-forest hover:text-moss font-semibold underline decoration-2 underline-offset-2 hover:decoration-moss transition-all duration-300">
                       Privacy Policy
                     </Link>
                   </Label>
@@ -321,7 +350,7 @@ const VendorPage = () => {
         {/* Enhanced Benefits Section for Registration */}
         {mode === 'register' && (
           <Card className="mt-8 bg-white/95 backdrop-blur-md border-forest/20 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 group relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-moss/5 to-clay/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-moss/5 to-clay/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             <CardContent className="p-6 relative z-10">
               <h3 className="font-bold text-xl text-forest mb-6 text-center bg-gradient-to-r from-forest to-moss bg-clip-text text-transparent">Why Sell on AveoEarth?</h3>
               <div className="space-y-4">

@@ -20,7 +20,12 @@ export const useAddToWishlist = () => {
   const { toast } = useToast()
   
   return useMutation({
-    mutationFn: (productId: string) => wishlistApi.add(user!.id, productId),
+    mutationFn: (productId: string) => {
+      if (!user) {
+        throw new Error('User must be logged in to add items to wishlist')
+      }
+      return wishlistApi.add(user.id, productId)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] })
       toast({
@@ -29,10 +34,11 @@ export const useAddToWishlist = () => {
         duration: 3000,
       })
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('❌ Add to wishlist error:', error)
       toast({
         title: "Error",
-        description: "Failed to add item to wishlist. Please try again.",
+        description: error.message || "Failed to add item to wishlist. Please try again.",
         variant: "destructive",
       })
     },
@@ -45,7 +51,12 @@ export const useRemoveFromWishlist = () => {
   const { toast } = useToast()
   
   return useMutation({
-    mutationFn: (productId: string) => wishlistApi.remove(user!.id, productId),
+    mutationFn: (productId: string) => {
+      if (!user) {
+        throw new Error('User must be logged in to remove items from wishlist')
+      }
+      return wishlistApi.remove(user.id, productId)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] })
       toast({
@@ -54,10 +65,11 @@ export const useRemoveFromWishlist = () => {
         duration: 3000,
       })
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('❌ Remove from wishlist error:', error)
       toast({
         title: "Error",
-        description: "Failed to remove item from wishlist. Please try again.",
+        description: error.message || "Failed to remove item from wishlist. Please try again.",
         variant: "destructive",
       })
     },

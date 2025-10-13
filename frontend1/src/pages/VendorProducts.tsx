@@ -175,69 +175,7 @@ const VendorProducts = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-forest/5 via-moss/10 to-clay/5 relative overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-forest/10 rounded-full blur-3xl animate-float-gentle"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-moss/10 rounded-full blur-3xl animate-float-gentle" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-clay/5 rounded-full blur-3xl animate-pulse-slow"></div>
-      </div>
-
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-screen w-64 bg-white/95 backdrop-blur-md border-r border-forest/30 shadow-2xl z-[100] flex flex-col pb-20">
-        {/* Logo Section */}
-        <div className="flex items-center gap-3 px-6 py-6">
-          <div className="w-10 h-10 bg-forest rounded-2xl flex items-center justify-center">
-            <Package className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <span className="font-bold text-xl text-forest">AveoEarth</span>
-            <span className="text-sm text-moss ml-2 font-medium">Vendor Portal</span>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex-1 px-4">
-          <nav className="space-y-2">
-            <Link to="/vendor/products" className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-forest text-white shadow-lg">
-              <Package className="w-5 h-5" />
-              <span className="font-semibold">Products</span>
-            </Link>
-            <Link to="/vendor/analytics" className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-forest hover:bg-forest/10 hover:text-moss transition-all duration-300">
-              <BarChart3 className="w-5 h-5" />
-              <span className="font-semibold">Analytics</span>
-            </Link>
-            <Link to="/vendor/dashboard" className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-forest hover:bg-forest/10 hover:text-moss transition-all duration-300">
-              <BarChart3 className="w-5 h-5" />
-              <span className="font-semibold">Dashboard</span>
-            </Link>
-          </nav>
-        </div>
-
-        {/* User Section */}
-        <div className="p-4 border-t border-forest/20">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-forest/10">
-            <div className="w-10 h-10 bg-forest rounded-full flex items-center justify-center">
-              <span className="text-white font-bold">{vendor?.businessName?.charAt(0) || 'V'}</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-semibold text-forest">{vendor?.businessName || 'Vendor'}</div>
-              <div className="text-sm text-muted-foreground">{vendor?.email || 'vendor@example.com'}</div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={signOut}
-              className="text-forest hover:text-moss hover:bg-forest/20 p-2"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="ml-64 p-8 relative z-10">
+    <div className="p-8 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-fade-in-up">
           <div className="flex items-center gap-4">
@@ -419,7 +357,6 @@ const VendorProducts = () => {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 };
