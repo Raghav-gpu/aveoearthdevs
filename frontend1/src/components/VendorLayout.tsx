@@ -10,7 +10,8 @@ import {
   LogOut,
   Menu,
   X,
-  Leaf
+  Leaf,
+  User
 } from 'lucide-react';
 
 const VendorLayout = () => {
@@ -23,7 +24,8 @@ const VendorLayout = () => {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, href: '/vendor/dashboard' },
     { id: 'products', label: 'Products', icon: Package, href: '/vendor/products' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/vendor/orders' },
-    { id: 'analytics', label: 'Analytics', icon: TrendingUp, href: '/vendor/analytics' }
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp, href: '/vendor/analytics' },
+    { id: 'profile', label: 'Profile', icon: User, href: '/vendor/profile' }
   ];
 
   const getCurrentTab = () => {
@@ -31,6 +33,7 @@ const VendorLayout = () => {
     if (path.includes('/products')) return 'products';
     if (path.includes('/orders')) return 'orders';
     if (path.includes('/analytics')) return 'analytics';
+    if (path.includes('/profile')) return 'profile';
     return 'dashboard';
   };
 
@@ -42,7 +45,7 @@ const VendorLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-forest/5 via-moss/10 to-clay/5 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-forest/5 via-moss/10 to-clay/5 relative overflow-hidden flex">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-forest/10 rounded-full blur-3xl animate-float-gentle"></div>
@@ -51,7 +54,7 @@ const VendorLayout = () => {
       </div>
 
       {/* Mobile Header */}
-      <div className="lg:hidden bg-white/95 backdrop-blur-md border-b border-forest/20 px-4 py-3 flex items-center justify-between relative z-50">
+      <div className="lg:hidden bg-white/95 backdrop-blur-md border-b border-forest/20 px-4 py-3 flex items-center justify-between relative z-50 fixed top-0 left-0 right-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-forest rounded-xl flex items-center justify-center">
             <Leaf className="w-5 h-5 text-white" />
@@ -142,8 +145,10 @@ const VendorLayout = () => {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-64 relative z-10">
-      <Outlet />
+      <div className="flex-1 lg:ml-0 relative z-10 overflow-auto">
+        <div className="pt-16 lg:pt-0">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

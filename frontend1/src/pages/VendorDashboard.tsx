@@ -29,25 +29,16 @@ const VendorDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated()) {
+    // For mock version, check if vendor exists in localStorage
+    const session = localStorage.getItem('vendorSession');
+    if (!session && !isAuthenticated()) {
       navigate('/vendor');
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-forest/5 via-moss/10 to-clay/5 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-forest rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Leaf className="w-8 h-8 text-white" />
-          </div>
-          <p className="text-forest text-lg">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated()) {
+  // For mock version, show dashboard if vendor session exists
+  const session = localStorage.getItem('vendorSession');
+  if (!session && !isAuthenticated()) {
     return null;
   }
 
@@ -159,7 +150,7 @@ const VendorDashboard = () => {
 
 
   return (
-    <div className="p-8 relative z-10">
+    <div className="p-6 lg:p-8 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-fade-in-up">
           <div>

@@ -1,482 +1,502 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useVendorAuth } from '@/hooks/useVendorAuth';
+import { vendorOrderService, OrderStats } from '@/services/vendorOrderService';
+import { vendorProductService } from '@/services/vendorProductService';
 import { 
-  BarChart3, 
   TrendingUp, 
-  TrendingDown,
-  DollarSign,
-  ShoppingCart,
-  Users,
-  Eye,
+  TrendingDown, 
+  DollarSign, 
+  ShoppingCart, 
+  Package, 
+  Users, 
+  Eye, 
   Star,
-  Package,
   Calendar,
-  Download,
-  Filter,
-  RefreshCw
+  BarChart3,
+  PieChart,
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight,
+  Leaf,
+  Zap
 } from 'lucide-react';
 
 const VendorAnalyticsPage = () => {
-  const [timeRange, setTimeRange] = useState('30d');
+  const { vendor, isAuthenticated } = useVendorAuth();
+  const [stats, setStats] = useState<OrderStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState('month');
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Mock data - in real app this would come from API
-  const overviewStats = {
-    totalRevenue: 125430,
-    totalOrders: 342,
-    totalCustomers: 189,
-    conversionRate: 3.2,
-    averageOrderValue: 366.75,
-    revenueChange: 12.5,
-    ordersChange: -2.1,
-    customersChange: 8.3,
-    conversionChange: 0.8
-  };
+  // Mock data for charts and detailed analytics
+  const [salesData, setSalesData] = useState([
+    { month: 'Jan', sales: 45000, orders: 23 },
+    { month: 'Feb', sales: 52000, orders: 28 },
+    { month: 'Mar', sales: 48000, orders: 25 },
+    { month: 'Apr', sales: 61000, orders: 32 },
+    { month: 'May', sales: 55000, orders: 29 },
+    { month: 'Jun', sales: 67000, orders: 35 },
+  ]);
 
-  const salesData = [
-    { month: 'Jan', revenue: 8500, orders: 45 },
-    { month: 'Feb', revenue: 9200, orders: 52 },
-    { month: 'Mar', revenue: 10800, orders: 61 },
-    { month: 'Apr', revenue: 12500, orders: 68 },
-    { month: 'May', revenue: 14200, orders: 78 },
-    { month: 'Jun', revenue: 15800, orders: 89 },
-    { month: 'Jul', revenue: 17200, orders: 95 },
-    { month: 'Aug', revenue: 18900, orders: 102 },
-    { month: 'Sep', revenue: 20100, orders: 108 },
-    { month: 'Oct', revenue: 22500, orders: 115 },
-    { month: 'Nov', revenue: 24800, orders: 125 },
-    { month: 'Dec', revenue: 27200, orders: 135 }
-  ];
+  const [topProducts] = useState([
+    { name: 'Organic Bamboo Sheets', sales: 234, revenue: 58466, growth: 12.5 },
+    { name: 'Eco Water Bottle', sales: 189, revenue: 24611, growth: 8.2 },
+    { name: 'Sustainable Tote Bag', sales: 156, revenue: 12444, growth: 15.3 },
+    { name: 'Recycled Notebook', sales: 142, revenue: 8520, growth: -2.1 },
+    { name: 'Bamboo Cutlery Set', sales: 128, revenue: 10240, growth: 6.7 },
+  ]);
 
-  const topProducts = [
-    {
-      name: 'Organic Cotton T-Shirt',
-      sales: 125,
-      revenue: 3748.75,
-      growth: 15.2,
-      rating: 4.8,
-      reviews: 23,
-      sustainability: 95
-    },
-    {
-      name: 'Bamboo Water Bottle',
-      sales: 89,
-      revenue: 2224.11,
-      growth: 8.7,
-      rating: 4.6,
-      reviews: 18,
-      sustainability: 98
-    },
-    {
-      name: 'Eco-Friendly Skincare Set',
-      sales: 45,
-      revenue: 4049.55,
-      growth: -3.1,
-      rating: 4.9,
-      reviews: 31,
-      sustainability: 92
-    },
-    {
-      name: 'Recycled Paper Notebook',
-      sales: 78,
-      revenue: 1013.22,
-      growth: 22.4,
-      rating: 4.4,
-      reviews: 12,
-      sustainability: 88
-    },
-    {
-      name: 'Solar-Powered Phone Charger',
-      sales: 32,
-      revenue: 1599.68,
-      growth: 45.6,
-      rating: 4.7,
-      reviews: 15,
-      sustainability: 96
-    }
-  ];
+  const [categoryData] = useState([
+    { category: 'Home & Living', sales: 45000, percentage: 35 },
+    { category: 'Personal Care', sales: 32000, percentage: 25 },
+    { category: 'Fashion', sales: 28000, percentage: 22 },
+    { category: 'Food & Beverage', sales: 18000, percentage: 14 },
+    { category: 'Other', sales: 5000, percentage: 4 },
+  ]);
 
-  const customerInsights = {
-    newCustomers: 45,
-    returningCustomers: 144,
-    customerRetention: 76.2,
-    averageLifetimeValue: 663.12,
-    topCustomerSegments: [
-      { segment: 'Eco-Conscious Millennials', percentage: 35, revenue: 43900 },
-      { segment: 'Sustainable Families', percentage: 28, revenue: 35120 },
-      { segment: 'Green Professionals', percentage: 22, revenue: 27595 },
-      { segment: 'Environmental Students', percentage: 15, revenue: 18815 }
-    ]
-  };
+  const [customerMetrics] = useState({
+    totalCustomers: 1247,
+    newCustomers: 89,
+    returningCustomers: 1158,
+    averageOrderValue: 2450,
+    customerLifetimeValue: 12500,
+    retentionRate: 78.5
+  });
 
-  const sustainabilityMetrics = {
-    carbonOffset: 1250,
+  const [sustainabilityMetrics] = useState({
+    carbonFootprintReduced: 1250, // kg CO2
+    wasteDiverted: 890, // kg
     treesPlanted: 45,
-    plasticSaved: 320,
-    waterSaved: 1800,
-    sustainableProducts: 28,
-    ecoCertifications: 5
+    plasticBottlesSaved: 2300,
+    energySaved: 450, // kWh
+    waterSaved: 1200 // liters
+  });
+
+  useEffect(() => {
+    // Load data immediately if vendor session exists (for mock version)
+    const session = localStorage.getItem('vendorSession');
+    if (session || vendor?.id) {
+      loadAnalytics();
+    }
+  }, [vendor, timeRange]);
+
+  const loadAnalytics = async () => {
+    // Use mock vendor ID if no vendor from auth
+    const vendorId = vendor?.id || 'mock-vendor-1';
+    
+    setIsLoading(true);
+    try {
+      // Simulate a quick load for mock data
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      const orderStats = await vendorOrderService.getOrderStats(vendorId, timeRange as any);
+      setStats(orderStats);
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'sales', label: 'Sales', icon: DollarSign },
-    { id: 'products', label: 'Products', icon: Package },
-    { id: 'customers', label: 'Customers', icon: Users },
-    { id: 'sustainability', label: 'Sustainability', icon: TrendingUp }
-  ];
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('en-IN').format(num);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-forest rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <BarChart3 className="w-8 h-8 text-white" />
+            </div>
+            <p className="text-forest text-lg">Loading analytics...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sage/5 via-background to-moss/5 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-headline font-bold text-charcoal">Analytics</h1>
-            <p className="text-charcoal/70">Track your performance and business insights</p>
+            <h1 className="text-3xl font-bold text-forest mb-2">Analytics Dashboard</h1>
+            <p className="text-muted-foreground">Track your business performance and insights</p>
           </div>
+          
           <div className="flex items-center gap-4">
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="px-4 py-2 border-2 border-forest/20 rounded-xl bg-white focus:border-forest focus:ring-4 focus:ring-forest/20"
-            >
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-              <option value="1y">Last year</option>
-            </select>
-            <Button variant="outline" className="border-2 border-forest/20 hover:border-forest hover:bg-forest/5 text-forest">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            <Button variant="outline" className="border-2 border-forest/20 hover:border-forest hover:bg-forest/5 text-forest">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Time Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="week">Last Week</SelectItem>
+                <SelectItem value="month">Last Month</SelectItem>
+                <SelectItem value="year">Last Year</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        {/* Tabs */}
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-2">
-            <div className="flex space-x-1">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <Button
-                    key={tab.id}
-                    variant={activeTab === tab.id ? 'default' : 'ghost'}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 ${
-                      activeTab === tab.id 
-                        ? 'bg-forest text-white' 
-                        : 'text-charcoal/70 hover:text-charcoal hover:bg-forest/5'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {tab.label}
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="sales">Sales</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="sustainability">Sustainability</TabsTrigger>
+          </TabsList>
 
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <>
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-charcoal/70">Total Revenue</p>
-                      <p className="text-2xl font-bold text-charcoal">${overviewStats.totalRevenue.toLocaleString()}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <TrendingUp className="w-4 h-4 text-forest" />
-                        <span className="text-sm text-forest font-medium">+{overviewStats.revenueChange}%</span>
-                      </div>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-br from-forest/10 to-forest/20 rounded-full flex items-center justify-center">
-                      <DollarSign className="w-6 h-6 text-forest" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-charcoal/70">Total Orders</p>
-                      <p className="text-2xl font-bold text-charcoal">{overviewStats.totalOrders}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <TrendingDown className="w-4 h-4 text-red-500" />
-                        <span className="text-sm text-red-500 font-medium">{overviewStats.ordersChange}%</span>
-                      </div>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-br from-sage/20 to-sage/30 rounded-full flex items-center justify-center">
-                      <ShoppingCart className="w-6 h-6 text-sage" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-charcoal/70">Total Customers</p>
-                      <p className="text-2xl font-bold text-charcoal">{overviewStats.totalCustomers}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <TrendingUp className="w-4 h-4 text-forest" />
-                        <span className="text-sm text-forest font-medium">+{overviewStats.customersChange}%</span>
-                      </div>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-br from-moss/20 to-moss/30 rounded-full flex items-center justify-center">
-                      <Users className="w-6 h-6 text-moss" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-charcoal/70">Conversion Rate</p>
-                      <p className="text-2xl font-bold text-charcoal">{overviewStats.conversionRate}%</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <TrendingUp className="w-4 h-4 text-forest" />
-                        <span className="text-sm text-forest font-medium">+{overviewStats.conversionChange}%</span>
-                      </div>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-br from-clay/20 to-clay/30 rounded-full flex items-center justify-center">
-                      <BarChart3 className="w-6 h-6 text-clay" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Revenue Chart */}
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-charcoal">
-                  <BarChart3 className="w-5 h-5 text-forest" />
-                  Revenue Trend
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-end justify-between gap-2">
-                  {salesData.map((data, index) => (
-                    <div key={index} className="flex-1 flex flex-col items-center">
-                      <div 
-                        className="w-full bg-gradient-to-t from-forest to-moss rounded-t-lg min-h-[20px]"
-                        style={{ height: `${(data.revenue / 30000) * 200}px` }}
-                      />
-                      <span className="text-xs text-charcoal/70 mt-2">{data.month}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {/* Products Tab */}
-        {activeTab === 'products' && (
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-charcoal">
-                <Package className="w-5 h-5 text-forest" />
-                Top Performing Products
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {topProducts.map((product, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border-2 border-forest/10 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-forest/10 to-forest/20 rounded-full flex items-center justify-center">
-                        <span className="font-bold text-forest">{index + 1}</span>
-                      </div>
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            <div className="space-y-6">
+              {/* Key Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-charcoal">{product.name}</h3>
-                        <div className="flex items-center gap-4 text-sm text-charcoal/70">
-                          <span>{product.sales} sales</span>
-                          <span>•</span>
-                          <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            <span>{product.rating}</span>
-                            <span>({product.reviews})</span>
-                          </div>
-                          <span>•</span>
-                          <span>{product.sustainability}% sustainable</span>
+                        <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                        <p className="text-2xl font-bold text-forest">
+                          {stats ? formatCurrency(stats.total_revenue) : '₹0'}
+                        </p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <ArrowUpRight className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-green-600">+12.5%</span>
                         </div>
                       </div>
+                      <DollarSign className="w-8 h-8 text-forest" />
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-charcoal">${product.revenue.toFixed(2)}</p>
-                      <div className="flex items-center gap-1">
-                        {product.growth > 0 ? (
-                          <TrendingUp className="w-4 h-4 text-forest" />
-                        ) : (
-                          <TrendingDown className="w-4 h-4 text-red-500" />
-                        )}
-                        <span className={`text-sm font-medium ${product.growth > 0 ? 'text-forest' : 'text-red-500'}`}>
-                          {product.growth > 0 ? '+' : ''}{product.growth}%
-                        </span>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                        <p className="text-2xl font-bold text-forest">
+                          {stats ? formatNumber(stats.total_orders) : '0'}
+                        </p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <ArrowUpRight className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-green-600">+8.2%</span>
+                        </div>
                       </div>
+                      <ShoppingCart className="w-8 h-8 text-forest" />
                     </div>
-                  </div>
-                ))}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Avg Order Value</p>
+                        <p className="text-2xl font-bold text-forest">
+                          {stats ? formatCurrency(stats.average_order_value) : '₹0'}
+                        </p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <ArrowUpRight className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-green-600">+5.3%</span>
+                        </div>
+                      </div>
+                      <TrendingUp className="w-8 h-8 text-forest" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Active Products</p>
+                        <p className="text-2xl font-bold text-forest">89</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <ArrowUpRight className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-green-600">+3</span>
+                        </div>
+                      </div>
+                      <Package className="w-8 h-8 text-forest" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Customers Tab */}
-        {activeTab === 'customers' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-charcoal">
-                  <Users className="w-5 h-5 text-forest" />
-                  Customer Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-forest/5 rounded-xl">
-                    <div>
-                      <p className="text-sm font-medium text-charcoal/70">New Customers</p>
-                      <p className="text-2xl font-bold text-charcoal">{customerInsights.newCustomers}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-br from-forest/10 to-forest/20 rounded-full flex items-center justify-center">
-                      <Users className="w-6 h-6 text-forest" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-sage/5 rounded-xl">
-                    <div>
-                      <p className="text-sm font-medium text-charcoal/70">Returning Customers</p>
-                      <p className="text-2xl font-bold text-charcoal">{customerInsights.returningCustomers}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-br from-sage/20 to-sage/30 rounded-full flex items-center justify-center">
-                      <RefreshCw className="w-6 h-6 text-sage" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-moss/5 rounded-xl">
-                    <div>
-                      <p className="text-sm font-medium text-charcoal/70">Retention Rate</p>
-                      <p className="text-2xl font-bold text-charcoal">{customerInsights.customerRetention}%</p>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-br from-moss/20 to-moss/30 rounded-full flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-moss" />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-charcoal">
-                  <BarChart3 className="w-5 h-5 text-forest" />
-                  Customer Segments
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {customerInsights.topCustomerSegments.map((segment, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-charcoal">{segment.segment}</span>
-                        <span className="text-sm text-charcoal/70">{segment.percentage}%</span>
-                      </div>
-                      <div className="w-full bg-forest/10 rounded-full h-2">
+              {/* Sales Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Sales Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80 flex items-end justify-between gap-2">
+                    {salesData.map((data, index) => (
+                      <div key={index} className="flex flex-col items-center gap-2 flex-1">
                         <div 
-                          className="bg-gradient-to-r from-forest to-moss h-2 rounded-full"
-                          style={{ width: `${segment.percentage}%` }}
+                          className="bg-gradient-to-t from-forest to-moss rounded-t w-full transition-all duration-500 hover:opacity-80"
+                          style={{ height: `${(data.sales / 70000) * 300}px` }}
                         />
+                        <span className="text-xs text-muted-foreground">{data.month}</span>
+                        <span className="text-xs font-medium">{formatCurrency(data.sales)}</span>
                       </div>
-                      <p className="text-xs text-charcoal/60">${segment.revenue.toLocaleString()} revenue</p>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Order Status Distribution */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <PieChart className="w-5 h-5" />
+                      Order Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {stats && [
+                        { label: 'Delivered', value: stats.delivered_orders, color: 'bg-green-500' },
+                        { label: 'Shipped', value: stats.shipped_orders, color: 'bg-blue-500' },
+                        { label: 'Processing', value: stats.processing_orders, color: 'bg-purple-500' },
+                        { label: 'Pending', value: stats.pending_orders, color: 'bg-yellow-500' },
+                        { label: 'Cancelled', value: stats.cancelled_orders, color: 'bg-red-500' },
+                      ].map((item, index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${item.color}`} />
+                            <span className="text-sm">{item.label}</span>
+                          </div>
+                          <span className="font-medium">{item.value}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                  </CardContent>
+                </Card>
 
-        {/* Sustainability Tab */}
-        {activeTab === 'sustainability' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-forest/5 to-moss/5">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-forest/10 to-forest/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-8 h-8 text-forest" />
-                </div>
-                <p className="text-3xl font-bold text-charcoal">{sustainabilityMetrics.carbonOffset}kg</p>
-                <p className="text-sm text-charcoal/70">CO₂ Offset</p>
-              </CardContent>
-            </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Customer Metrics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Total Customers</span>
+                        <span className="font-medium">{formatNumber(customerMetrics.totalCustomers)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">New This Month</span>
+                        <span className="font-medium">{customerMetrics.newCustomers}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Returning</span>
+                        <span className="font-medium">{customerMetrics.returningCustomers}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Retention Rate</span>
+                        <span className="font-medium">{customerMetrics.retentionRate}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Lifetime Value</span>
+                        <span className="font-medium">{formatCurrency(customerMetrics.customerLifetimeValue)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-sage/5 to-sage/10">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-sage/20 to-sage/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Package className="w-8 h-8 text-sage" />
-                </div>
-                <p className="text-3xl font-bold text-charcoal">{sustainabilityMetrics.treesPlanted}</p>
-                <p className="text-sm text-charcoal/70">Trees Planted</p>
-              </CardContent>
-            </Card>
+          {/* Sales Tab */}
+          <TabsContent value="sales">
+            <div className="space-y-6">
+              {/* Sales Performance */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sales Performance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-forest">
+                        {stats ? formatCurrency(stats.revenue_this_month) : '₹0'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">This Month</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-forest">
+                        {stats ? formatCurrency(stats.total_revenue) : '₹0'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Total Revenue</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-forest">
+                        {stats ? formatNumber(stats.orders_this_month) : '0'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Orders This Month</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-moss/5 to-moss/10">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-moss/20 to-moss/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="w-8 h-8 text-moss" />
-                </div>
-                <p className="text-3xl font-bold text-charcoal">{sustainabilityMetrics.plasticSaved}g</p>
-                <p className="text-sm text-charcoal/70">Plastic Saved</p>
-              </CardContent>
-            </Card>
+              {/* Revenue by Category */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenue by Category</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {categoryData.map((category, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">{category.category}</span>
+                          <span className="text-sm text-muted-foreground">{category.percentage}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-forest to-moss h-2 rounded-full transition-all duration-500"
+                            style={{ width: `${category.percentage}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{formatCurrency(category.sales)}</span>
+                          <span>{category.percentage}% of total</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-clay/5 to-clay/10">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-clay/20 to-clay/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-8 h-8 text-clay" />
-                </div>
-                <p className="text-3xl font-bold text-charcoal">{sustainabilityMetrics.waterSaved}L</p>
-                <p className="text-sm text-charcoal/70">Water Saved</p>
-              </CardContent>
-            </Card>
+          {/* Products Tab */}
+          <TabsContent value="products">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Performing Products</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {topProducts.map((product, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{product.name}</h4>
+                          <p className="text-sm text-muted-foreground">{product.sales} sales</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{formatCurrency(product.revenue)}</p>
+                          <div className="flex items-center gap-1">
+                            {product.growth > 0 ? (
+                              <ArrowUpRight className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <ArrowDownRight className="w-4 h-4 text-red-600" />
+                            )}
+                            <span className={`text-sm ${product.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {product.growth > 0 ? '+' : ''}{product.growth}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-forest/5 to-forest/10">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-forest/10 to-forest/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Package className="w-8 h-8 text-forest" />
-                </div>
-                <p className="text-3xl font-bold text-charcoal">{sustainabilityMetrics.sustainableProducts}</p>
-                <p className="text-sm text-charcoal/70">Sustainable Products</p>
-              </CardContent>
-            </Card>
+          {/* Sustainability Tab */}
+          <TabsContent value="sustainability">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Leaf className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                    <p className="text-2xl font-bold text-forest">{sustainabilityMetrics.carbonFootprintReduced} kg</p>
+                    <p className="text-sm text-muted-foreground">CO2 Reduced</p>
+                  </CardContent>
+                </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-sage/5 to-sage/10">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-sage/20 to-sage/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Star className="w-8 h-8 text-sage" />
-                </div>
-                <p className="text-3xl font-bold text-charcoal">{sustainabilityMetrics.ecoCertifications}</p>
-                <p className="text-sm text-charcoal/70">Eco Certifications</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Package className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+                    <p className="text-2xl font-bold text-forest">{sustainabilityMetrics.wasteDiverted} kg</p>
+                    <p className="text-sm text-muted-foreground">Waste Diverted</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Zap className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
+                    <p className="text-2xl font-bold text-forest">{sustainabilityMetrics.energySaved} kWh</p>
+                    <p className="text-sm text-muted-foreground">Energy Saved</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Activity className="w-12 h-12 text-purple-600 mx-auto mb-4" />
+                    <p className="text-2xl font-bold text-forest">{sustainabilityMetrics.treesPlanted}</p>
+                    <p className="text-sm text-muted-foreground">Trees Planted</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Package className="w-12 h-12 text-indigo-600 mx-auto mb-4" />
+                    <p className="text-2xl font-bold text-forest">{sustainabilityMetrics.plasticBottlesSaved}</p>
+                    <p className="text-sm text-muted-foreground">Plastic Bottles Saved</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Activity className="w-12 h-12 text-cyan-600 mx-auto mb-4" />
+                    <p className="text-2xl font-bold text-forest">{sustainabilityMetrics.waterSaved} L</p>
+                    <p className="text-sm text-muted-foreground">Water Saved</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Environmental Impact</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <div className="w-32 h-32 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-4xl font-bold text-white">95%</span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-forest mb-2">Sustainability Score</h3>
+                    <p className="text-muted-foreground">
+                      Your products are making a positive environmental impact
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
