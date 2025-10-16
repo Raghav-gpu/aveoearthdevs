@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/EnhancedAuthContext";
 import { SearchProvider } from "./contexts/SearchContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -32,6 +32,7 @@ import VendorOrdersPage from "./pages/VendorOrdersPage";
 import VendorAnalyticsPage from "./pages/VendorAnalyticsPage";
 import VendorLayout from "./components/VendorLayout";
 import DebugAuth from "./components/DebugAuth";
+import EnhancedChatBot from "./components/EnhancedChatBot";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,6 +87,7 @@ const App = () => (
               </Route>
             </Routes>
             <DebugAuth />
+            <EnhancedChatBot />
           </SearchProvider>
         </BrowserRouter>
       </TooltipProvider>

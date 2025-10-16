@@ -219,7 +219,9 @@ const AboutPage = () => {
                   <p className="text-muted-foreground">{value.description}</p>
                 </CardContent>
               </Card>
-            ))}
+            )
+          )
+        }
           </div>
         </div>
       </section>
