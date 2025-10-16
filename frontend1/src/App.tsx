@@ -30,6 +30,7 @@ import VendorDashboardPage from "./pages/VendorDashboardPage";
 import VendorProductsPage from "./pages/VendorProductsPage";
 import VendorOrdersPage from "./pages/VendorOrdersPage";
 import VendorAnalyticsPage from "./pages/VendorAnalyticsPage";
+import VendorProfilePage from "./pages/VendorProfilePage";
 import VendorLayout from "./components/VendorLayout";
 import DebugAuth from "./components/DebugAuth";
 import EnhancedChatBot from "./components/EnhancedChatBot";
@@ -84,6 +85,7 @@ const App = () => (
                 <Route path="products" element={<VendorProductsPage />} />
                 <Route path="orders" element={<VendorOrdersPage />} />
                 <Route path="analytics" element={<VendorAnalyticsPage />} />
+                <Route path="profile" element={<VendorProfilePage />} />
               </Route>
             </Routes>
             <DebugAuth />

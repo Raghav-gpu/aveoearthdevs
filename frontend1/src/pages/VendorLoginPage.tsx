@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/lib/supabase';
 import { 
   Building2, 
   User, 
@@ -28,6 +29,8 @@ import {
 const VendorLoginPage = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -40,24 +43,74 @@ const VendorLoginPage = () => {
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setError(''); // Clear error when user types
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // For mock version, create a vendor session directly
+      const vendorSession = {
+        id: 'mock-vendor-1',
+        email: formData.email,
+        businessName: 'EcoFriendly Store',
+        loginTime: new Date().toISOString()
+      };
+      
+      localStorage.setItem('vendorSession', JSON.stringify(vendorSession));
+      navigate('/vendor/dashboard');
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.agreeToTerms) {
+      setError('Please agree to the terms and conditions');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // For mock version, create a vendor session directly
+      const vendorSession = {
+        id: 'mock-vendor-1',
+        email: formData.email,
+        businessName: formData.businessName,
+        loginTime: new Date().toISOString()
+      };
+      
+      localStorage.setItem('vendorSession', JSON.stringify(vendorSession));
+      navigate('/vendor/onboarding');
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (mode === 'register') {
-        // Redirect to the detailed onboarding flow
-        navigate('/vendor/onboarding');
-        return;
-      }
-      
-      // Handle login
-      console.log('Vendor auth data:', formData);
-      
-      // For now, just redirect to dashboard
-      navigate('/vendor/dashboard');
-    } catch (error) {
-      console.error('Authentication failed:', error);
+    if (mode === 'login') {
+      await handleLogin(e);
+    } else {
+      await handleRegister(e);
     }
   };
 
@@ -129,6 +182,11 @@ const VendorLoginPage = () => {
               </TabsList>
 
               <TabsContent value="login" className="space-y-4 mt-6">
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+                    {error}
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-charcoal font-medium">
@@ -181,13 +239,18 @@ const VendorLoginPage = () => {
                     </Link>
                   </div>
 
-                  <Button type="submit" className="w-full h-12 btn-primary text-lg font-medium">
-                    Sign In
+                  <Button type="submit" disabled={isLoading} className="w-full h-12 btn-primary text-lg font-medium">
+                    {isLoading ? 'Signing In...' : 'Sign In'}
                   </Button>
                 </form>
               </TabsContent>
 
               <TabsContent value="register" className="space-y-4 mt-6">
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+                    {error}
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -322,8 +385,8 @@ const VendorLoginPage = () => {
                     </Label>
                   </div>
 
-                  <Button type="submit" className="w-full h-12 btn-primary text-lg font-medium">
-                    Start Registration Process
+                  <Button type="submit" disabled={isLoading} className="w-full h-12 btn-primary text-lg font-medium">
+                    {isLoading ? 'Creating Account...' : 'Start Registration Process'}
                   </Button>
                   
                   <div className="mt-4">
@@ -344,6 +407,99 @@ const VendorLoginPage = () => {
                   Contact Vendor Support
                 </Link>
               </p>
+              
+              {/* Test Account Button - Remove in production */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-4">
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          // Create mock vendor session
+                          const vendorSession = {
+                            id: 'mock-vendor-1',
+                            email: 'test@vendor.com',
+                            businessName: 'Test Vendor Store',
+                            loginTime: new Date().toISOString()
+                          };
+                          
+                          localStorage.setItem('vendorSession', JSON.stringify(vendorSession));
+                          alert('Test vendor created! Email: test@vendor.com, Password: any password');
+                          
+                          // Auto-fill the form
+                          setFormData(prev => ({
+                            ...prev,
+                            email: 'test@vendor.com',
+                            password: 'testpassword123'
+                          }));
+                        } catch (err) {
+                          console.error('Error:', err);
+                          alert('Error creating test vendor');
+                        }
+                      }}
+                      className="text-xs w-full"
+                    >
+                      Create Test Vendor Account
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const vendorSession = {
+                          id: 'mock-vendor-1',
+                          email: 'test@vendor.com',
+                          businessName: 'EcoFriendly Store',
+                          loginTime: new Date().toISOString()
+                        };
+                        localStorage.setItem('vendorSession', JSON.stringify(vendorSession));
+                        navigate('/vendor/dashboard');
+                      }}
+                      className="text-xs w-full bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                    >
+                      🚀 Quick Access to Dashboard
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const vendorSession = {
+                          id: 'mock-vendor-1',
+                          email: 'test@vendor.com',
+                          businessName: 'EcoFriendly Store',
+                          loginTime: new Date().toISOString()
+                        };
+                        localStorage.setItem('vendorSession', JSON.stringify(vendorSession));
+                        navigate('/vendor/products');
+                      }}
+                      className="text-xs w-full bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                    >
+                      📦 Go to Products
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const vendorSession = {
+                          id: 'mock-vendor-1',
+                          email: 'test@vendor.com',
+                          businessName: 'EcoFriendly Store',
+                          loginTime: new Date().toISOString()
+                        };
+                        localStorage.setItem('vendorSession', JSON.stringify(vendorSession));
+                        navigate('/vendor/orders');
+                      }}
+                      className="text-xs w-full bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
+                    >
+                      🛒 Go to Orders
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

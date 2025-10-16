@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Loader2
 } from 'lucide-react';
+import { mockVendorOnboardingService } from '@/services/mockVendorServices';
 
 // Import step components
 import OnboardingHeader from '@/components/vendor/onboarding/OnboardingHeader';
@@ -50,17 +51,17 @@ const VendorOnboardingPage = () => {
     business_address: '',
     is_msme_registered: false,
     website: '',
-    business_description: '',
+    description: '', // Changed from business_description to match frontend
     
-    // Document uploads
-    logo: null,
-    banner: null,
-    pan_card: null,
-    address_proof: null,
-    fssai_license: null,
-    trade_license: null,
-    msme_certificate: null,
-    other_document: null,
+    // Document uploads (8 types as per frontend)
+    logo: [],
+    banner: [],
+    pan_card: [],
+    address_proof: [],
+    fssai_license: [],
+    trade_license: [],
+    msme_certificate: [],
+    other_document: [],
     other_document_name: '',
     
     // Step 3 fields - Product Basic Info
@@ -78,18 +79,30 @@ const VendorOnboardingPage = () => {
     
     // Step 4 fields - Product Details & Inventory
     weight: 0,
-    dimensions: {},
+    dimensions: { length: 0, width: 0, height: 0 },
     materials: [],
     care_instructions: '',
     origin_country: '',
-    manufacturing_details: {},
+    manufacturing_details: { manufacturer: '', country: '', date: '' },
     track_quantity: true,
     continue_selling: true,
-    productVariants: [{ name: '', price: '', stockQuantity: '' }],
+    productVariants: [{ 
+      sku: '', 
+      title: '', 
+      price: 0, 
+      compare_at_price: 0, 
+      stock_quantity: 0,
+      option1_name: '',
+      option1_value: '',
+      option2_name: '',
+      option2_value: '',
+      option3_name: '',
+      option3_value: ''
+    }],
     
     // Step 5 fields - Sustainability Profile
     sustainability_practices: '',
-    sustainability_certificate: null
+    sustainability_certificate: []
   });
 
   // Check authentication and business status on mount
@@ -131,9 +144,35 @@ const VendorOnboardingPage = () => {
   const handleStep2Complete = async (hasExistingBusiness = false) => {
     try {
       console.log('Saving business profile...');
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setCurrentStep(3);
+      const businessData = {
+        business_name: formData.business_name,
+        legal_entity_type: formData.legal_entity_type,
+        pan_gst_number: formData.pan_gst_number,
+        bank_name: formData.bank_name,
+        bank_account_number: formData.bank_account_number,
+        ifsc_code: formData.ifsc_code,
+        business_address: formData.business_address,
+        is_msme_registered: formData.is_msme_registered,
+        website: formData.website,
+        description: formData.description,
+        documents: {
+          logo: formData.logo,
+          banner: formData.banner,
+          pan_card: formData.pan_card,
+          address_proof: formData.address_proof,
+          fssai_license: formData.fssai_license,
+          trade_license: formData.trade_license,
+          msme_certificate: formData.msme_certificate,
+          other_document: formData.other_document
+        }
+      };
+      
+      const result = await mockVendorOnboardingService.saveBusinessProfile(businessData);
+      if (result.success) {
+        setCurrentStep(3);
+      } else {
+        alert('Failed to save business information');
+      }
     } catch (error) {
       console.error('Failed to save business data:', error);
       alert('Failed to save business information: ' + error.message);
@@ -144,9 +183,26 @@ const VendorOnboardingPage = () => {
   const handleStep3Complete = async () => {
     try {
       console.log('Creating product...');
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setCurrentStep(4);
+      const productData = {
+        name: formData.name,
+        sku: formData.sku,
+        short_description: formData.short_description,
+        description: formData.description,
+        category_id: formData.category_id,
+        brand_id: formData.brand_id,
+        price: formData.price,
+        compare_at_price: formData.compare_at_price,
+        cost_per_item: formData.cost_per_item,
+        tags: formData.tags,
+        images: formData.images
+      };
+      
+      const result = await mockVendorOnboardingService.createProduct(productData);
+      if (result.success) {
+        setCurrentStep(4);
+      } else {
+        alert('Failed to create product');
+      }
     } catch (error) {
       console.error('Failed to create product:', error);
       alert('Failed to create product: ' + error.message);
@@ -157,9 +213,25 @@ const VendorOnboardingPage = () => {
   const handleStep4Complete = async () => {
     try {
       console.log('Setting up inventory...');
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setCurrentStep(5);
+      const inventoryData = {
+        weight: formData.weight,
+        dimensions: formData.dimensions,
+        materials: formData.materials,
+        care_instructions: formData.care_instructions,
+        origin_country: formData.origin_country,
+        manufacturing_details: formData.manufacturing_details,
+        track_quantity: formData.track_quantity,
+        continue_selling: formData.continue_selling,
+        variants: formData.productVariants
+      };
+      
+      // Save inventory data and create variants
+      const result = await mockVendorOnboardingService.createVariants('current-product', formData.productVariants);
+      if (result.success) {
+        setCurrentStep(5);
+      } else {
+        alert('Failed to complete inventory setup');
+      }
     } catch (error) {
       console.error('Failed to complete inventory setup:', error);
       alert('Failed to complete inventory setup: ' + error.message);
@@ -170,10 +242,24 @@ const VendorOnboardingPage = () => {
   const handleStep5Complete = async () => {
     try {
       console.log('Saving sustainability profile...');
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Onboarding completed successfully! Redirecting to your dashboard...');
-      navigate('/vendor/dashboard');
+      const sustainabilityData = {
+        sustainability_practices: formData.sustainability_practices,
+        sustainability_certificate: formData.sustainability_certificate
+      };
+      
+      const result = await mockVendorOnboardingService.saveSustainabilityProfile(sustainabilityData);
+      if (result.success) {
+        // Complete the entire onboarding process
+        const finalResult = await mockVendorOnboardingService.completeOnboarding(formData);
+        if (finalResult.success) {
+          alert('Onboarding completed successfully! Redirecting to your dashboard...');
+          navigate('/vendor/dashboard');
+        } else {
+          alert('Failed to complete onboarding');
+        }
+      } else {
+        alert('Failed to save sustainability information');
+      }
     } catch (error) {
       console.error('Failed to save sustainability data:', error);
       alert('Failed to save sustainability information: ' + error.message);

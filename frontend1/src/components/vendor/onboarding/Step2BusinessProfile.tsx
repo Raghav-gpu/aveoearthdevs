@@ -3,24 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Building2, 
-  FileText, 
-  Upload, 
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  X,
-  Plus,
-  Banknote,
-  MapPin,
-  Globe,
-  Award
-} from 'lucide-react';
+import { FileUpload } from '@/components/ui/FileUpload';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LEGAL_ENTITY_TYPES } from '@/lib/constants';
 
 interface Step2BusinessProfileProps {
   formData: any;
@@ -28,42 +14,18 @@ interface Step2BusinessProfileProps {
   onStepComplete: (hasExistingBusiness?: boolean) => void;
 }
 
-const Step2BusinessProfile: React.FC<Step2BusinessProfileProps> = ({ 
-  formData, 
-  handleChange, 
-  onStepComplete 
+const Step2BusinessProfile: React.FC<Step2BusinessProfileProps> = ({
+  formData,
+  handleChange,
+  onStepComplete
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const legalEntityTypes = [
-    'Sole Proprietorship',
-    'Partnership',
-    'Private Limited Company',
-    'Public Limited Company',
-    'LLP (Limited Liability Partnership)',
-    'HUF (Hindu Undivided Family)',
-    'Trust',
-    'Society',
-    'Other'
-  ];
-
-  const documentTypes = [
-    { key: 'logo', label: 'Business Logo', required: false, description: 'Your business logo (PNG, JPG, max 2MB)' },
-    { key: 'banner', label: 'Banner Image', required: false, description: 'Banner image for your store (PNG, JPG, max 5MB)' },
-    { key: 'pan_card', label: 'PAN Card', required: true, description: 'PAN card copy (PDF, JPG, PNG, max 2MB)' },
-    { key: 'address_proof', label: 'Address Proof', required: true, description: 'Utility bill or bank statement (PDF, JPG, PNG, max 2MB)' },
-    { key: 'fssai_license', label: 'FSSAI License', required: false, description: 'Food license (if applicable) (PDF, JPG, PNG, max 2MB)' },
-    { key: 'trade_license', label: 'Trade License', required: false, description: 'Trade license (if applicable) (PDF, JPG, PNG, max 2MB)' },
-    { key: 'msme_certificate', label: 'MSME Certificate', required: false, description: 'MSME registration certificate (PDF, JPG, PNG, max 2MB)' },
-    { key: 'other_document', label: 'Other Document', required: false, description: 'Any other relevant document (PDF, JPG, PNG, max 2MB)' }
-  ];
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.business_name?.trim()) {
+    if (!formData.business_name.trim()) {
       newErrors.business_name = 'Business name is required';
     }
 
@@ -71,394 +33,372 @@ const Step2BusinessProfile: React.FC<Step2BusinessProfileProps> = ({
       newErrors.legal_entity_type = 'Legal entity type is required';
     }
 
-    if (!formData.pan_gst_number?.trim()) {
+    if (!formData.pan_gst_number.trim()) {
       newErrors.pan_gst_number = 'PAN/GST number is required';
+    } else if (formData.pan_gst_number.length < 10) {
+      newErrors.pan_gst_number = 'PAN/GST number must be at least 10 characters';
     }
 
-    if (!formData.bank_name?.trim()) {
+    if (!formData.business_address.trim()) {
+      newErrors.business_address = 'Business address is required';
+    } else if (formData.business_address.length < 10) {
+      newErrors.business_address = 'Business address must be at least 10 characters';
+    }
+
+    if (!formData.bank_name.trim()) {
       newErrors.bank_name = 'Bank name is required';
     }
 
-    if (!formData.bank_account_number?.trim()) {
+    if (!formData.bank_account_number.trim()) {
       newErrors.bank_account_number = 'Bank account number is required';
     }
 
-    if (!formData.ifsc_code?.trim()) {
+    if (!formData.ifsc_code.trim()) {
       newErrors.ifsc_code = 'IFSC code is required';
+    } else if (formData.ifsc_code.length !== 11) {
+      newErrors.ifsc_code = 'IFSC code must be exactly 11 characters';
     }
 
-    if (!formData.business_address?.trim()) {
-      newErrors.business_address = 'Business address is required';
+    // Document validation
+    if (formData.logo.length === 0) {
+      newErrors.logo = 'Business logo is required';
     }
 
-    // Check required documents
-    if (!uploadedFiles.pan_card) {
-      newErrors.pan_card = 'PAN card is required';
+    if (formData.pan_card.length === 0) {
+      newErrors.pan_card = 'PAN card document is required';
     }
 
-    if (!uploadedFiles.address_proof) {
-      newErrors.address_proof = 'Address proof is required';
+    if (formData.address_proof.length === 0) {
+      newErrors.address_proof = 'Address proof document is required';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleFileUpload = (field: string, file: File) => {
-    setUploadedFiles(prev => ({ ...prev, [field]: file }));
-    handleChange(field, file);
-  };
+  const handleSaveAndContinue = async () => {
+    if (!validateForm()) {
+      return;
+    }
 
-  const removeFile = (field: string) => {
-    setUploadedFiles(prev => ({ ...prev, [field]: null }));
-    handleChange(field, null);
-  };
-
-  const handleSave = async () => {
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
+    setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      onStepComplete(false);
+      await onStepComplete();
     } catch (error) {
-      console.error('Failed to save business profile:', error);
+      console.error('Error saving business profile:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
+  const handleFileChange = (field: string, files: File[]) => {
+    handleChange(field, files);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-br from-forest/10 to-moss/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FileText className="w-8 h-8 text-forest" />
-        </div>
-        <h3 className="text-2xl font-headline font-bold text-charcoal mb-2">
-          Business Profile
+    <div className="space-y-8">
+      {/* Business Information Section */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-semibold text-forest border-b border-forest/20 pb-2">
+          Business Information
         </h3>
-        <p className="text-charcoal/70">
-          Complete your business information and upload required documents
-        </p>
-      </div>
-
-      {/* Business Information */}
-      <Card className="border-2 border-forest/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-charcoal">
-            <Building2 className="w-5 h-5 text-forest" />
-            Business Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="business_name" className="text-charcoal font-medium">
-                Business Name *
-              </Label>
-              <Input
-                id="business_name"
-                value={formData.business_name || ''}
-                onChange={(e) => handleChange('business_name', e.target.value)}
-                className={`h-12 border-2 ${
-                  errors.business_name 
-                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                    : 'border-forest/20 focus:border-forest focus:ring-forest/20'
-                } rounded-xl`}
-                placeholder="Enter your business name"
-              />
-              {errors.business_name && (
-                <p className="text-red-500 text-sm flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.business_name}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="legal_entity_type" className="text-charcoal font-medium">
-                Legal Entity Type *
-              </Label>
-              <Select 
-                value={formData.legal_entity_type || ''} 
-                onValueChange={(value) => handleChange('legal_entity_type', value)}
-              >
-                <SelectTrigger className={`h-12 border-2 ${
-                  errors.legal_entity_type 
-                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                    : 'border-forest/20 focus:border-forest focus:ring-forest/20'
-                } rounded-xl`}>
-                  <SelectValue placeholder="Select entity type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {legalEntityTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.legal_entity_type && (
-                <p className="text-red-500 text-sm flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.legal_entity_type}
-                </p>
-              )}
-            </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="business_name" className="text-forest font-medium">
+              Business Name *
+            </Label>
+            <Input
+              id="business_name"
+              value={formData.business_name}
+              onChange={(e) => handleChange('business_name', e.target.value)}
+              className={`bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032] ${
+                errors.business_name ? 'border-red-500' : ''
+              }`}
+              placeholder="Enter your business name"
+            />
+            {errors.business_name && (
+              <p className="text-sm text-red-500">{errors.business_name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="pan_gst_number" className="text-charcoal font-medium">
+            <Label htmlFor="legal_entity_type" className="text-forest font-medium">
+              Legal Entity Type *
+            </Label>
+            <Select
+              value={formData.legal_entity_type}
+              onValueChange={(value) => handleChange('legal_entity_type', value)}
+            >
+              <SelectTrigger className={`bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032] ${
+                errors.legal_entity_type ? 'border-red-500' : ''
+              }`}>
+                <SelectValue placeholder="Select entity type" />
+              </SelectTrigger>
+              <SelectContent>
+                {LEGAL_ENTITY_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.legal_entity_type && (
+              <p className="text-sm text-red-500">{errors.legal_entity_type}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pan_gst_number" className="text-forest font-medium">
               PAN/GST Number *
             </Label>
             <Input
               id="pan_gst_number"
-              value={formData.pan_gst_number || ''}
+              value={formData.pan_gst_number}
               onChange={(e) => handleChange('pan_gst_number', e.target.value)}
-              className={`h-12 border-2 ${
-                errors.pan_gst_number 
-                  ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                  : 'border-forest/20 focus:border-forest focus:ring-forest/20'
-              } rounded-xl`}
+              className={`bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032] ${
+                errors.pan_gst_number ? 'border-red-500' : ''
+              }`}
               placeholder="Enter PAN or GST number"
             />
             {errors.pan_gst_number && (
-              <p className="text-red-500 text-sm flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errors.pan_gst_number}
-              </p>
+              <p className="text-sm text-red-500">{errors.pan_gst_number}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="business_address" className="text-charcoal font-medium">
-              Business Address *
+            <Label htmlFor="website" className="text-forest font-medium">
+              Website (Optional)
             </Label>
-            <Textarea
-              id="business_address"
-              value={formData.business_address || ''}
-              onChange={(e) => handleChange('business_address', e.target.value)}
-              className={`min-h-[100px] border-2 ${
-                errors.business_address 
-                  ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                  : 'border-forest/20 focus:border-forest focus:ring-forest/20'
-              } rounded-xl`}
-              placeholder="Enter your complete business address"
+            <Input
+              id="website"
+              value={formData.website}
+              onChange={(e) => handleChange('website', e.target.value)}
+              className="bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032]"
+              placeholder="https://yourwebsite.com"
             />
-            {errors.business_address && (
-              <p className="text-red-500 text-sm flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errors.business_address}
-              </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="business_address" className="text-forest font-medium">
+            Business Address *
+          </Label>
+          <Textarea
+            id="business_address"
+            value={formData.business_address}
+            onChange={(e) => handleChange('business_address', e.target.value)}
+            className={`bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032] ${
+              errors.business_address ? 'border-red-500' : ''
+            }`}
+            placeholder="Enter complete business address"
+            rows={3}
+          />
+          {errors.business_address && (
+            <p className="text-sm text-red-500">{errors.business_address}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description" className="text-forest font-medium">
+            Business Description (Optional)
+          </Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => handleChange('description', e.target.value)}
+            className="bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032]"
+            placeholder="Describe your business and what you offer"
+            rows={3}
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="is_msme_registered"
+            checked={formData.is_msme_registered}
+            onCheckedChange={(checked) => handleChange('is_msme_registered', checked)}
+          />
+          <Label htmlFor="is_msme_registered" className="text-forest font-medium">
+            Are you registered under MSME?
+          </Label>
+        </div>
+      </div>
+
+      {/* Banking Information Section */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-semibold text-forest border-b border-forest/20 pb-2">
+          Banking Information
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="bank_name" className="text-forest font-medium">
+              Bank Name *
+            </Label>
+            <Input
+              id="bank_name"
+              value={formData.bank_name}
+              onChange={(e) => handleChange('bank_name', e.target.value)}
+              className={`bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032] ${
+                errors.bank_name ? 'border-red-500' : ''
+              }`}
+              placeholder="Enter bank name"
+            />
+            {errors.bank_name && (
+              <p className="text-sm text-red-500">{errors.bank_name}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="website" className="text-charcoal font-medium">
-                Website (Optional)
-              </Label>
-              <div className="relative">
-                <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal/40 w-4 h-4" />
-                <Input
-                  id="website"
-                  value={formData.website || ''}
-                  onChange={(e) => handleChange('website', e.target.value)}
-                  className="pl-10 h-12 border-2 border-forest/20 focus:border-forest focus:ring-forest/20 rounded-xl"
-                  placeholder="https://yourwebsite.com"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-charcoal font-medium">
-                Business Description (Optional)
-              </Label>
-              <Textarea
-                id="description"
-                value={formData.description || ''}
-                onChange={(e) => handleChange('description', e.target.value)}
-                className="min-h-[100px] border-2 border-forest/20 focus:border-forest focus:ring-forest/20 rounded-xl"
-                placeholder="Tell us about your business..."
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="is_msme_registered"
-              checked={formData.is_msme_registered || false}
-              onCheckedChange={(checked) => handleChange('is_msme_registered', checked)}
-            />
-            <Label htmlFor="is_msme_registered" className="text-charcoal">
-              I am MSME registered
+          <div className="space-y-2">
+            <Label htmlFor="bank_account_number" className="text-forest font-medium">
+              Account Number *
             </Label>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Banking Information */}
-      <Card className="border-2 border-forest/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-charcoal">
-            <Banknote className="w-5 h-5 text-forest" />
-            Banking Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="bank_name" className="text-charcoal font-medium">
-                Bank Name *
-              </Label>
-              <Input
-                id="bank_name"
-                value={formData.bank_name || ''}
-                onChange={(e) => handleChange('bank_name', e.target.value)}
-                className={`h-12 border-2 ${
-                  errors.bank_name 
-                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                    : 'border-forest/20 focus:border-forest focus:ring-forest/20'
-                } rounded-xl`}
-                placeholder="Enter bank name"
-              />
-              {errors.bank_name && (
-                <p className="text-red-500 text-sm flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.bank_name}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bank_account_number" className="text-charcoal font-medium">
-                Account Number *
-              </Label>
-              <Input
-                id="bank_account_number"
-                value={formData.bank_account_number || ''}
-                onChange={(e) => handleChange('bank_account_number', e.target.value)}
-                className={`h-12 border-2 ${
-                  errors.bank_account_number 
-                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                    : 'border-forest/20 focus:border-forest focus:ring-forest/20'
-                } rounded-xl`}
-                placeholder="Enter account number"
-              />
-              {errors.bank_account_number && (
-                <p className="text-red-500 text-sm flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.bank_account_number}
-                </p>
-              )}
-            </div>
+            <Input
+              id="bank_account_number"
+              value={formData.bank_account_number}
+              onChange={(e) => handleChange('bank_account_number', e.target.value)}
+              className={`bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032] ${
+                errors.bank_account_number ? 'border-red-500' : ''
+              }`}
+              placeholder="Enter account number"
+            />
+            {errors.bank_account_number && (
+              <p className="text-sm text-red-500">{errors.bank_account_number}</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ifsc_code" className="text-charcoal font-medium">
+            <Label htmlFor="ifsc_code" className="text-forest font-medium">
               IFSC Code *
             </Label>
             <Input
               id="ifsc_code"
-              value={formData.ifsc_code || ''}
-              onChange={(e) => handleChange('ifsc_code', e.target.value)}
-              className={`h-12 border-2 ${
-                errors.ifsc_code 
-                  ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                  : 'border-forest/20 focus:border-forest focus:ring-forest/20'
-              } rounded-xl`}
+              value={formData.ifsc_code}
+              onChange={(e) => handleChange('ifsc_code', e.target.value.toUpperCase())}
+              className={`bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032] ${
+                errors.ifsc_code ? 'border-red-500' : ''
+              }`}
               placeholder="Enter IFSC code"
+              maxLength={11}
             />
             {errors.ifsc_code && (
-              <p className="text-red-500 text-sm flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errors.ifsc_code}
-              </p>
+              <p className="text-sm text-red-500">{errors.ifsc_code}</p>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Document Upload */}
-      <Card className="border-2 border-forest/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-charcoal">
-            <Upload className="w-5 h-5 text-forest" />
-            Required Documents
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {documentTypes.map((doc) => (
-              <div key={doc.key} className="space-y-2">
-                <Label className="text-charcoal font-medium flex items-center gap-2">
-                  {doc.label}
-                  {doc.required && <Badge variant="destructive" className="text-xs">Required</Badge>}
-                </Label>
-                
-                {uploadedFiles[doc.key] ? (
-                  <div className="flex items-center justify-between p-3 bg-forest/5 border-2 border-forest/20 rounded-xl">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-forest" />
-                      <span className="text-sm text-charcoal">{uploadedFiles[doc.key]?.name}</span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(doc.key)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed border-forest/30 rounded-xl p-6 text-center hover:border-forest/50 transition-colors">
-                    <input
-                      type="file"
-                      id={doc.key}
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload(doc.key, file);
-                      }}
-                      className="hidden"
-                    />
-                    <label htmlFor={doc.key} className="cursor-pointer">
-                      <Upload className="w-8 h-8 text-forest/50 mx-auto mb-2" />
-                      <p className="text-sm text-charcoal/70 mb-1">Click to upload</p>
-                      <p className="text-xs text-charcoal/50">{doc.description}</p>
-                    </label>
-                  </div>
-                )}
-                
-                {errors[doc.key] && (
-                  <p className="text-red-500 text-sm flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors[doc.key]}
-                  </p>
-                )}
-              </div>
-            ))}
+      {/* Document Upload Section */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-semibold text-forest border-b border-forest/20 pb-2">
+          Document Uploads
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Branding Documents */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-forest">Branding Documents</h4>
+            
+            <FileUpload
+              label="Business Logo"
+              accept="image/*"
+              onFileChange={(files) => handleFileChange('logo', files)}
+              files={formData.logo}
+              required
+              error={errors.logo}
+            />
+
+            <FileUpload
+              label="Business Banner"
+              accept="image/*"
+              onFileChange={(files) => handleFileChange('banner', files)}
+              files={formData.banner}
+            />
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Required Documents */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-forest">Required Documents</h4>
+            
+            <FileUpload
+              label="PAN Card"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onFileChange={(files) => handleFileChange('pan_card', files)}
+              files={formData.pan_card}
+              required
+              error={errors.pan_card}
+            />
+
+            <FileUpload
+              label="Address Proof"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onFileChange={(files) => handleFileChange('address_proof', files)}
+              files={formData.address_proof}
+              required
+              error={errors.address_proof}
+            />
+          </div>
+
+          {/* License Documents */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-forest">License Documents</h4>
+            
+            <FileUpload
+              label="FSSAI License"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onFileChange={(files) => handleFileChange('fssai_license', files)}
+              files={formData.fssai_license}
+            />
+
+            <FileUpload
+              label="Trade License"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onFileChange={(files) => handleFileChange('trade_license', files)}
+              files={formData.trade_license}
+            />
+          </div>
+
+          {/* Additional Documents */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-forest">Additional Documents</h4>
+            
+            {formData.is_msme_registered && (
+              <FileUpload
+                label="MSME Certificate"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onFileChange={(files) => handleFileChange('msme_certificate', files)}
+                files={formData.msme_certificate}
+              />
+            )}
+
+            <FileUpload
+              label="Other Document"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onFileChange={(files) => handleFileChange('other_document', files)}
+              files={formData.other_document}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-center">
+      <div className="flex justify-end space-x-4 pt-6 border-t border-forest/20">
         <Button
-          onClick={handleSave}
-          disabled={isSubmitting}
-          className="btn-primary px-8 py-3 text-lg"
+          type="button"
+          variant="outline"
+          className="border-2 border-forest/20 hover:border-forest hover:bg-forest/5 text-forest"
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Saving Profile...
-            </>
-          ) : (
-            'Save & Continue'
-          )}
+          Save as Draft
+        </Button>
+        
+        <Button
+          type="button"
+          onClick={handleSaveAndContinue}
+          disabled={isLoading}
+          className="bg-gradient-to-r from-forest to-moss hover:from-forest/90 hover:to-moss/90 text-white px-8"
+        >
+          {isLoading ? 'Saving...' : 'Save & Continue'}
         </Button>
       </div>
     </div>
