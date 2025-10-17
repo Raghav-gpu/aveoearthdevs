@@ -20,6 +20,8 @@ from app.features.products.routes.products_admin_routes import products_admin_ro
 from app.features.products.routes.products_buyer_routes import products_buyer_router
 from app.features.products.routes.products_supplier_routes import products_supplier_router
 from app.features.products.routes.product_search_routes import product_search_router
+from app.features.products.routes.products_fallback import products_fallback_router
+from app.features.products.routes.product_search_fallback import product_search_fallback_router
 from app.features.orders.routes.orders_supplier_routes import orders_supplier_router
 from app.features.orders.routes.orders_buyer_routes import orders_buyer_router
 from app.features.orders.routes.orders_admin_routes import orders_admin_router
@@ -108,6 +110,9 @@ app.include_router(products_admin_router)
 app.include_router(products_buyer_router)
 app.include_router(products_supplier_router)
 app.include_router(product_search_router)
+# Fallback routes for when SQLAlchemy is not available
+app.include_router(products_fallback_router)
+app.include_router(product_search_fallback_router)
 app.include_router(account_router)
 app.include_router(settings_router)
 app.include_router(orders_supplier_router)

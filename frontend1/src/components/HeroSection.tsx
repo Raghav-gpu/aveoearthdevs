@@ -6,7 +6,7 @@ import { ShoppingCart, Leaf, Award, ArrowLeft, ArrowRight, Heart } from 'lucide-
 import { useFeaturedProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import heroImage from '@/assets/hero-sustainable-products.jpg';
 import bambooBottle from '@/assets/product-bamboo-bottle.jpg';
 import cottonBags from '@/assets/product-cotton-bags.jpg';

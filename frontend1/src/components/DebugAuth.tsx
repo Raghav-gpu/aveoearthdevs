@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/EnhancedAuthContext';
 import { testProfileCreation } from '../utils/testProfile';
 import { createProfileManually } from '../utils/manualProfileCreation';
 import { testDirectDatabaseAccess } from '../utils/directDatabaseTest';

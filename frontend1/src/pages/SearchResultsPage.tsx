@@ -8,7 +8,7 @@ import { useSearch } from '@/contexts/SearchContext';
 import { useSearchProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { 
   Search, 
   Star, 

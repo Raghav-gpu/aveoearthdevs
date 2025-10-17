@@ -68,6 +68,13 @@
   --color-green-light: var(--color-neutral-7);
   --color-green-subtle: var(--color-neutral-9);
 
+  /* Eco color variables for components */
+  --color-eco-primary: #047857; /* emerald-700 */
+  --color-eco-secondary: #059669; /* emerald-600 */
+  --color-eco-accent: #10b981; /* emerald-500 */
+  --color-eco-light: #d1fae5; /* emerald-100 */
+  --color-eco-subtle: #ecfdf5; /* emerald-50 */
+
   /* Legacy neutrals mapped to new scale for safety */
   --color-neutral-900: var(--color-neutral-black);
   --color-neutral-800: #17202E;
@@ -136,16 +143,7 @@
 }
 
 body {
-  background: linear-gradient(90deg, 
-    #2d5016 0%, 
-    #3d6b1f 15%, 
-    #4a7c28 30%, 
-    #5a8f35 45%, 
-    #6ba342 60%, 
-    #7bb84f 75%, 
-    #8bc85c 90%, 
-    #9dd86a 100%);
-  background-attachment: fixed;
+  background: var(--color-background);
   color: var(--foreground);
   font-family: var(--font-poppins), var(--font-reemkufi), 'Poppins', sans-serif;
   min-height: 100vh;

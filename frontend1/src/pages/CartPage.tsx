@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/EnhancedAuthContext";
 import {
   Minus,
   Plus,

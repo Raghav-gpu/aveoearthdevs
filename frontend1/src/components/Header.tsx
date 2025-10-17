@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from "react-router-dom";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useSearch } from '@/contexts/SearchContext';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';

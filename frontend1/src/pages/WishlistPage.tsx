@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
 import { useCart } from '@/hooks/useCart';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { 
   Heart, 
   ShoppingCart, 

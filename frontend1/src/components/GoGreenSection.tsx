@@ -19,7 +19,7 @@ import {
 import { useEcoFriendlyProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 
 const GoGreenSection = () => {
   const { data: ecoProducts, isLoading, error } = useEcoFriendlyProducts(24);

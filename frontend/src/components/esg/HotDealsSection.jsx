@@ -84,8 +84,8 @@ const HotDealsCard = ({
   );
 };
 
-// Main App Component (Formerly HotDealsSection)
-export default function App() {
+// Main HotDealsSection Component
+export default function HotDealsSection() {
   const [activeFilter, setActiveFilter] = useState('all');
   const allProducts = useMemo(() => [
     {

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProduct } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useAddToWishlistNew, useRemoveFromWishlistNew, useIsInWishlistNew } from '@/hooks/useWishlistNew';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { 
   Star, 
   Heart, 

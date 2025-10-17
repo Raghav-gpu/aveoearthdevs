@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useProducts, useSearchProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useSearch } from '@/contexts/SearchContext';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import {
