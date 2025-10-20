@@ -33,7 +33,7 @@ import VendorAnalyticsPage from "./pages/VendorAnalyticsPage";
 import VendorProfilePage from "./pages/VendorProfilePage";
 import VendorLayout from "./components/VendorLayout";
 import DebugAuth from "./components/DebugAuth";
-import EnhancedChatBot from "./components/EnhancedChatBot";
+import UniversalChatBot from "./components/UniversalChatBot";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,7 +89,7 @@ const App = () => (
               </Route>
             </Routes>
             <DebugAuth />
-            <EnhancedChatBot />
+            <UniversalChatBot />
           </SearchProvider>
         </BrowserRouter>
       </TooltipProvider>

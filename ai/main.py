@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from vendor_concierge import vendor_concierge
 
 load_dotenv()
 
@@ -28,6 +29,7 @@ class ChatRequest(BaseModel):
     message: str
     user_token: Optional[str] = None
     session_id: Optional[str] = None
+    user_type: Optional[str] = None
 
 class ChatResponse(BaseModel):
     response: str
@@ -358,6 +360,277 @@ async def getSupport(topic: str) -> Dict[str, Any]:
         ]
     }
 
+# Vendor Concierge Functions
+async def getVendorAnalytics(days: int = 30, user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get comprehensive vendor analytics and performance metrics"""
+    if not user_token:
+        return {"error": "Authentication required for vendor analytics"}
+    
+    try:
+        analytics = await vendor_concierge.get_vendor_analytics(user_token, days)
+        return {
+            "analytics": analytics,
+            "status": "success",
+            "message": f"Vendor analytics for the last {days} days"
+        }
+    except Exception as e:
+        return {"error": f"Failed to get vendor analytics: {str(e)}"}
+
+async def getVendorPerformance(user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get detailed vendor performance analysis with insights and recommendations"""
+    if not user_token:
+        return {"error": "Authentication required for vendor performance analysis"}
+    
+    try:
+        performance = await vendor_concierge.analyze_vendor_performance(user_token)
+        return {
+            "performance": performance,
+            "status": "success",
+            "message": "Vendor performance analysis completed"
+        }
+    except Exception as e:
+        return {"error": f"Failed to analyze vendor performance: {str(e)}"}
+
+async def getVendorRecommendations(user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get AI-powered business recommendations for vendor growth"""
+    if not user_token:
+        return {"error": "Authentication required for vendor recommendations"}
+    
+    try:
+        recommendations = await vendor_concierge.generate_business_recommendations(user_token)
+        return {
+            "recommendations": recommendations,
+            "status": "success",
+            "message": f"Generated {len(recommendations)} business recommendations"
+        }
+    except Exception as e:
+        return {"error": f"Failed to generate recommendations: {str(e)}"}
+
+async def getVendorDailyInsights(user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get daily insights and action items for vendors"""
+    if not user_token:
+        return {"error": "Authentication required for daily insights"}
+    
+    try:
+        insights = await vendor_concierge.generate_daily_insights(user_token)
+        return {
+            "daily_insights": insights,
+            "status": "success",
+            "message": "Daily insights and action items generated"
+        }
+    except Exception as e:
+        return {"error": f"Failed to generate daily insights: {str(e)}"}
+
+async def getVendorProducts(status: str = "all", user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get vendor's product catalog with performance metrics"""
+    if not user_token:
+        return {"error": "Authentication required for vendor products"}
+    
+    try:
+        products = await vendor_concierge.get_vendor_products(user_token, status)
+        return {
+            "products": products,
+            "total_count": len(products),
+            "status": "success",
+            "message": f"Retrieved {len(products)} products"
+        }
+    except Exception as e:
+        return {"error": f"Failed to get vendor products: {str(e)}"}
+
+async def getVendorOrders(days: int = 30, user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get vendor's recent orders and fulfillment status"""
+    if not user_token:
+        return {"error": "Authentication required for vendor orders"}
+    
+    try:
+        orders = await vendor_concierge.get_vendor_orders(user_token, days)
+        return {
+            "orders": orders,
+            "total_count": len(orders),
+            "status": "success",
+            "message": f"Retrieved {len(orders)} recent orders"
+        }
+    except Exception as e:
+        return {"error": f"Failed to get vendor orders: {str(e)}"}
+
+async def getVendorInventory(user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get inventory status and low stock alerts"""
+    if not user_token:
+        return {"error": "Authentication required for inventory data"}
+    
+    try:
+        low_stock = await vendor_concierge.get_low_stock_products(user_token)
+        return {
+            "low_stock_products": low_stock,
+            "alert_count": len(low_stock),
+            "status": "success",
+            "message": f"Found {len(low_stock)} products with low stock"
+        }
+    except Exception as e:
+        return {"error": f"Failed to get inventory data: {str(e)}"}
+
+async def getVendorSustainability(user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get sustainability insights and improvement recommendations"""
+    if not user_token:
+        return {"error": "Authentication required for sustainability data"}
+    
+    try:
+        sustainability = await vendor_concierge.get_sustainability_insights(user_token)
+        return {
+            "sustainability": sustainability,
+            "status": "success",
+            "message": "Sustainability insights and recommendations generated"
+        }
+    except Exception as e:
+        return {"error": f"Failed to get sustainability insights: {str(e)}"}
+
+async def getVendorBundleRecommendations(user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get intelligent product bundle recommendations"""
+    if not user_token:
+        return {"error": "Authentication required for bundle recommendations"}
+    
+    try:
+        bundles = await vendor_concierge.generate_bundle_recommendations(user_token)
+        return {
+            "bundle_recommendations": bundles,
+            "total_bundles": len(bundles),
+            "status": "success",
+            "message": f"Generated {len(bundles)} intelligent bundle recommendations"
+        }
+    except Exception as e:
+        return {"error": f"Failed to generate bundle recommendations: {str(e)}"}
+
+async def getVendorPersonalizedInsights(user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get comprehensive personalized insights and recommendations"""
+    if not user_token:
+        return {"error": "Authentication required for personalized insights"}
+    
+    try:
+        performance = await vendor_concierge.analyze_vendor_performance(user_token)
+        bundles = await vendor_concierge.generate_bundle_recommendations(user_token)
+        recommendations = await vendor_concierge.generate_business_recommendations(user_token)
+        
+        return {
+            "performance": performance,
+            "bundle_recommendations": bundles,
+            "business_recommendations": recommendations,
+            "personalization": performance.get("personalization", {}),
+            "status": "success",
+            "message": "Comprehensive personalized insights generated"
+        }
+    except Exception as e:
+        return {"error": f"Failed to generate personalized insights: {str(e)}"}
+
+# Universal Help and FAQ Functions
+async def getFAQ(category: str = "general", user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get frequently asked questions by category"""
+    faq_data = {
+        "general": [
+            {
+                "question": "What is AveoEarth?",
+                "answer": "AveoEarth is a sustainable e-commerce platform that connects eco-conscious consumers with environmentally responsible vendors. We focus on promoting sustainable products and practices."
+            },
+            {
+                "question": "How do I create an account?",
+                "answer": "You can create an account by clicking the 'Sign Up' button in the top right corner. Choose between a customer or vendor account, then follow the simple registration process."
+            }
+        ],
+        "shopping": [
+            {
+                "question": "How do I search for products?",
+                "answer": "Use the search bar at the top of the page. You can search by product name, category, or keywords. Use filters to narrow down results by price, brand, or sustainability features."
+            },
+            {
+                "question": "How do I add items to my cart?",
+                "answer": "Click the 'Add to Cart' button on any product page. You can adjust quantities and select variants before adding. Your cart will show the total and allow you to proceed to checkout."
+            }
+        ],
+        "orders": [
+            {
+                "question": "How do I track my order?",
+                "answer": "After placing an order, you'll receive a tracking number via email. You can also track orders in your account dashboard under 'Order History'."
+            },
+            {
+                "question": "What is your return policy?",
+                "answer": "We offer a 30-day return policy for most items. Items must be in original condition with tags attached. Some items like personalized products may not be returnable."
+            }
+        ],
+        "vendor": [
+            {
+                "question": "How do I become a vendor?",
+                "answer": "Click 'Become a Vendor' in the header, complete the application form, and upload required documents. Our team will review your application within 2-3 business days."
+            },
+            {
+                "question": "How do I manage my products?",
+                "answer": "Use your vendor dashboard to add, edit, and manage products. You can track sales, manage inventory, and view analytics all in one place."
+            }
+        ]
+    }
+    
+    return {
+        "faqs": faq_data.get(category, faq_data["general"]),
+        "category": category,
+        "status": "success",
+        "message": f"Retrieved FAQs for {category} category"
+    }
+
+async def getHelpTopics(user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Get available help topics and resources"""
+    help_topics = {
+        "contact": {
+            "email": "support@aveoearth.com",
+            "phone": "+1-800-AVEO-HELP",
+            "hours": "24/7 for urgent issues"
+        },
+        "resources": [
+            "User Guide",
+            "Privacy Policy", 
+            "Terms of Service",
+            "Shipping Information",
+            "Return Policy"
+        ],
+        "quick_actions": [
+            "Track Order",
+            "View Cart",
+            "Search Products",
+            "Contact Support",
+            "Browse FAQs"
+        ]
+    }
+    
+    return {
+        "help_topics": help_topics,
+        "status": "success",
+        "message": "Help topics and resources retrieved"
+    }
+
+async def searchHelp(query: str, user_token: Optional[str] = None) -> Dict[str, Any]:
+    """Search help content and FAQs"""
+    # This would typically search through a knowledge base
+    # For now, return mock search results
+    search_results = [
+        {
+            "title": "How to track your order",
+            "content": "You can track your order using the tracking number sent to your email or through your account dashboard.",
+            "category": "orders",
+            "relevance": 0.95
+        },
+        {
+            "title": "Payment methods accepted",
+            "content": "We accept all major credit cards, PayPal, Apple Pay, Google Pay, and bank transfers.",
+            "category": "payments",
+            "relevance": 0.87
+        }
+    ]
+    
+    return {
+        "search_results": search_results,
+        "query": query,
+        "total_results": len(search_results),
+        "status": "success",
+        "message": f"Found {len(search_results)} results for '{query}'"
+    }
+
 # Function mapping for AI tool calls
 FUNCTION_MAP = {
     "getProducts": getProducts,
@@ -377,6 +650,21 @@ FUNCTION_MAP = {
     "addToWishlist": addToWishlist,
     "cancelOrder": cancelOrder,
     "getSupport": getSupport,
+    # Vendor Concierge Functions
+    "getVendorAnalytics": getVendorAnalytics,
+    "getVendorPerformance": getVendorPerformance,
+    "getVendorRecommendations": getVendorRecommendations,
+    "getVendorDailyInsights": getVendorDailyInsights,
+    "getVendorProducts": getVendorProducts,
+    "getVendorOrders": getVendorOrders,
+    "getVendorInventory": getVendorInventory,
+    "getVendorSustainability": getVendorSustainability,
+    "getVendorBundleRecommendations": getVendorBundleRecommendations,
+    "getVendorPersonalizedInsights": getVendorPersonalizedInsights,
+    # Universal Help Functions
+    "getFAQ": getFAQ,
+    "getHelpTopics": getHelpTopics,
+    "searchHelp": searchHelp,
 }
 
 def get_conversation_context(session_id: str, max_messages: int = 5) -> List[types.Content]:
@@ -408,6 +696,66 @@ def add_to_conversation_history(session_id: str, user_message: str, ai_response:
             parts=[types.Part.from_text(text=ai_response)]
         )
     )
+
+def get_system_instruction(user_type: Optional[str] = None, user_token: Optional[str] = None) -> types.Content:
+    """Get system instruction based on user type"""
+    base_instruction = """You are AveoEarth's AI assistant, a helpful and knowledgeable guide for our sustainable e-commerce platform. You help users with shopping, orders, vendor management, and general questions about our eco-friendly marketplace.
+
+Key capabilities:
+- Help users search and discover sustainable products
+- Assist with order tracking and management
+- Provide vendor support and business insights
+- Answer questions about sustainability and eco-friendly practices
+- Guide users through account management and platform features
+- Offer personalized recommendations based on user preferences
+
+Always be friendly, helpful, and focused on sustainability. When appropriate, use the available functions to provide real-time information and assistance."""
+
+    if user_type == "vendor":
+        vendor_instruction = f"""
+
+VENDOR MODE: You are specifically helping a vendor on our platform. You have access to:
+- Vendor analytics and performance metrics
+- Business recommendations and optimization strategies
+- Product management and inventory tools
+- Order fulfillment and customer service
+- Sustainability scoring and improvement suggestions
+
+Focus on helping them grow their business, optimize their operations, and improve their sustainability impact. Use vendor-specific functions when relevant."""
+        return types.Content(
+            role="model",
+            parts=[types.Part.from_text(text=base_instruction + vendor_instruction)],
+        )
+    elif user_type == "customer":
+        customer_instruction = f"""
+
+CUSTOMER MODE: You are helping a customer shopping on our platform. Focus on:
+- Product discovery and recommendations
+- Shopping cart and wishlist management
+- Order tracking and support
+- Sustainability information and eco-friendly choices
+- Account management and preferences
+
+Help them find the perfect sustainable products and have a great shopping experience."""
+        return types.Content(
+            role="model",
+            parts=[types.Part.from_text(text=base_instruction + customer_instruction)],
+        )
+    else:
+        guest_instruction = f"""
+
+GUEST MODE: You are helping a visitor to our platform. Focus on:
+- Introducing them to AveoEarth and our mission
+- Explaining our sustainable e-commerce platform
+- Helping them understand our features and benefits
+- Encouraging them to create an account
+- Answering general questions about sustainability and eco-friendly shopping
+
+Be welcoming and informative, helping them understand why AveoEarth is the right choice for sustainable shopping."""
+        return types.Content(
+            role="model",
+            parts=[types.Part.from_text(text=base_instruction + guest_instruction)],
+        )
     
     # Keep only last 10 messages (5 exchanges) to prevent memory issues
     max_history = 10
@@ -434,7 +782,7 @@ async def execute_function_call(function_call, user_token: Optional[str] = None)
         return {"error": f"Error executing {function_name}: {str(e)}"}
 
 async def generate_ai_response(user_input: str, user_token: Optional[str] = None, 
-                              session_id: Optional[str] = None, max_iterations: int = 5) -> Dict[str, Any]:
+                              session_id: Optional[str] = None, user_type: Optional[str] = None, max_iterations: int = 5) -> Dict[str, Any]:
     """Generate AI response with function calling capability and conversation context"""
     api_key = os.environ.get("GEMINI_API_KEY")
     
@@ -452,8 +800,11 @@ async def generate_ai_response(user_input: str, user_token: Optional[str] = None
     # Get conversation context
     context_messages = get_conversation_context(session_id)
     
-    # Initialize conversation with context and new user input
-    contents = context_messages.copy()
+    # Create system instruction based on user type
+    system_instruction = get_system_instruction(user_type, user_token)
+    
+    # Initialize conversation with system instruction, context, and new user input
+    contents = [system_instruction] + context_messages.copy()
     contents.append(
         types.Content(
             role="user",
@@ -658,6 +1009,131 @@ async def generate_ai_response(user_input: str, user_token: Optional[str] = None
                         required=["topic"]
                     ),
                 ),
+                # Vendor Concierge Functions
+                types.FunctionDeclaration(
+                    name="getVendorAnalytics",
+                    description="Get comprehensive vendor analytics and performance metrics. Use this to analyze business performance, revenue, orders, and key metrics.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={
+                            "days": genai.types.Schema(type=genai.types.Type.INTEGER, description="Number of days to analyze (default: 30)"),
+                        },
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getVendorPerformance",
+                    description="Get detailed vendor performance analysis with insights and recommendations. Use this for comprehensive business analysis.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={},
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getVendorRecommendations",
+                    description="Get AI-powered business recommendations for vendor growth and optimization. Use this to get actionable business advice.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={},
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getVendorDailyInsights",
+                    description="Get daily insights and action items for vendors. Use this to get today's priorities and tasks.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={},
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getVendorProducts",
+                    description="Get vendor's product catalog with performance metrics. Use this to analyze product portfolio and performance.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={
+                            "status": genai.types.Schema(
+                                type=genai.types.Type.STRING,
+                                enum=["all", "active", "inactive", "draft"],
+                                description="Filter products by status (default: all)"
+                            ),
+                        },
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getVendorOrders",
+                    description="Get vendor's recent orders and fulfillment status. Use this to track order performance and fulfillment.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={
+                            "days": genai.types.Schema(type=genai.types.Type.INTEGER, description="Number of days to look back (default: 30)"),
+                        },
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getVendorInventory",
+                    description="Get inventory status and low stock alerts. Use this to manage inventory and prevent stockouts.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={},
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getVendorSustainability",
+                    description="Get sustainability insights and improvement recommendations. Use this to improve environmental impact and sustainability score.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={},
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getVendorBundleRecommendations",
+                    description="Get intelligent product bundle recommendations based on your product catalog and market trends. Use this to create profitable product bundles.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={},
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getVendorPersonalizedInsights",
+                    description="Get comprehensive personalized insights combining performance analysis, bundle recommendations, and business advice tailored to your vendor profile.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={},
+                    ),
+                ),
+                # Universal Help Functions
+                types.FunctionDeclaration(
+                    name="getFAQ",
+                    description="Get frequently asked questions by category. Use this to answer common questions about the platform, shopping, orders, or vendor topics.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={
+                            "category": genai.types.Schema(
+                                type=genai.types.Type.STRING,
+                                enum=["general", "shopping", "orders", "payments", "vendor", "sustainability"],
+                                description="FAQ category to retrieve questions from"
+                            ),
+                        },
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="getHelpTopics",
+                    description="Get available help topics and resources. Use this to show users what help is available and how to contact support.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={},
+                    ),
+                ),
+                types.FunctionDeclaration(
+                    name="searchHelp",
+                    description="Search help content and FAQs. Use this when users ask specific questions that might be answered in our help documentation.",
+                    parameters=genai.types.Schema(
+                        type=genai.types.Type.OBJECT,
+                        properties={
+                            "query": genai.types.Schema(type=genai.types.Type.STRING, description="Search query for help content"),
+                        },
+                        required=["query"]
+                    ),
+                ),
             ])
     ]
     
@@ -779,7 +1255,8 @@ async def chat_endpoint(request: ChatRequest):
         result = await generate_ai_response(
             request.message, 
             request.user_token, 
-            request.session_id
+            request.session_id,
+            request.user_type
         )
         
         if "error" in result:

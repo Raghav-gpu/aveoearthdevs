@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useVendorAuth } from '@/hooks/useVendorAuth';
+import VendorConcierge from '@/components/VendorConcierge';
 import { 
   Plus, 
   TrendingUp, 
@@ -329,6 +330,9 @@ const VendorDashboard = () => {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Vendor Concierge */}
+        <VendorConcierge />
     </div>
   );
 };

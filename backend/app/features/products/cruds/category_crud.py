@@ -15,7 +15,12 @@ class CategoryCrud(BaseCrud[Category]):
     def __init__(self):
         super().__init__(get_supabase_client(), Category)
 
-    async def get_categories_tree(self, db: AsyncSession) -> List[Dict[str, Any]]:
+    async def get_categories_tree(self, db: Optional[AsyncSession]) -> List[Dict[str, Any]]:
+        # Handle case when database is not available
+        if db is None:
+            logger.warning("Database not available, returning empty categories list")
+            return []
+        
         try:
             result = await db.execute(
                 select(Category)

@@ -53,21 +53,32 @@ async def get_products(
     sort_order: Optional[str] = Query("desc", pattern="^(asc|desc)$"),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_async_session)
+    db: Optional[AsyncSession] = Depends(get_async_session)
 ):
-    pagination = PaginationParams(page=page, limit=limit)
-    product_crud = ProductCrud()
-    return await product_crud.get_public_products(
-        db=db,
-        pagination=pagination,
-        category_id=category_id,
-        brand_id=brand_id,
-        min_price=min_price,
-        max_price=max_price,
-        search=search,
-        sort_by=sort_by,
-        sort_order=sort_order
-    )
+    try:
+        pagination = PaginationParams(page=page, limit=limit)
+        product_crud = ProductCrud()
+        return await product_crud.get_public_products(
+            db=db,
+            pagination=pagination,
+            category_id=category_id,
+            brand_id=brand_id,
+            min_price=min_price,
+            max_price=max_price,
+            search=search,
+            sort_by=sort_by,
+            sort_order=sort_order
+        )
+    except Exception as e:
+        logger.error(f"Database error in get_products: {str(e)}")
+        # Return empty results when database is not available
+        return PaginatedResponse[ProductListResponse](
+            items=[],
+            total=0,
+            page=page,
+            limit=limit,
+            total_pages=0
+        )
 
 @products_buyer_router.get("/{product_slug}", response_model=ProductDetailResponse)
 async def get_product_by_slug(
@@ -121,18 +132,23 @@ async def get_product_by_slug(
 
 @products_buyer_router.get("/categories/tree", response_model=List[CategoryTreeResponse])
 async def get_categories_tree(
-    db: AsyncSession = Depends(get_async_session)
+    db: Optional[AsyncSession] = Depends(get_async_session)
 ):
-    category_crud = CategoryCrud()
-    categories = await category_crud.get_categories_tree(db)
-    result = []
-    for cat in categories:
-        try:
-            result.append(CategoryTreeResponse(**cat))
-        except Exception as e:
-            logger.error(f"Error creating CategoryTreeResponse: {str(e)}")
-            continue
-    return result
+    try:
+        category_crud = CategoryCrud()
+        categories = await category_crud.get_categories_tree(db)
+        result = []
+        for cat in categories:
+            try:
+                result.append(CategoryTreeResponse(**cat))
+            except Exception as e:
+                logger.error(f"Error creating CategoryTreeResponse: {str(e)}")
+                continue
+        return result
+    except Exception as e:
+        logger.error(f"Database error in get_categories_tree: {str(e)}")
+        # Return empty categories when database is not available
+        return []
 
 @products_buyer_router.get("/brands/active", response_model=List[BrandResponse])
 async def get_active_brands(

@@ -196,7 +196,7 @@ class ProductCrud(BaseCrud[Product]):
 
     async def get_public_products(
         self,
-        db: AsyncSession,
+        db: Optional[AsyncSession],
         pagination: PaginationParams,
         category_id: Optional[str] = None,
         brand_id: Optional[str] = None,
@@ -206,6 +206,17 @@ class ProductCrud(BaseCrud[Product]):
         sort_by: Optional[str] = "created_at",
         sort_order: Optional[str] = "desc"
     ) -> PaginatedResponse[Dict[str, Any]]:
+        # Handle case when database is not available
+        if db is None:
+            logger.warning("Database not available, returning empty products list")
+            return PaginatedResponse[Dict[str, Any]](
+                items=[],
+                total=0,
+                page=pagination.page,
+                limit=pagination.limit,
+                total_pages=0
+            )
+        
         try:
             query = select(Product).where(
                 and_(
