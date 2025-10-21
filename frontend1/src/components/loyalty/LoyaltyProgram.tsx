@@ -121,99 +121,50 @@ const LoyaltyProgram: React.FC<{ userId?: string }> = ({ userId }) => {
   const loadLoyaltyData = async () => {
     setIsLoading(true);
     try {
-      // Simulate API calls
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Fetch real loyalty data from Supabase
+      const { supabase } = await import('@/lib/supabase');
       
-      // Mock activities
-      const mockActivities: LoyaltyActivity[] = [
-        {
-          id: '1',
-          type: 'purchase',
-          description: 'Bamboo Toothbrush Set - $15.99',
-          points: 80,
-          timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-          status: 'completed'
-        },
-        {
-          id: '2',
-          type: 'review',
-          description: 'Product review for Organic Cotton Tote',
-          points: 25,
-          timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-          status: 'completed'
-        },
-        {
-          id: '3',
-          type: 'referral',
-          description: 'Referred Sarah Wilson',
-          points: 100,
-          timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          status: 'completed'
-        },
-        {
-          id: '4',
-          type: 'social_share',
-          description: 'Shared sustainable living tips',
-          points: 15,
-          timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-          status: 'completed'
-        },
-        {
-          id: '5',
-          type: 'sustainability_action',
-          description: 'Completed carbon footprint quiz',
-          points: 50,
-          timestamp: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-          status: 'completed'
-        }
-      ];
+      // Fetch user's loyalty activities
+      const { data: activities, error: activitiesError } = await supabase
+        .from('loyalty_activities')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-      // Mock rewards
-      const mockRewards: LoyaltyReward[] = [
-        {
-          id: '1',
-          name: '$5 Off Next Purchase',
-          description: 'Get $5 off your next order',
-          pointsRequired: 100,
-          type: 'discount',
-          value: 5,
-          available: true,
-          image: '/api/placeholder/100/100'
-        },
-        {
-          id: '2',
-          name: 'Free Shipping',
-          description: 'Free shipping on your next order',
-          pointsRequired: 200,
-          type: 'free_shipping',
-          value: 0,
-          available: true,
-          image: '/api/placeholder/100/100'
-        },
-        {
-          id: '3',
-          name: 'Bamboo Straw Set',
-          description: 'Free bamboo straw set',
-          pointsRequired: 500,
-          type: 'free_product',
-          value: 12.99,
-          available: true,
-          image: '/api/placeholder/100/100'
-        },
-        {
-          id: '4',
-          name: 'Exclusive Eco Box',
-          description: 'Monthly curated sustainable products',
-          pointsRequired: 1000,
-          type: 'exclusive_access',
-          value: 49.99,
-          available: false,
-          image: '/api/placeholder/100/100'
-        }
-      ];
+      if (activitiesError) {
+        console.error('Error fetching loyalty activities:', activitiesError);
+        setActivities([]);
+      } else {
+        setActivities(activities || []);
+      }
 
-      setActivities(mockActivities);
-      setRewards(mockRewards);
+      // Fetch available rewards
+      const { data: rewards, error: rewardsError } = await supabase
+        .from('loyalty_rewards')
+        .select('*')
+        .eq('active', true)
+        .order('points_required', { ascending: true });
+
+      if (rewardsError) {
+        console.error('Error fetching loyalty rewards:', rewardsError);
+        setRewards([]);
+      } else {
+        setRewards(rewards || []);
+      }
+
+      // Fetch user's current points
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('loyalty_points')
+        .eq('id', userId)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user points:', userError);
+      } else {
+        setCurrentPoints(userData?.loyalty_points || 0);
+      }
+
     } catch (error) {
       console.error('Error loading loyalty data:', error);
     } finally {

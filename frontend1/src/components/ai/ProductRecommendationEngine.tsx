@@ -57,80 +57,40 @@ const ProductRecommendationEngine: React.FC<{
     setError(null);
 
     try {
-      // Simulate AI-powered recommendation generation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Fetch real products from Supabase
+      const { supabase } = await import('@/lib/supabase');
+      
+      const { data: products, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          price,
+          image_url,
+          sustainability_score,
+          category_id,
+          categories(name),
+          brand,
+          short_description,
+          status,
+          approval_status
+        `)
+        .eq('status', 'active')
+        .eq('approval_status', 'approved')
+        .order('sustainability_score', { ascending: false })
+        .limit(maxRecommendations * 2);
 
-      const mockProducts: Product[] = [
-        {
-          id: '1',
-          name: 'Bamboo Kitchen Utensils Set',
-          price: 29.99,
-          image: '/api/placeholder/200/200',
-          rating: 4.8,
-          sustainabilityScore: 95,
-          category: 'Kitchen',
-          tags: ['bamboo', 'kitchen', 'sustainable'],
-          description: 'Eco-friendly bamboo kitchen utensils'
-        },
-        {
-          id: '2',
-          name: 'Organic Cotton Produce Bags',
-          price: 12.99,
-          image: '/api/placeholder/200/200',
-          rating: 4.6,
-          sustainabilityScore: 88,
-          category: 'Storage',
-          tags: ['organic', 'cotton', 'produce'],
-          description: 'Reusable organic cotton produce bags'
-        },
-        {
-          id: '3',
-          name: 'Recycled Glass Water Bottle',
-          price: 24.99,
-          image: '/api/placeholder/200/200',
-          rating: 4.9,
-          sustainabilityScore: 92,
-          category: 'Drinkware',
-          tags: ['recycled', 'glass', 'water'],
-          description: 'Insulated recycled glass water bottle'
-        },
-        {
-          id: '4',
-          name: 'Jute Storage Baskets',
-          price: 18.99,
-          image: '/api/placeholder/200/200',
-          rating: 4.7,
-          sustainabilityScore: 90,
-          category: 'Storage',
-          tags: ['jute', 'storage', 'basket'],
-          description: 'Handwoven jute storage baskets'
-        },
-        {
-          id: '5',
-          name: 'Beeswax Food Wraps',
-          price: 19.99,
-          image: '/api/placeholder/200/200',
-          rating: 4.5,
-          sustainabilityScore: 85,
-          category: 'Kitchen',
-          tags: ['beeswax', 'food', 'wrap'],
-          description: 'Reusable beeswax food wraps'
-        },
-        {
-          id: '6',
-          name: 'Wooden Phone Stand',
-          price: 15.99,
-          image: '/api/placeholder/200/200',
-          rating: 4.4,
-          sustainabilityScore: 87,
-          category: 'Accessories',
-          tags: ['wooden', 'phone', 'stand'],
-          description: 'Sustainable wooden phone stand'
-        }
-      ];
+      if (error) {
+        throw error;
+      }
 
-      // Generate AI-powered recommendations
-      const generatedRecommendations: Recommendation[] = mockProducts.map((product, index) => {
+      if (!products || products.length === 0) {
+        setRecommendations([]);
+        return;
+      }
+
+      // Generate AI-powered recommendations based on real data
+      const generatedRecommendations: Recommendation[] = products.map((product, index) => {
         const types: Recommendation['type'][] = ['similar', 'trending', 'sustainability', 'price', 'category'];
         const reasons = [
           'Similar sustainability profile',
@@ -144,7 +104,17 @@ const ProductRecommendationEngine: React.FC<{
         ];
 
         return {
-          product,
+          product: {
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image_url || '/api/placeholder/200/200',
+            rating: 4.5, // Default rating
+            sustainabilityScore: product.sustainability_score || 80,
+            category: product.categories?.name || 'General',
+            tags: product.brand ? [product.brand.toLowerCase()] : [],
+            description: product.short_description || ''
+          },
           reason: reasons[Math.floor(Math.random() * reasons.length)],
           confidence: Math.random() * 0.4 + 0.6, // 60-100% confidence
           type: types[Math.floor(Math.random() * types.length)]

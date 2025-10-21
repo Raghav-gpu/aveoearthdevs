@@ -24,61 +24,57 @@ type WishlistItemInsert = Database['public']['Tables']['wishlist']['Insert']
 export const productsApi = {
   // Get all products with pagination
   async getAll(page: number = 1, limit: number = 50, categoryId?: string) {
-    console.log('🔍 Fetching products from database...', { page, limit, categoryId });
+    console.log('🔍 Fetching products from Supabase...', { page, limit, categoryId });
     
     try {
-      // Use fetch API directly to bypass Supabase client issues
-      console.log('🔍 Using direct fetch approach...');
+      let query = supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          price,
+          image_url,
+          discount,
+          sustainability_score,
+          stock,
+          category_id,
+          categories(name),
+          brand,
+          short_description,
+          status,
+          approval_status
+        `, { count: 'exact' })
+        .eq('status', 'active')
+        .eq('approval_status', 'approved');
+
+      if (categoryId) {
+        query = query.eq('category_id', categoryId);
+      }
+
+      const { data, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+
+      if (error) {
+        console.error('❌ Supabase query error:', error);
+        throw error;
+      }
+
+      console.log('✅ Found', data?.length || 0, 'products from Supabase');
       
-      const response = await fetch(`https://ylhvdwizcsoelpreftpy.supabase.co/rest/v1/products?select=id,name,price,image_url&limit=${limit}`, {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
-          'Content-Type': 'application/json'
-        },
-        // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
-
-      if (!response.ok) {
-        console.error('❌ Direct fetch failed:', response.status, response.statusText);
-        console.log('📦 Falling back to mock data');
-        return this.getMockProducts(page, limit);
-      }
-
-      const data = await response.json();
-      console.log('🔍 Direct fetch result:', { dataLength: data?.length, sampleData: data?.[0] });
-
-      if (!data || data.length === 0) {
-        console.log('📦 No products returned from direct fetch, using mock data');
-        return this.getMockProducts(page, limit);
-      }
-
-      console.log('✅ Found', data.length, 'products via direct fetch');
-      
-      // Add missing fields with defaults
-      const productsWithDefaults = data.map(product => ({
-        ...product,
-        discount: 0,
-        sustainability_score: 85,
-        stock: 100,
-        category_id: product.category_id || '1',
-        categories: { name: 'Sustainable Living' }
-      }));
-
-    return {
-        data: productsWithDefaults || [],
-        count: data.length,
-        totalPages: Math.ceil(data.length / limit)
-      }
+      return {
+        data: data || [],
+        count: count || 0,
+        totalPages: Math.ceil((count || 0) / limit)
+      };
     } catch (error) {
-      if (error instanceof Error && error.name === 'TimeoutError') {
-        console.error('⏰ Request timeout:', error.message);
-      } else {
-        console.error('❌ Direct fetch error:', error);
-      }
-      console.log('📦 Falling back to mock data');
-      return this.getMockProducts(page, limit);
+      console.error('❌ Error fetching products:', error);
+      // Return empty data instead of mock data
+      return {
+        data: [],
+        count: 0,
+        totalPages: 0
+      };
     }
   },
 
@@ -434,45 +430,45 @@ export const productsApi = {
 
   // Search products
   async search(query: string, categoryId?: string) {
-    console.log('🔍 Searching products:', { query, categoryId });
+    console.log('🔍 Searching products in Supabase:', { query, categoryId });
     
     try {
-      // Use direct fetch API for search
-      let url = `https://ylhvdwizcsoelpreftpy.supabase.co/rest/v1/products?select=id,name,price,image_url&or=(name.ilike.%25${encodeURIComponent(query)}%25,description.ilike.%25${encodeURIComponent(query)}%25)`;
+      let queryBuilder = supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          price,
+          image_url,
+          discount,
+          sustainability_score,
+          stock,
+          category_id,
+          categories(name),
+          brand,
+          short_description,
+          status,
+          approval_status
+        `)
+        .eq('status', 'active')
+        .eq('approval_status', 'approved')
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%,short_description.ilike.%${query}%`);
 
-    if (categoryId) {
-        url += `&category_id=eq.${categoryId}`;
+      if (categoryId) {
+        queryBuilder = queryBuilder.eq('category_id', categoryId);
       }
-      
-      const response = await fetch(url, {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
-          'Content-Type': 'application/json'
-        },
-        // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
 
-      if (!response.ok) {
-        console.error('❌ Search failed:', response.status, response.statusText);
-        return [];
+      const { data, error } = await queryBuilder
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('❌ Search query error:', error);
+        throw error;
       }
 
-      const data = await response.json();
-      console.log('🔍 Search results:', { dataLength: data?.length, query });
-
-      // Add missing fields with defaults
-      const productsWithDefaults = data.map(product => ({
-        ...product,
-        discount: 0,
-        sustainability_score: 85,
-        stock: 100,
-        category_id: product.category_id || '1',
-        categories: { name: 'Sustainable Living' }
-      }));
-
-      return productsWithDefaults || [];
+      console.log('✅ Search results:', { dataLength: data?.length || 0, query });
+      return data || [];
     } catch (error) {
       console.error('❌ Search error:', error);
       return [];
@@ -516,114 +512,83 @@ export const productsApi = {
 
   // Get featured products
   async getFeatured(limit: number = 16) {
-    console.log('🔍 Fetching featured products from database:', limit);
+    console.log('🔍 Fetching featured products from Supabase:', limit);
     
     try {
-      // Use direct fetch API to bypass Supabase client issues
-      console.log('🔍 Using direct fetch for featured products...');
-      
-      const response = await fetch(`https://ylhvdwizcsoelpreftpy.supabase.co/rest/v1/products?select=id,name,price,image_url&limit=${limit}`, {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
-          'Content-Type': 'application/json'
-        },
-        // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          price,
+          image_url,
+          discount,
+          sustainability_score,
+          stock,
+          category_id,
+          categories(name),
+          brand,
+          short_description,
+          status,
+          approval_status
+        `)
+        .eq('status', 'active')
+        .eq('approval_status', 'approved')
+        .eq('is_featured', true)
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
-      if (!response.ok) {
-        console.error('❌ Direct fetch failed for featured products:', response.status, response.statusText);
-        console.log('📦 Falling back to mock featured products');
-        return this.getMockProducts(1, limit).data;
+      if (error) {
+        console.error('❌ Featured products query error:', error);
+        throw error;
       }
 
-      const data = await response.json();
-      console.log('🔍 Direct fetch result for featured products:', { dataLength: data?.length, sampleData: data?.[0] });
-
-      if (!data || data.length === 0) {
-        console.log('📦 No featured products returned from direct fetch, using mock data');
-        return this.getMockProducts(1, limit).data;
-      }
-
-      console.log('✅ Found', data.length, 'featured products via direct fetch');
-      
-      // Add missing fields with defaults
-      const productsWithDefaults = data.map(product => ({
-        ...product,
-        discount: 0,
-        sustainability_score: 85,
-        stock: 100,
-        category_id: '1',
-        categories: { name: 'Sustainable Living' }
-      }));
-      
-      return productsWithDefaults || [];
+      console.log('✅ Found', data?.length || 0, 'featured products from Supabase');
+      return data || [];
     } catch (error) {
-      if (error instanceof Error && error.name === 'TimeoutError') {
-        console.error('⏰ Featured products request timeout:', error.message);
-      } else {
-        console.error('❌ Direct fetch error for featured products:', error);
-      }
-      console.log('📦 Falling back to mock featured products');
-      return this.getMockProducts(1, limit).data;
+      console.error('❌ Error fetching featured products:', error);
+      return [];
     }
   },
 
   // Get eco-friendly products (high sustainability score)
   async getEcoFriendly(limit: number = 12) {
-    console.log('🌱 Fetching eco-friendly products from database:', limit);
+    console.log('🌱 Fetching eco-friendly products from Supabase:', limit);
     
     try {
-      // Use direct fetch API for eco-friendly products
-      const response = await fetch(`https://ylhvdwizcsoelpreftpy.supabase.co/rest/v1/products?select=id,name,price,image_url&limit=${limit}`, {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
-          'Content-Type': 'application/json'
-        },
-        // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          price,
+          image_url,
+          discount,
+          sustainability_score,
+          stock,
+          category_id,
+          categories(name),
+          brand,
+          short_description,
+          status,
+          approval_status
+        `)
+        .eq('status', 'active')
+        .eq('approval_status', 'approved')
+        .gte('sustainability_score', 80)
+        .order('sustainability_score', { ascending: false })
+        .limit(limit);
 
-      if (!response.ok) {
-        console.error('❌ Eco-friendly products fetch failed:', response.status, response.statusText);
-        console.log('📦 Falling back to mock eco-friendly products');
-        return this.getMockEcoProducts(limit);
+      if (error) {
+        console.error('❌ Eco-friendly products query error:', error);
+        throw error;
       }
 
-      const data = await response.json();
-      console.log('🌱 Eco-friendly products fetch result:', { dataLength: data?.length, sampleData: data?.[0] });
-
-      if (!data || data.length === 0) {
-        console.log('📦 No eco-friendly products returned, using mock data');
-        return this.getMockEcoProducts(limit);
-      }
-
-      console.log('✅ Found', data.length, 'eco-friendly products via direct fetch');
-      
-      // Add missing fields with high sustainability scores for eco-friendly products
-      const productsWithDefaults = data.map(product => ({
-        ...product,
-        discount: Math.floor(Math.random() * 30) + 10, // 10-40% discount
-        sustainability_score: Math.floor(Math.random() * 15) + 85, // 85-100% sustainability
-        stock: Math.floor(Math.random() * 50) + 50, // 50-100 stock
-        category_id: product.category_id || '1',
-        categories: { name: 'Sustainable Living' },
-        badges: ['Eco-Friendly', 'Sustainable', 'Organic'],
-        carbonSaved: `${(Math.random() * 2 + 0.5).toFixed(1)}kg`,
-        ecoScore: `${Math.floor(Math.random() * 15) + 85}%`
-      }));
-      
-      return productsWithDefaults || [];
+      console.log('✅ Found', data?.length || 0, 'eco-friendly products from Supabase');
+      return data || [];
     } catch (error) {
-      if (error instanceof Error && error.name === 'TimeoutError') {
-        console.error('⏰ Eco-friendly products request timeout:', error.message);
-      } else {
-        console.error('❌ Direct fetch error for eco-friendly products:', error);
-      }
-      console.log('📦 Falling back to mock eco-friendly products');
-      return this.getMockEcoProducts(limit);
+      console.error('❌ Error fetching eco-friendly products:', error);
+      return [];
     }
   }
 }
