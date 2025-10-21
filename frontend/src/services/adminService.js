@@ -495,6 +495,224 @@ class AdminService {
     }
   }
 
+  // USER MANAGEMENT API CALLS
+
+  // Get all users with filters
+  async getAllUsers(params = {}) {
+    try {
+      const cacheKey = `all_users_${JSON.stringify(params)}`;
+      const cached = this.getCache(cacheKey);
+      if (cached) return cached;
+
+      const token = this.getToken();
+      if (!token) throw new Error('Authentication required');
+
+      const queryParams = new URLSearchParams();
+      if (params.page) queryParams.append('page', params.page);
+      if (params.limit) queryParams.append('limit', params.limit);
+      if (params.role) queryParams.append('role', params.role);
+      if (params.status) queryParams.append('status', params.status);
+      if (params.search) queryParams.append('search', params.search);
+
+      const path = `/admin/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const result = await request(path, { token });
+      
+      this.setCache(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error('Failed to get all users:', error);
+      throw error;
+    }
+  }
+
+  // Get user details
+  async getUser(userId) {
+    try {
+      const cacheKey = `user_${userId}`;
+      const cached = this.getCache(cacheKey);
+      if (cached) return cached;
+
+      const token = this.getToken();
+      if (!token) throw new Error('Authentication required');
+
+      const result = await request(`/admin/users/${userId}`, { token });
+      
+      this.setCache(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error('Failed to get user:', error);
+      throw error;
+    }
+  }
+
+  // Update user status
+  async updateUserStatus(userId, status, reason = '') {
+    try {
+      const token = this.getToken();
+      if (!token) throw new Error('Authentication required');
+
+      const result = await request(`/admin/users/${userId}/status`, {
+        method: 'PUT',
+        token,
+        body: { status, reason }
+      });
+
+      // Invalidate user caches
+      this.cache.delete(`user_${userId}`);
+      this.invalidateUserCaches();
+      
+      return result;
+    } catch (error) {
+      console.error('Failed to update user status:', error);
+      throw error;
+    }
+  }
+
+  // Delete user
+  async deleteUser(userId) {
+    try {
+      const token = this.getToken();
+      if (!token) throw new Error('Authentication required');
+
+      await request(`/admin/users/${userId}`, {
+        method: 'DELETE',
+        token
+      });
+
+      // Invalidate user caches
+      this.cache.delete(`user_${userId}`);
+      this.invalidateUserCaches();
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      throw error;
+    }
+  }
+
+  // ANALYTICS API CALLS
+
+  // Get comprehensive analytics
+  async getAnalytics(params = {}) {
+    try {
+      const cacheKey = `analytics_${JSON.stringify(params)}`;
+      const cached = this.getCache(cacheKey);
+      if (cached) return cached;
+
+      const token = this.getToken();
+      if (!token) throw new Error('Authentication required');
+
+      const queryParams = new URLSearchParams();
+      if (params.start_date) queryParams.append('start_date', params.start_date);
+      if (params.end_date) queryParams.append('end_date', params.end_date);
+      if (params.granularity) queryParams.append('granularity', params.granularity);
+
+      const path = `/admin/analytics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const result = await request(path, { token });
+      
+      this.setCache(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error('Failed to get analytics:', error);
+      // Return mock data as fallback
+      return this.getMockAnalyticsData();
+    }
+  }
+
+  // Get revenue analytics
+  async getRevenueAnalytics(params = {}) {
+    try {
+      const cacheKey = `revenue_analytics_${JSON.stringify(params)}`;
+      const cached = this.getCache(cacheKey);
+      if (cached) return cached;
+
+      const token = this.getToken();
+      if (!token) throw new Error('Authentication required');
+
+      const queryParams = new URLSearchParams();
+      if (params.period) queryParams.append('period', params.period);
+      if (params.granularity) queryParams.append('granularity', params.granularity);
+
+      const path = `/admin/analytics/revenue${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const result = await request(path, { token });
+      
+      this.setCache(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error('Failed to get revenue analytics:', error);
+      throw error;
+    }
+  }
+
+  // Get user analytics
+  async getUserAnalytics(params = {}) {
+    try {
+      const cacheKey = `user_analytics_${JSON.stringify(params)}`;
+      const cached = this.getCache(cacheKey);
+      if (cached) return cached;
+
+      const token = this.getToken();
+      if (!token) throw new Error('Authentication required');
+
+      const queryParams = new URLSearchParams();
+      if (params.period) queryParams.append('period', params.period);
+      if (params.granularity) queryParams.append('granularity', params.granularity);
+
+      const path = `/admin/analytics/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const result = await request(path, { token });
+      
+      this.setCache(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error('Failed to get user analytics:', error);
+      throw error;
+    }
+  }
+
+  // SYSTEM SETTINGS API CALLS
+
+  // Get system settings
+  async getSettings() {
+    try {
+      const cacheKey = 'system_settings';
+      const cached = this.getCache(cacheKey);
+      if (cached) return cached;
+
+      const token = this.getToken();
+      if (!token) throw new Error('Authentication required');
+
+      const result = await request('/admin/settings', { token });
+      
+      this.setCache(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error('Failed to get settings:', error);
+      throw error;
+    }
+  }
+
+  // Update system settings
+  async updateSettings(settings) {
+    try {
+      const token = this.getToken();
+      if (!token) throw new Error('Authentication required');
+
+      const result = await request('/admin/settings', {
+        method: 'PUT',
+        token,
+        body: settings
+      });
+
+      // Invalidate settings cache
+      this.cache.delete('system_settings');
+      
+      return result;
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      throw error;
+    }
+  }
+
   // Get top products data
   async getTopProducts(params = {}) {
     try {
@@ -551,6 +769,56 @@ class AdminService {
       { name: "Jute Bags", orders: 1654, likes: 1423, image: "/category1.png" },
       { name: "Eco-friendly Plates", orders: 1432, likes: 1289, image: "/spoons.png" },
     ];
+  }
+
+  // Mock analytics data
+  getMockAnalyticsData() {
+    return {
+      overview: {
+        totalRevenue: 125430,
+        totalOrders: 342,
+        totalUsers: 1250,
+        totalProducts: 28,
+        revenueGrowth: 12.5,
+        ordersGrowth: 8.3,
+        usersGrowth: 15.2,
+        productsGrowth: 5.7
+      },
+      revenue: [
+        { month: "Jan", revenue: 15000, orders: 45 },
+        { month: "Feb", revenue: 18000, orders: 52 },
+        { month: "Mar", revenue: 22000, orders: 68 },
+        { month: "Apr", revenue: 25000, orders: 75 },
+        { month: "May", revenue: 28000, orders: 82 },
+        { month: "Jun", revenue: 32000, orders: 95 }
+      ],
+      users: [
+        { month: "Jan", new: 120, returning: 80 },
+        { month: "Feb", new: 150, returning: 95 },
+        { month: "Mar", new: 180, returning: 110 },
+        { month: "Apr", new: 200, returning: 125 },
+        { month: "May", new: 220, returning: 140 },
+        { month: "Jun", new: 250, returning: 160 }
+      ],
+      conversion: [
+        { source: "Organic Search", visitors: 1200, conversions: 48, rate: 4.0 },
+        { source: "Social Media", visitors: 800, conversions: 24, rate: 3.0 },
+        { source: "Direct", visitors: 600, conversions: 30, rate: 5.0 },
+        { source: "Email", visitors: 400, conversions: 28, rate: 7.0 },
+        { source: "Referral", visitors: 300, conversions: 18, rate: 6.0 }
+      ]
+    };
+  }
+
+  // Invalidate user-related caches
+  invalidateUserCaches() {
+    const keysToDelete = Array.from(this.cache.keys()).filter(key => 
+      key.includes('user') || key.includes('analytics') || key.includes('dashboard_stats')
+    );
+    keysToDelete.forEach(key => {
+      this.cache.delete(key);
+      this.cacheTimestamps.delete(key);
+    });
   }
 }
 

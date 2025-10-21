@@ -101,7 +101,7 @@ const VendorAnalyticsDashboard = () => {
                 </p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <ArrowUpRight className="h-3 w-3 mr-1" />
-                  +12.5% from last month
+                  {insights.performance.revenue_growth || 0}% from last month
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-600" />
@@ -119,7 +119,7 @@ const VendorAnalyticsDashboard = () => {
                 </p>
                 <p className="text-xs text-blue-600 flex items-center mt-1">
                   <ArrowUpRight className="h-3 w-3 mr-1" />
-                  +8.2% from last month
+                  {insights.performance.orders_growth || 0}% from last month
                 </p>
               </div>
               <ShoppingCart className="h-8 w-8 text-blue-600" />
@@ -155,7 +155,7 @@ const VendorAnalyticsDashboard = () => {
                 </p>
                 <p className="text-xs text-orange-600 flex items-center mt-1">
                   <ArrowUpRight className="h-3 w-3 mr-1" />
-                  +5.3% from last month
+                  {insights.performance.products_growth || 0}% from last month
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-orange-600" />

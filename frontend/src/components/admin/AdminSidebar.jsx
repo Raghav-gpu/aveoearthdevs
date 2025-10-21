@@ -18,6 +18,16 @@ const menuItems = [
     icon: Squares2X2Icon 
   },
   { 
+    name: "Analytics", 
+    key: "analytics", 
+    icon: ChartBarIcon 
+  },
+  { 
+    name: "Users", 
+    key: "users", 
+    icon: UsersIcon 
+  },
+  { 
     name: "Suppliers", 
     key: "suppliers", 
     icon: TruckIcon 
@@ -32,16 +42,6 @@ const menuItems = [
     key: "orders", 
     icon: ShoppingBagIcon 
   },
-  // { 
-  //   name: "Users", 
-  //   key: "users", 
-  //   icon: UsersIcon 
-  // },
-  // { 
-  //   name: "Analytics", 
-  //   key: "analytics", 
-  //   icon: ChartBarIcon 
-  // },
 ];
 
 const bottomItems = [

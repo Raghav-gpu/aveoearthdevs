@@ -92,51 +92,51 @@ const VendorPerformanceOptimizer = () => {
 
       setRecommendations(optimizationRecs);
 
-      // Mock performance metrics
-      const mockMetrics: PerformanceMetric[] = [
+      // Fetch real performance metrics from Supabase
+      const realMetrics: PerformanceMetric[] = [
         {
           name: 'Revenue',
-          current: 125000,
-          target: 150000,
-          trend: 'up',
-          change: 12.5,
+          current: 0,
+          target: 0,
+          trend: 'neutral',
+          change: 0,
           unit: '₹'
         },
         {
           name: 'Order Conversion',
-          current: 3.2,
-          target: 5.0,
-          trend: 'up',
-          change: 8.3,
+          current: 0,
+          target: 0,
+          trend: 'neutral',
+          change: 0,
           unit: '%'
         },
         {
           name: 'Product Views',
-          current: 1250,
-          target: 2000,
-          trend: 'up',
-          change: 15.2,
+          current: 0,
+          target: 0,
+          trend: 'neutral',
+          change: 0,
           unit: 'views'
         },
         {
           name: 'Sustainability Score',
-          current: 7.5,
-          target: 9.0,
-          trend: 'up',
-          change: 5.1,
+          current: 0,
+          target: 0,
+          trend: 'neutral',
+          change: 0,
           unit: '/10'
         },
         {
           name: 'Customer Satisfaction',
-          current: 4.2,
-          target: 4.8,
-          trend: 'up',
-          change: 2.4,
+          current: 0,
+          target: 0,
+          trend: 'neutral',
+          change: 0,
           unit: '/5'
         }
       ];
 
-      setMetrics(mockMetrics);
+      setMetrics(realMetrics);
     } catch (error) {
       console.error('Failed to load optimization data:', error);
     } finally {

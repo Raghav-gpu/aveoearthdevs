@@ -155,6 +155,11 @@ const Header = () => {
                       <User className="w-5 h-5" />
                     </Link>
                   </Button>
+                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-forest" title="Admin Dashboard">
+                    <Link to="/admin/dashboard">
+                      <TreePine className="w-5 h-5" />
+                    </Link>
+                  </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 

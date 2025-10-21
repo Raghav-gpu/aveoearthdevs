@@ -72,7 +72,17 @@ interface FAQItem {
 const UniversalChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  const closeChat = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsOpen(false);
+      setIsMinimized(false);
+      setIsClosing(false);
+    }, 300);
+  };
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAIConnected, setIsAIConnected] = useState(true);
@@ -447,7 +457,7 @@ const UniversalChatBot = () => {
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           onClick={() => setIsOpen(true)}
-          className="h-14 w-14 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300"
+          className="h-14 w-14 rounded-full bg-gradient-to-r from-[hsl(var(--forest-deep))] to-[hsl(var(--moss-accent))] hover:from-[hsl(157_75%_12%)] hover:to-[hsl(120_40%_65%)] shadow-lg hover:shadow-xl transition-all duration-300 group"
           size="icon"
         >
           <MessageCircle className="h-8 w-8 text-white" />
@@ -490,8 +500,9 @@ const UniversalChatBot = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsOpen(false)}
-              className="text-white hover:bg-white/20 h-8 w-8"
+              onClick={closeChat}
+              className="text-white hover:bg-red-500/20 h-8 w-8 border border-white/30 hover:border-red-300"
+              title="Close Chat"
             >
               <X className="h-4 w-4" />
             </Button>

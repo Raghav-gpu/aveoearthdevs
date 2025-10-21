@@ -44,6 +44,9 @@ const VendorProductsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkUploading, setBulkUploading] = useState(false);
 
   const [formData, setFormData] = useState<Partial<VendorProduct>>({
     name: '',
@@ -178,6 +181,56 @@ const VendorProductsPage = () => {
     }
   };
 
+  const handleBulkUpload = async () => {
+    if (!bulkFile || !vendor?.id) return;
+    
+    setBulkUploading(true);
+    try {
+      // Parse CSV file
+      const text = await bulkFile.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      
+      const products = lines.slice(1).map((line, index) => {
+        const values = line.split(',').map(v => v.trim());
+        const product: Partial<VendorProduct> = {
+          name: values[headers.indexOf('name')] || `Bulk Product ${index + 1}`,
+          description: values[headers.indexOf('description')] || '',
+          short_description: values[headers.indexOf('short_description')] || '',
+          price: parseFloat(values[headers.indexOf('price')]) || 0,
+          stock_quantity: parseInt(values[headers.indexOf('stock_quantity')]) || 0,
+          category_id: values[headers.indexOf('category_id')] || categories[0]?.id || '',
+          is_active: values[headers.indexOf('is_active')]?.toLowerCase() === 'true',
+          is_featured: values[headers.indexOf('is_featured')]?.toLowerCase() === 'true',
+          weight: parseFloat(values[headers.indexOf('weight')]) || 0,
+          dimensions: values[headers.indexOf('dimensions')] || '',
+          materials: values[headers.indexOf('materials')] || '',
+          care_instructions: values[headers.indexOf('care_instructions')] || '',
+          sustainability_notes: values[headers.indexOf('sustainability_notes')] || '',
+          tags: values[headers.indexOf('tags')]?.split(';').map(t => t.trim()) || [],
+          vendor_id: vendor.id
+        };
+        return product;
+      });
+
+      // Create products in batches
+      const batchSize = 5;
+      for (let i = 0; i < products.length; i += batchSize) {
+        const batch = products.slice(i, i + batchSize);
+        await Promise.all(batch.map(product => vendorProductService.createProduct(product as VendorProduct)));
+      }
+
+      // Refresh products list
+      await fetchProducts();
+      setBulkUploadOpen(false);
+      setBulkFile(null);
+    } catch (error) {
+      console.error('Bulk upload failed:', error);
+    } finally {
+      setBulkUploading(false);
+    }
+  };
+
   const handleEdit = (product: VendorProduct) => {
     setEditingProduct(product);
     setFormData(product);
@@ -272,10 +325,16 @@ const VendorProductsPage = () => {
             <h1 className="text-3xl font-bold text-forest mb-2">Product Management</h1>
             <p className="text-muted-foreground">Manage your products and inventory</p>
           </div>
-          <Button onClick={handleNewProduct} className="bg-gradient-to-r from-forest to-moss hover:from-moss hover:to-clay text-white">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={handleNewProduct} className="bg-gradient-to-r from-forest to-moss hover:from-moss hover:to-clay text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </Button>
+            <Button onClick={() => setBulkUploadOpen(true)} variant="outline" className="border-forest text-forest hover:bg-forest hover:text-white">
+              <Upload className="w-4 h-4 mr-2" />
+              Bulk Upload
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -722,6 +781,48 @@ const VendorProductsPage = () => {
                 {isSaving ? 'Saving...' : 'Save Product'}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Upload Dialog */}
+      <Dialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bulk Upload Products</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="bulk-file">CSV File</Label>
+              <Input
+                id="bulk-file"
+                type="file"
+                accept=".csv"
+                onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
+                className="mt-1"
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Upload a CSV file with columns: name, description, short_description, price, stock_quantity, category_id, is_active, is_featured, weight, dimensions, materials, care_instructions, sustainability_notes, tags
+              </p>
+            </div>
+            {bulkFile && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm font-medium">Selected file: {bulkFile.name}</p>
+                <p className="text-xs text-gray-500">Size: {(bulkFile.size / 1024).toFixed(1)} KB</p>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setBulkUploadOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBulkUpload} 
+              disabled={!bulkFile || bulkUploading}
+              className="bg-gradient-to-r from-forest to-moss hover:from-moss hover:to-clay text-white"
+            >
+              {bulkUploading ? 'Uploading...' : 'Upload Products'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

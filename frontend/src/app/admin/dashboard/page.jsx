@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
 import DashboardScreen from "@/components/admin/screens/DashboardScreen";
@@ -13,27 +14,50 @@ import SettingsScreen from "@/components/admin/screens/SettingsScreen";
 
 export default function AdminDashboard() {
   const [activeScreen, setActiveScreen] = useState("dashboard");
+  const [isLoading, setIsLoading] = useState(true);
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user || user.user_role !== "admin") {
+        window.location.href = "/admin/login";
+      } else {
+        setIsLoading(false);
+      }
+    }
+  }, [user, loading]);
 
   const renderScreen = () => {
     switch (activeScreen) {
       case "dashboard":
         return <DashboardScreen />;
+      case "analytics":
+        return <AnalyticsScreen />;
+      case "users":
+        return <UsersScreen />;
       case "suppliers":
         return <SuppliersScreen />;
       case "products":
         return <ProductsScreen />;
       case "orders":
         return <OrdersScreen />;
-      case "users":
-        return <UsersScreen />;
-      case "analytics":
-        return <AnalyticsScreen />;
       case "settings":
         return <SettingsScreen />;
       default:
         return <DashboardScreen />;
     }
   };
+
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,7 +70,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <div className="ml-60">
         {/* Top Bar */}
-        <AdminTopbar />
+        <AdminTopbar user={user} />
         
         {/* Page Content */}
         <main className="p-6">

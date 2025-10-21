@@ -1,211 +1,169 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/api";
-import { tokens } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function AdminLogin() {
   const [formData, setFormData] = useState({
     email: "",
     password: ""
   });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  
+  const { login, user } = useAuth();
   const router = useRouter();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ""
-      }));
+  useEffect(() => {
+    if (user && user.user_role === "admin") {
+      router.push("/admin/dashboard");
     }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-    
-    if (!formData.password.trim()) {
-      newErrors.password = "Password is required";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  }, [user, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
-    setIsLoading(true);
-    setErrors({});
-    
+    setLoading(true);
+    setError("");
+
     try {
-      // Call the auth API with correct parameters
-      const response = await auth.login(formData.email, formData.password);
-      
-      // Check if user has admin role
-      if (response.user.user_type !== 'admin') {
-        setErrors({ submit: "Access denied. Admin privileges required." });
-        return;
-      }
-      
-      // Store tokens
-      tokens.set({
-        access_token: response.tokens.access_token,
-        refresh_token: response.tokens.refresh_token
-      });
-      
-      // Store user info in localStorage for admin dashboard
-      localStorage.setItem('adminUser', JSON.stringify({
-        id: response.user.id,
-        email: response.user.email,
-        first_name: response.user.first_name,
-        last_name: response.user.last_name,
-        user_type: response.user.user_type
-      }));
-      
-      // Redirect to admin dashboard
-      router.push("/admin/dashboard");
-      
-    } catch (error) {
-      console.error("Admin login error:", error);
-      setErrors({ 
-        submit: error.message || "Invalid email or password. Please try again." 
-      });
+      await login(formData.email, formData.password);
+      // Redirect will happen in useEffect
+    } catch (err) {
+      setError(err.message || "Login failed. Please check your credentials.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
+  const handleChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {/* Logo and Header */}
+        {/* Header */}
         <div className="text-center">
-          <div className="flex items-center justify-center mb-6">
-            <img
-              src="/logo.png"
-              alt="AveoEarth Logo"
-              className="h-[42px] w-[44px] mr-2"
-            />
-            <h1 className="font-reem font-normal text-[48px] leading-normal text-black">
-              AveoEarth
-            </h1>
+          <div className="mx-auto h-16 w-16 bg-emerald-600 rounded-full flex items-center justify-center">
+            <span className="text-white font-bold text-xl">AE</span>
           </div>
-          <p className="font-poppins font-normal text-[24px] leading-normal text-black">
-            Conscious commerce, frictionless for you
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+            Admin Login
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Sign in to access the admin dashboard
           </p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-[#f8f8f8] border border-[#666666] rounded-[20px] p-12 mt-16 max-w-[785px] mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="font-reem font-medium text-[16px] leading-[24px] text-[#1a4032]">
-              Admin Login
-            </h2>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
-            <div className="space-y-2">
-              <label className="flex items-center px-4 py-0">
-                <span className="font-poppins font-semibold text-[16px] leading-[24px] text-[#09101d] opacity-80">
-                  Email
-                </span>
-                <span className="font-poppins font-semibold text-[13px] leading-[20px] text-[#da1414] opacity-80 ml-1">
-                  *
-                </span>
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter admin email"
-                  className={`w-full px-4 py-3 bg-[#f9fbe7] border rounded-[8px] font-poppins font-semibold text-[16px] leading-[24px] text-[#1a4032] placeholder-[#1a4032] placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-[#1a4032] focus:border-transparent transition-colors ${
-                    errors.email ? 'border-[#da1414]' : 'border-[#858c94]'
-                  }`}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-[#da1414] text-sm mt-1 px-4">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-2">
-              <label className="flex items-center px-4 py-0">
-                <span className="font-poppins font-semibold text-[16px] leading-[24px] text-[#09101d] opacity-80">
-                  Password
-                </span>
-                <span className="font-poppins font-semibold text-[13px] leading-[20px] text-[#da1414] opacity-80 ml-1">
-                  *
-                </span>
-              </label>
-              <div className="relative">
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter password"
-                  className={`w-full px-4 py-3 bg-[#f9fbe7] border rounded-[8px] font-poppins font-semibold text-[16px] leading-[24px] text-[#1a4032] placeholder-[#1a4032] placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-[#1a4032] focus:border-transparent transition-colors ${
-                    errors.password ? 'border-[#da1414]' : 'border-[#858c94]'
-                  }`}
-                />
-              </div>
-              {errors.password && (
-                <p className="text-[#da1414] text-sm mt-1 px-4">{errors.password}</p>
-              )}
-            </div>
-
-            {/* Submit Error */}
-            {errors.submit && (
-              <div className="text-center">
-                <p className="text-[#da1414] text-sm">{errors.submit}</p>
+        <div className="bg-white py-8 px-6 shadow-xl rounded-lg">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                <p className="text-sm text-red-600">{error}</p>
               </div>
             )}
 
-            {/* Submit Button */}
-            <div className="pt-6">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email Address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
+                placeholder="admin@aveoearth.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1 relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  Remember me
+                </label>
+              </div>
+
+              <div className="text-sm">
+                <a href="#" className="font-medium text-emerald-600 hover:text-emerald-500">
+                  Forgot your password?
+                </a>
+              </div>
+            </div>
+
+            <div>
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full bg-[#1a4032] hover:bg-[#0f2319] disabled:opacity-50 disabled:cursor-not-allowed text-white font-poppins font-medium text-[16px] px-[54px] py-4 rounded-[62px] transition-colors duration-200 max-w-[426px] mx-auto block"
+                disabled={loading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Logging in..." : "Log in"}
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign in"
+                )}
               </button>
             </div>
           </form>
         </div>
 
-        {/* Back to site link */}
+        {/* Footer */}
         <div className="text-center">
-          <Link 
-            href="/" 
-            className="font-poppins text-[#1a4032] hover:text-[#0f2319] underline transition-colors duration-200"
-          >
-            ← Back to main site
-          </Link>
+          <p className="text-sm text-gray-600">
+            Not an admin?{" "}
+            <a href="/" className="font-medium text-emerald-600 hover:text-emerald-500">
+              Go to main site
+            </a>
+          </p>
         </div>
       </div>
     </div>

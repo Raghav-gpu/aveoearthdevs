@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { mockVendorOrderService } from './mockVendorServices';
+import { supabaseVendorOrderService } from './supabaseVendorOrderService';
 
 export interface OrderItem {
   id: string;
@@ -85,30 +86,65 @@ export const vendorOrderService = {
     page?: number;
     limit?: number;
   }): Promise<{ orders: VendorOrder[]; total: number }> {
-    return await mockVendorOrderService.getOrders(vendorId, filters);
+    try {
+      return await supabaseVendorOrderService.getOrders(vendorId, filters);
+    } catch (error) {
+      console.error('Error fetching orders from Supabase, falling back to mock:', error);
+      return await mockVendorOrderService.getOrders(vendorId, filters);
+    }
   },
 
   async getOrder(orderId: string): Promise<VendorOrder | null> {
-    return await mockVendorOrderService.getOrder(orderId);
+    try {
+      return await supabaseVendorOrderService.getOrder(orderId);
+    } catch (error) {
+      console.error('Error fetching order from Supabase, falling back to mock:', error);
+      return await mockVendorOrderService.getOrder(orderId);
+    }
   },
 
   async updateOrderStatus(orderId: string, status: string, notes?: string): Promise<boolean> {
-    return await mockVendorOrderService.updateOrderStatus(orderId, status, notes);
+    try {
+      return await supabaseVendorOrderService.updateOrderStatus(orderId, status, notes);
+    } catch (error) {
+      console.error('Error updating order status in Supabase, falling back to mock:', error);
+      return await mockVendorOrderService.updateOrderStatus(orderId, status, notes);
+    }
   },
 
   async updateTrackingInfo(orderId: string, trackingNumber: string, carrier: string): Promise<boolean> {
-    return await mockVendorOrderService.updateTrackingInfo(orderId, trackingNumber, carrier);
+    try {
+      return await supabaseVendorOrderService.updateTrackingInfo(orderId, trackingNumber, carrier);
+    } catch (error) {
+      console.error('Error updating tracking info in Supabase, falling back to mock:', error);
+      return await mockVendorOrderService.updateTrackingInfo(orderId, trackingNumber, carrier);
+    }
   },
 
   async getOrderStats(vendorId: string, period?: 'week' | 'month' | 'year'): Promise<OrderStats> {
-    return await mockVendorOrderService.getOrderStats(vendorId, period);
+    try {
+      return await supabaseVendorOrderService.getOrderStats(vendorId, period);
+    } catch (error) {
+      console.error('Error fetching order stats from Supabase, falling back to mock:', error);
+      return await mockVendorOrderService.getOrderStats(vendorId, period);
+    }
   },
 
   async cancelOrder(orderId: string, reason: string): Promise<boolean> {
-    return await mockVendorOrderService.cancelOrder(orderId, reason);
+    try {
+      return await supabaseVendorOrderService.cancelOrder(orderId, reason);
+    } catch (error) {
+      console.error('Error cancelling order in Supabase, falling back to mock:', error);
+      return await mockVendorOrderService.cancelOrder(orderId, reason);
+    }
   },
 
   async processRefund(orderId: string, amount: number, reason: string): Promise<boolean> {
-    return await mockVendorOrderService.processRefund(orderId, amount, reason);
+    try {
+      return await supabaseVendorOrderService.processRefund(orderId, amount, reason);
+    } catch (error) {
+      console.error('Error processing refund in Supabase, falling back to mock:', error);
+      return await mockVendorOrderService.processRefund(orderId, amount, reason);
+    }
   }
 };

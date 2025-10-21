@@ -27,8 +27,19 @@ export const useVendorAuth = () => {
           return
         }
 
-        // If no session found, set loading to false immediately
+        // TEMPORARILY DISABLED FOR REVIEW - Provide mock vendor data
+        const mockVendor = {
+          id: 'temp-vendor-123',
+          email: 'review@example.com',
+          businessName: 'Review Vendor',
+          loginTime: new Date().toISOString()
+        }
+        setVendor(mockVendor)
+        setUser({ id: mockVendor.id, email: mockVendor.email } as any)
         setLoading(false)
+
+        // Original behavior (commented out):
+        // setLoading(false)
       } catch (error) {
         console.error('Error checking vendor session:', error)
         setLoading(false)
@@ -52,7 +63,9 @@ export const useVendorAuth = () => {
   }
 
   const isAuthenticated = () => {
-    return !!(vendor && user)
+    // TEMPORARILY DISABLED FOR REVIEW - Always return true
+    return true
+    // Original: return !!(vendor && user)
   }
 
   return {

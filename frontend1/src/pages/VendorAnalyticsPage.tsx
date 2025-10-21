@@ -31,48 +31,25 @@ const VendorAnalyticsPage = () => {
   const [timeRange, setTimeRange] = useState('month');
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Mock data for charts and detailed analytics
-  const [salesData, setSalesData] = useState([
-    { month: 'Jan', sales: 45000, orders: 23 },
-    { month: 'Feb', sales: 52000, orders: 28 },
-    { month: 'Mar', sales: 48000, orders: 25 },
-    { month: 'Apr', sales: 61000, orders: 32 },
-    { month: 'May', sales: 55000, orders: 29 },
-    { month: 'Jun', sales: 67000, orders: 35 },
-  ]);
-
-  const [topProducts] = useState([
-    { name: 'Organic Bamboo Sheets', sales: 234, revenue: 58466, growth: 12.5 },
-    { name: 'Eco Water Bottle', sales: 189, revenue: 24611, growth: 8.2 },
-    { name: 'Sustainable Tote Bag', sales: 156, revenue: 12444, growth: 15.3 },
-    { name: 'Recycled Notebook', sales: 142, revenue: 8520, growth: -2.1 },
-    { name: 'Bamboo Cutlery Set', sales: 128, revenue: 10240, growth: 6.7 },
-  ]);
-
-  const [categoryData] = useState([
-    { category: 'Home & Living', sales: 45000, percentage: 35 },
-    { category: 'Personal Care', sales: 32000, percentage: 25 },
-    { category: 'Fashion', sales: 28000, percentage: 22 },
-    { category: 'Food & Beverage', sales: 18000, percentage: 14 },
-    { category: 'Other', sales: 5000, percentage: 4 },
-  ]);
-
-  const [customerMetrics] = useState({
-    totalCustomers: 1247,
-    newCustomers: 89,
-    returningCustomers: 1158,
-    averageOrderValue: 2450,
-    customerLifetimeValue: 12500,
-    retentionRate: 78.5
+  // State for real data
+  const [salesData, setSalesData] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
+  const [customerMetrics, setCustomerMetrics] = useState({
+    totalCustomers: 0,
+    newCustomers: 0,
+    returningCustomers: 0,
+    averageOrderValue: 0,
+    customerLifetimeValue: 0,
+    retentionRate: 0
   });
-
-  const [sustainabilityMetrics] = useState({
-    carbonFootprintReduced: 1250, // kg CO2
-    wasteDiverted: 890, // kg
-    treesPlanted: 45,
-    plasticBottlesSaved: 2300,
-    energySaved: 450, // kWh
-    waterSaved: 1200 // liters
+  const [sustainabilityMetrics, setSustainabilityMetrics] = useState({
+    carbonFootprintReduced: 0,
+    wasteDiverted: 0,
+    treesPlanted: 0,
+    plasticBottlesSaved: 0,
+    energySaved: 0,
+    waterSaved: 0
   });
 
   useEffect(() => {

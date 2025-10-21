@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useVendorAuth } from '@/hooks/useVendorAuth';
 import VendorConcierge from '@/components/VendorConcierge';
+import { supabase } from '@/lib/supabase';
 import { 
   Plus, 
   TrendingUp, 
@@ -43,102 +44,106 @@ const VendorDashboard = () => {
     return null;
   }
 
-  // Mock data
-  const stats = [
+  // State for real data
+  const [stats, setStats] = useState([
     {
       title: 'Total Revenue',
-      value: '₹2,45,680',
-      change: '+12.5%',
-      trend: 'up',
+      value: '₹0',
+      change: '0%',
+      trend: 'neutral',
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-100'
     },
     {
       title: 'Total Orders',
-      value: '1,234',
-      change: '+8.2%',
-      trend: 'up',
+      value: '0',
+      change: '0%',
+      trend: 'neutral',
       icon: ShoppingCart,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100'
     },
     {
       title: 'Products Sold',
-      value: '3,456',
-      change: '+15.3%',
-      trend: 'up',
+      value: '0',
+      change: '0%',
+      trend: 'neutral',
       icon: Package,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100'
     },
     {
       title: 'Active Products',
-      value: '89',
-      change: '+3',
-      trend: 'up',
+      value: '0',
+      change: '0',
+      trend: 'neutral',
       icon: TrendingUp,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100'
     }
-  ];
+  ]);
 
-  const recentOrders = [
-    {
-      id: '#ORD-001',
-      customer: 'Sarah Johnson',
-      product: 'Organic Bamboo Sheets',
-      amount: '₹2,499',
-      status: 'completed',
-      date: '2024-01-15'
-    },
-    {
-      id: '#ORD-002',
-      customer: 'Mike Chen',
-      product: 'Eco Water Bottle',
-      amount: '₹1,299',
-      status: 'pending',
-      date: '2024-01-14'
-    },
-    {
-      id: '#ORD-003',
-      customer: 'Emma Wilson',
-      product: 'Sustainable Tote Bag',
-      amount: '₹799',
-      status: 'shipped',
-      date: '2024-01-13'
-    }
-  ];
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const topProducts = [
-    {
-      id: 1,
-      name: 'Organic Bamboo Sheets',
-      image: '/api/placeholder/80/80',
-      sales: 234,
-      revenue: '₹58,466',
-      rating: 4.8,
-      sustainability: 95
-    },
-    {
-      id: 2,
-      name: 'Eco Water Bottle',
-      image: '/api/placeholder/80/80',
-      sales: 189,
-      revenue: '₹24,611',
-      rating: 4.6,
-      sustainability: 92
-    },
-    {
-      id: 3,
-      name: 'Sustainable Tote Bag',
-      image: '/api/placeholder/80/80',
-      sales: 156,
-      revenue: '₹12,444',
-      rating: 4.7,
-      sustainability: 88
-    }
-  ];
+  // Fetch real data from Supabase
+  useEffect(() => {
+    const fetchVendorData = async () => {
+      if (!vendor?.id) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Fetch vendor stats
+        const { data: products } = await supabase
+          .from('products')
+          .select('id, name, price, status, approval_status')
+          .eq('supplier_id', vendor.id);
+
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('id, total_amount, status, created_at')
+          .eq('vendor_id', vendor.id);
+
+        // Calculate stats
+        const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+        const totalOrders = orders?.length || 0;
+        const activeProducts = products?.filter(p => p.status === 'active' && p.approval_status === 'approved').length || 0;
+        const totalProducts = products?.length || 0;
+
+        // Update stats
+        setStats(prev => prev.map(stat => {
+          switch (stat.title) {
+            case 'Total Revenue':
+              return { ...stat, value: `₹${totalRevenue.toLocaleString()}` };
+            case 'Total Orders':
+              return { ...stat, value: totalOrders.toString() };
+            case 'Active Products':
+              return { ...stat, value: activeProducts.toString() };
+            case 'Products Sold':
+              return { ...stat, value: '0' }; // This would need order_items table
+            default:
+              return stat;
+          }
+        }));
+
+        // Set recent orders (empty for now - would need orders table)
+        setRecentOrders([]);
+        
+        // Set top products (empty for now - would need sales data)
+        setTopProducts([]);
+
+      } catch (error) {
+        console.error('Error fetching vendor data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVendorData();
+  }, [vendor?.id]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -34,6 +34,9 @@ import VendorProfilePage from "./pages/VendorProfilePage";
 import VendorLayout from "./components/VendorLayout";
 import DebugAuth from "./components/DebugAuth";
 import UniversalChatBot from "./components/UniversalChatBot";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import TestRunner from "./pages/TestRunner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -87,6 +90,12 @@ const App = () => (
                 <Route path="analytics" element={<VendorAnalyticsPage />} />
                 <Route path="profile" element={<VendorProfilePage />} />
               </Route>
+              {/* Admin Routes */}
+              <Route path="admin/login" element={<AdminLoginPage />} />
+              <Route path="admin/dashboard" element={<AdminDashboard />} />
+              <Route path="admin" element={<AdminDashboard />} />
+              {/* Test Runner Route */}
+              <Route path="test-runner" element={<TestRunner />} />
             </Routes>
             <DebugAuth />
             <UniversalChatBot />

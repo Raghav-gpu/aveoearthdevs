@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
+import { useVendorAuth } from '@/hooks/useVendorAuth';
 import { 
   BarChart3, 
   Package, 
@@ -26,89 +28,135 @@ import {
 
 const VendorDashboardPage = () => {
   const navigate = useNavigate();
+  const { vendor, isAuthenticated } = useVendorAuth();
   const [timeRange, setTimeRange] = useState('7d');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - in real app this would come from API
-  const stats = {
-    totalRevenue: 125430,
-    totalOrders: 342,
-    totalProducts: 28,
-    conversionRate: 3.2,
-    revenueChange: 12.5,
-    ordersChange: -2.1,
-    productsChange: 8.3,
-    conversionChange: 0.8
-  };
+  // State for real data
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalProducts: 0,
+    conversionRate: 0,
+    revenueChange: 0,
+    ordersChange: 0,
+    productsChange: 0,
+    conversionChange: 0
+  });
 
-  const recentOrders = [
-    {
-      id: 'ORD-001',
-      customer: 'John Smith',
-      product: 'Organic Cotton T-Shirt',
-      amount: 29.99,
-      status: 'completed',
-      date: '2024-01-15',
-      time: '10:30 AM'
-    },
-    {
-      id: 'ORD-002',
-      customer: 'Sarah Johnson',
-      product: 'Bamboo Water Bottle',
-      amount: 24.99,
-      status: 'processing',
-      date: '2024-01-15',
-      time: '09:15 AM'
-    },
-    {
-      id: 'ORD-003',
-      customer: 'Mike Wilson',
-      product: 'Eco-Friendly Skincare Set',
-      amount: 89.99,
-      status: 'shipped',
-      date: '2024-01-14',
-      time: '2:45 PM'
-    },
-    {
-      id: 'ORD-004',
-      customer: 'Emma Davis',
-      product: 'Recycled Paper Notebook',
-      amount: 12.99,
-      status: 'pending',
-      date: '2024-01-14',
-      time: '11:20 AM'
-    }
-  ];
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [sustainabilityMetrics, setSustainabilityMetrics] = useState({
+    carbonOffset: 0,
+    treesPlanted: 0,
+    plasticSaved: 0,
+    waterSaved: 0
+  });
 
-  const topProducts = [
-    {
-      name: 'Organic Cotton T-Shirt',
-      sales: 45,
-      revenue: 1349.55,
-      growth: 15.2,
-      image: '/api/placeholder/60/60'
-    },
-    {
-      name: 'Bamboo Water Bottle',
-      sales: 32,
-      revenue: 799.68,
-      growth: 8.7,
-      image: '/api/placeholder/60/60'
-    },
-    {
-      name: 'Eco-Friendly Skincare Set',
-      sales: 18,
-      revenue: 1619.82,
-      growth: -3.1,
-      image: '/api/placeholder/60/60'
-    }
-  ];
+  // Fetch real data from Supabase
+  useEffect(() => {
+    const fetchVendorData = async () => {
+      if (!vendor?.id) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Fetch vendor products
+        const { data: products } = await supabase
+          .from('products')
+          .select('id, name, price, status, approval_status, created_at')
+          .eq('supplier_id', vendor.id);
 
-  const sustainabilityMetrics = {
-    carbonOffset: 1250,
-    treesPlanted: 45,
-    plasticSaved: 320,
-    waterSaved: 1800
-  };
+        // Fetch vendor orders
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('id, total_amount, status, created_at, order_items(quantity, price)')
+          .eq('vendor_id', vendor.id);
+
+        // Calculate stats
+        const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+        const totalOrders = orders?.length || 0;
+        const activeProducts = products?.filter(p => p.status === 'active' && p.approval_status === 'approved').length || 0;
+        const totalProducts = products?.length || 0;
+        const conversionRate = totalOrders > 0 ? (totalOrders / (totalOrders + 100)) * 100 : 0; // Mock conversion rate
+
+        // Calculate changes (mock for now - would need historical data)
+        const revenueChange = 0;
+        const ordersChange = 0;
+        const productsChange = 0;
+        const conversionChange = 0;
+
+        setStats({
+          totalRevenue,
+          totalOrders,
+          totalProducts,
+          conversionRate,
+          revenueChange,
+          ordersChange,
+          productsChange,
+          conversionChange
+        });
+
+        // Set recent orders (limit to 4)
+        const recentOrdersData = (orders || [])
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 4)
+          .map(order => ({
+            id: order.id,
+            customer: 'Customer', // Would need to join with users table
+            product: 'Product', // Would need to join with order_items
+            amount: order.total_amount,
+            status: order.status,
+            date: new Date(order.created_at).toISOString().split('T')[0],
+            time: new Date(order.created_at).toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: true 
+            })
+          }));
+        setRecentOrders(recentOrdersData);
+
+        // Set top products (mock for now - would need sales data)
+        setTopProducts([]);
+
+        // Set sustainability metrics (mock for now)
+        setSustainabilityMetrics({
+          carbonOffset: 0,
+          treesPlanted: 0,
+          plasticSaved: 0,
+          waterSaved: 0
+        });
+
+      } catch (error) {
+        console.error('Error fetching vendor data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVendorData();
+  }, [vendor?.id, timeRange]);
+
+  // Authentication check
+  if (!isAuthenticated()) {
+    return null;
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-sage/5 via-background to-moss/5 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-forest mx-auto"></div>
+              <p className="mt-4 text-charcoal/70">Loading dashboard...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

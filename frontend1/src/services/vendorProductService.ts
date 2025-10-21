@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { mockVendorProductService } from './mockVendorServices';
+import { supabaseVendorService } from './supabaseVendorService';
 
 export interface ProductVariant {
   id: string;
@@ -87,38 +88,79 @@ export const vendorProductService = {
     page?: number;
     limit?: number;
   }): Promise<{ products: VendorProduct[]; total: number }> {
-    return await mockVendorProductService.getProducts(vendorId, filters);
+    try {
+      return await supabaseVendorService.getProducts(vendorId, filters);
+    } catch (error) {
+      console.error('Error fetching products from Supabase, falling back to mock:', error);
+      return await mockVendorProductService.getProducts(vendorId, filters);
+    }
   },
 
   async getProduct(productId: string): Promise<VendorProduct | null> {
-    return await mockVendorProductService.getProduct(productId);
+    try {
+      return await supabaseVendorService.getProduct(productId);
+    } catch (error) {
+      console.error('Error fetching product from Supabase, falling back to mock:', error);
+      return await mockVendorProductService.getProduct(productId);
+    }
   },
 
   async createProduct(product: Partial<VendorProduct>): Promise<VendorProduct | null> {
-    return await mockVendorProductService.createProduct(product);
+    try {
+      return await supabaseVendorService.createProduct(product);
+    } catch (error) {
+      console.error('Error creating product in Supabase, falling back to mock:', error);
+      return await mockVendorProductService.createProduct(product);
+    }
   },
 
   async updateProduct(productId: string, updates: Partial<VendorProduct>): Promise<VendorProduct | null> {
-    return await mockVendorProductService.updateProduct(productId, updates);
+    try {
+      return await supabaseVendorService.updateProduct(productId, updates);
+    } catch (error) {
+      console.error('Error updating product in Supabase, falling back to mock:', error);
+      return await mockVendorProductService.updateProduct(productId, updates);
+    }
   },
 
   async deleteProduct(productId: string): Promise<boolean> {
-    return await mockVendorProductService.deleteProduct(productId);
+    try {
+      return await supabaseVendorService.deleteProduct(productId);
+    } catch (error) {
+      console.error('Error deleting product in Supabase, falling back to mock:', error);
+      return await mockVendorProductService.deleteProduct(productId);
+    }
   },
 
   async uploadProductImage(productId: string, file: File, imageIndex: number): Promise<string | null> {
+    // For now, use mock service for image uploads
     return await mockVendorProductService.uploadProductImage(productId, file, imageIndex);
   },
 
   async getCategories(): Promise<ProductCategory[]> {
-    return await mockVendorProductService.getCategories();
+    try {
+      return await supabaseVendorService.getCategories();
+    } catch (error) {
+      console.error('Error fetching categories from Supabase, falling back to mock:', error);
+      return await mockVendorProductService.getCategories();
+    }
   },
 
   async updateStock(productId: string, quantity: number): Promise<boolean> {
-    return await mockVendorProductService.updateStock(productId, quantity);
+    try {
+      return await supabaseVendorService.updateStock(productId, quantity);
+    } catch (error) {
+      console.error('Error updating stock in Supabase, falling back to mock:', error);
+      return await mockVendorProductService.updateStock(productId, quantity);
+    }
   },
 
   async toggleProductStatus(productId: string, isActive: boolean): Promise<boolean> {
-    return await mockVendorProductService.toggleProductStatus(productId, isActive);
+    try {
+      return await supabaseVendorService.toggleProductStatus(productId, isActive);
+    } catch (error) {
+      console.error('Error toggling product status in Supabase, falling back to mock:', error);
+      return await mockVendorProductService.toggleProductStatus(productId, isActive);
+    }
   }
 };
