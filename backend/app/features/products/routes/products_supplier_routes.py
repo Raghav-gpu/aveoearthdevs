@@ -235,11 +235,21 @@ async def get_supplier_products(
     current_user: Dict[str, Any] = Depends(require_supplier()),
     db: AsyncSession = Depends(get_async_session)
 ):
-    pagination = PaginationParams(page=page, limit=limit)
-    product_crud = ProductCrud()
-    return await product_crud.get_supplier_products(
-        db, current_user["id"], pagination, status_filter, search
-    )
+    try:
+        pagination = PaginationParams(page=page, limit=limit)
+        product_crud = ProductCrud()
+        return await product_crud.get_supplier_products(
+            db, current_user["id"], pagination, status_filter, search
+        )
+    except Exception as e:
+        logger.error(f"Database error in get_supplier_products: {str(e)}")
+        # Return empty results when database is not available
+        return PaginatedResponse[ProductListResponse].create(
+            items=[],
+            total=0,
+            page=page,
+            limit=limit
+        )
 
 @products_supplier_router.get("/{product_id}", response_model=ProductDetailResponse)
 async def get_product(

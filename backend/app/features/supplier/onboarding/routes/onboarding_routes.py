@@ -16,10 +16,7 @@ from app.core.role_auth import require_supplier, get_all_users
 from app.core.exceptions import ValidationException, NotFoundException, AuthorizationException
 from app.core.logging import get_logger
 from app.core.base import SuccessResponse
-from app.core.gcp_storage import (
-    upload_supplier_logo, upload_supplier_banner, upload_supplier_document,
-    delete_file_from_url, extract_blob_path_from_url
-)
+from app.core.supabase_storage import SupabaseStorageClient
 from app.database.session import get_async_session
 from fastapi import APIRouter, Depends, File, Form, status
 from fastapi.datastructures import UploadFile

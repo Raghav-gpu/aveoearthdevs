@@ -23,6 +23,8 @@ from app.features.products.routes.product_search_routes import product_search_ro
 from app.features.orders.routes.orders_supplier_routes import orders_supplier_router
 from app.features.orders.routes.orders_buyer_routes import orders_buyer_router
 from app.features.orders.routes.orders_admin_routes import orders_admin_router
+from app.features.analytics.routes.analytics_routes import analytics_router
+from app.features.analytics.routes.dashboard_routes import dashboard_router
 
 app_logger = get_logger("main")
 
@@ -41,13 +43,17 @@ async def lifespan(app: FastAPI):
         app_logger.info("Continuing with limited functionality")
     
     try:
-        from app.core.gcp_storage import GCPStorageClient
-        storage_client = GCPStorageClient()
-        storage_client._ensure_buckets_exist()
-        app_logger.info("GCP storage buckets initialized")
+        from app.core.supabase_storage import SupabaseStorageClient
+        storage_client = SupabaseStorageClient()
+        # Initialize storage buckets
+        storage_client._ensure_bucket_exists("supplier-assets")
+        storage_client._ensure_bucket_exists("product-assets")
+        storage_client._ensure_bucket_exists("category-assets")
+        storage_client._ensure_bucket_exists("user-uploads")
+        app_logger.info("Supabase storage buckets initialized")
     except Exception as e:
-        app_logger.error(f"GCP storage initialization failed: {str(e)}")
-        app_logger.info("Continuing without GCP storage")
+        app_logger.error(f"Supabase storage initialization failed: {str(e)}")
+        app_logger.info("Continuing without Supabase storage")
     
     yield
     
@@ -113,6 +119,8 @@ app.include_router(settings_router)
 app.include_router(orders_supplier_router)
 app.include_router(orders_buyer_router)
 app.include_router(orders_admin_router)
+app.include_router(analytics_router)
+app.include_router(dashboard_router)
 
 @app.get("/")
 async def root():

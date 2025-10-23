@@ -72,12 +72,11 @@ async def get_products(
     except Exception as e:
         logger.error(f"Database error in get_products: {str(e)}")
         # Return empty results when database is not available
-        return PaginatedResponse[ProductListResponse](
+        return PaginatedResponse[ProductListResponse].create(
             items=[],
             total=0,
             page=page,
-            limit=limit,
-            total_pages=0
+            limit=limit
         )
 
 @products_buyer_router.get("/{product_slug}", response_model=ProductDetailResponse)
