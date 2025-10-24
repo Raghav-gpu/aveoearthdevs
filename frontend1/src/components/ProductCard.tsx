@@ -51,13 +51,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <Card className="group hover:shadow-lg transition-shadow duration-300">
+    <Card className="mobile-product-card group hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="p-0">
         <div className="relative overflow-hidden rounded-t-lg">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+            className="mobile-product-image group-hover:scale-105 transition-transform duration-300"
           />
           {product.onSale && (
             <Badge className="absolute top-2 left-2 bg-red-500 text-white">
@@ -75,23 +75,23 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       </CardHeader>
       
-      <CardContent className="p-4">
+      <CardContent className="mobile-product-info">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="mobile-text-sm">
               {product.category}
             </Badge>
             <div className="flex items-center gap-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <span className="text-xs font-medium">{product.rating}</span>
+              <span className="mobile-text-sm font-medium">{product.rating}</span>
             </div>
           </div>
           
-          <CardTitle className="text-lg line-clamp-2 group-hover:text-[hsl(var(--forest-deep))] transition-colors">
+          <CardTitle className="mobile-heading-3 line-clamp-2 group-hover:text-[hsl(var(--forest-deep))] transition-colors">
             {product.name}
           </CardTitle>
           
-          <p className="text-sm text-gray-600 line-clamp-2">
+          <p className="mobile-text-sm text-gray-600 line-clamp-2">
             {product.description}
           </p>
           
@@ -119,7 +119,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 onClick={handleViewDetails}
                 variant="outline"
                 size="sm"
-                className="text-xs"
+                className="mobile-touch-target mobile-touch-feedback mobile-text-sm"
               >
                 View
               </Button>
@@ -127,7 +127,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 onClick={handleAddToCart}
                 disabled={!product.inStock}
                 size="sm"
-                className="bg-[hsl(var(--forest-deep))] hover:bg-[hsl(157_75%_12%)] text-white text-xs"
+                className="mobile-touch-target mobile-touch-feedback bg-[hsl(var(--forest-deep))] hover:bg-[hsl(157_75%_12%)] text-white mobile-text-sm"
               >
                 <ShoppingCart className="h-3 w-3 mr-1" />
                 Add

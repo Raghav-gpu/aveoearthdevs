@@ -2,6 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-First Responsive Design */
+@layer base {
+  /* Mobile-specific viewport settings */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+  
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  
+  /* Touch-friendly tap targets */
+  button, a, input, select, textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent zoom on input focus (iOS) */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 /* AveoEarth Design System - Organic, sustainable, conversion-optimized */
 
 @layer base {
@@ -277,5 +311,225 @@
     50% {
       transform: translateY(-15px) rotate(2deg);
     }
+  }
+}
+
+/* Mobile-First Responsive Utilities */
+@layer utilities {
+  /* Mobile Navigation */
+  .mobile-nav {
+    @apply fixed inset-0 z-50 bg-white transform transition-transform duration-300 ease-in-out;
+  }
+  
+  .mobile-nav-open {
+    @apply translate-x-0;
+  }
+  
+  .mobile-nav-closed {
+    @apply -translate-x-full;
+  }
+  
+  /* Mobile Product Grid */
+  .mobile-product-grid {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  /* Mobile Category Bubbles */
+  .mobile-category-bubbles {
+    @apply flex flex-wrap gap-2 justify-center px-4;
+  }
+  
+  .mobile-category-bubble {
+    @apply px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors;
+  }
+  
+  /* Mobile Chat Bot */
+  .mobile-chat-bot {
+    @apply fixed bottom-4 right-4 z-40;
+  }
+  
+  .mobile-chat-window {
+    @apply fixed bottom-20 right-4 w-80 max-w-[calc(100vw-2rem)] h-96 bg-white rounded-lg shadow-xl border;
+  }
+  
+  /* Mobile Forms */
+  .mobile-form {
+    @apply space-y-4 p-4;
+  }
+  
+  .mobile-form-input {
+    @apply w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent;
+  }
+  
+  .mobile-form-button {
+    @apply w-full py-3 px-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors;
+  }
+  
+  /* Mobile Vendor Dashboard */
+  .mobile-vendor-dashboard {
+    @apply p-4 space-y-6;
+  }
+  
+  .mobile-vendor-card {
+    @apply bg-white rounded-lg shadow-sm border p-4;
+  }
+  
+  /* Mobile Product Cards */
+  .mobile-product-card {
+    @apply bg-white rounded-lg shadow-sm border overflow-hidden;
+  }
+  
+  .mobile-product-image {
+    @apply w-full h-48 object-cover;
+  }
+  
+  .mobile-product-info {
+    @apply p-4 space-y-2;
+  }
+  
+  /* Mobile Search */
+  .mobile-search-bar {
+    @apply w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500;
+  }
+  
+  /* Mobile Tables */
+  .mobile-table {
+    @apply block overflow-x-auto;
+  }
+  
+  .mobile-table-row {
+    @apply block border-b py-2;
+  }
+  
+  .mobile-table-cell {
+    @apply block px-2 py-1;
+  }
+  
+  /* Mobile Modals */
+  .mobile-modal {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+  }
+  
+  .mobile-modal-content {
+    @apply bg-white rounded-lg shadow-xl max-w-sm w-full max-h-[90vh] overflow-y-auto;
+  }
+  
+  /* Mobile Typography */
+  .mobile-heading-1 {
+    @apply text-2xl font-bold text-gray-900 sm:text-3xl lg:text-4xl;
+  }
+  
+  .mobile-heading-2 {
+    @apply text-xl font-semibold text-gray-900 sm:text-2xl lg:text-3xl;
+  }
+  
+  .mobile-heading-3 {
+    @apply text-lg font-semibold text-gray-900 sm:text-xl lg:text-2xl;
+  }
+  
+  .mobile-text {
+    @apply text-base text-gray-700 leading-relaxed;
+  }
+  
+  .mobile-text-sm {
+    @apply text-sm text-gray-600;
+  }
+  
+  /* Mobile Spacing */
+  .mobile-section {
+    @apply py-8 px-4 sm:py-12 sm:px-6 lg:py-16 lg:px-8;
+  }
+  
+  .mobile-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Mobile Touch Interactions */
+  .mobile-touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+  
+  .mobile-touch-feedback {
+    @apply active:scale-95 transition-transform duration-150;
+  }
+  
+  /* Mobile Accessibility */
+  .mobile-sr-only {
+    @apply sr-only;
+  }
+  
+  .mobile-focus-visible {
+    @apply focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
+  }
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 640px) {
+  /* Mobile-specific styles */
+  .mobile-only {
+    @apply block;
+  }
+  
+  .desktop-only {
+    @apply hidden;
+  }
+  
+  /* Mobile navigation */
+  .mobile-nav-toggle {
+    @apply block sm:hidden;
+  }
+  
+  /* Mobile product grid */
+  .mobile-product-grid {
+    @apply grid-cols-1 gap-3;
+  }
+  
+  /* Mobile text sizes */
+  .mobile-text-responsive {
+    @apply text-sm;
+  }
+  
+  .mobile-heading-responsive {
+    @apply text-xl;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Tablet-specific styles */
+  .tablet-only {
+    @apply block;
+  }
+  
+  .mobile-only {
+    @apply hidden;
+  }
+  
+  .desktop-only {
+    @apply hidden;
+  }
+  
+  /* Tablet product grid */
+  .mobile-product-grid {
+    @apply grid-cols-2 gap-4;
+  }
+}
+
+@media (min-width: 1025px) {
+  /* Desktop-specific styles */
+  .desktop-only {
+    @apply block;
+  }
+  
+  .mobile-only {
+    @apply hidden;
+  }
+  
+  .tablet-only {
+    @apply hidden;
+  }
+  
+  /* Desktop product grid */
+  .mobile-product-grid {
+    @apply grid-cols-3 xl:grid-cols-4 gap-6;
   }
 }

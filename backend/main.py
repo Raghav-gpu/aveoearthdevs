@@ -25,6 +25,7 @@ from app.features.orders.routes.orders_buyer_routes import orders_buyer_router
 from app.features.orders.routes.orders_admin_routes import orders_admin_router
 from app.features.analytics.routes.analytics_routes import analytics_router
 from app.features.analytics.routes.dashboard_routes import dashboard_router
+from app.features.products.routes.optimized_upload_routes import router as optimized_upload_router
 
 app_logger = get_logger("main")
 
@@ -121,6 +122,7 @@ app.include_router(orders_buyer_router)
 app.include_router(orders_admin_router)
 app.include_router(analytics_router)
 app.include_router(dashboard_router)
+app.include_router(optimized_upload_router)
 
 @app.get("/")
 async def root():
