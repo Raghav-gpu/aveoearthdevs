@@ -30,6 +30,8 @@ class User(BaseUUID, BaseTimeStamp, Base):
     referrals_made = relationship("Referral", foreign_keys="Referral.referrer_id", back_populates="referrer", passive_deletes=True)
     referrals_received = relationship("Referral", foreign_keys="Referral.referee_id", back_populates="referee", passive_deletes=True)
     supplier_business = relationship("SupplierBusiness", foreign_keys="SupplierBusiness.supplier_id", back_populates="supplier", uselist=False, passive_deletes=True)
+    activities = relationship("UserActivity", back_populates="user", passive_deletes=True)
+    behavior_profile = relationship("UserBehaviorProfile", back_populates="user", uselist=False, passive_deletes=True)
 
     def to_dict(self):
         return {

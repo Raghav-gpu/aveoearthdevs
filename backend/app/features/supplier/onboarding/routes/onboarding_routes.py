@@ -190,11 +190,10 @@ async def delete_document(
         raise NotFoundException("Document not found")
     
     try:
-        from app.core.gcp_storage import get_storage_client
-        storage_client = get_storage_client()
+        storage_client = SupabaseStorageClient()
         blob_path = extract_blob_path_from_url(document.file_path)
         if blob_path:
-            storage_client.delete_file("aveoearth-supplier-assets", blob_path)
+            storage_client.delete_file("supplier-assets", blob_path)
     except:
         pass
     
@@ -760,7 +759,7 @@ async def upload_banner(
 async def list_assets(
     current_user: Dict[str, Any] = Depends(require_supplier())
 ):
-    from app.core.gcp_storage import get_storage_client
+    storage_client = SupabaseStorageClient()
     from app.core.config import settings
     try:
         client = get_storage_client()
@@ -789,7 +788,7 @@ async def delete_asset(
         raise AuthorizationException("You can only delete your own files")
     
     from app.core.config import settings
-    from app.core.gcp_storage import get_storage_client
+    storage_client = SupabaseStorageClient()
     try:
         client = get_storage_client()
         success = client.delete_file(settings.GCP_BUCKET_SUPPLIER_ASSETS, file_name)

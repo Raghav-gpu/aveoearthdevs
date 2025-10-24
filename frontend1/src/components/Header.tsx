@@ -33,6 +33,7 @@ const Header = () => {
     { label: 'Categories', href: '/category' },
     { label: 'New Arrivals', href: '/products' },
     { label: 'Best Sellers', href: '/products' },
+    { label: 'Track Order', href: '/track-order' },
     { label: 'Community', href: '/community' },
     { label: 'About Us', href: '/about' },
   ];

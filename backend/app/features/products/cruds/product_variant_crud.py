@@ -9,7 +9,7 @@ from app.features.products.models.product_variant import ProductVariant
 from app.features.products.models.product_image import ProductImage
 from app.core.exceptions import NotFoundException, ConflictException
 from app.core.logging import get_logger
-from app.core.gcp_storage import get_storage_client, extract_blob_path_from_url, delete_file_from_url, upload_product_image
+from app.core.supabase_storage import SupabaseStorageClient, extract_blob_path_from_url, delete_file_from_url, upload_product_image
 import asyncio
 
 logger = get_logger("crud.product_variants")

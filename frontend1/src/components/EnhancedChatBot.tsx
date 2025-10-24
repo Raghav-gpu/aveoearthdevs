@@ -60,6 +60,7 @@ const EnhancedChatBot = () => {
   const [isAIConnected, setIsAIConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
   const { user, isBackendConnected } = useAuth();
 
   // Check AI service connection on mount
@@ -81,6 +82,23 @@ const EnhancedChatBot = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Click outside to close functionality
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (chatRef.current && !chatRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const handleSendMessage = async (messageText?: string) => {
     const textToSend = messageText || message.trim();
@@ -227,24 +245,35 @@ const EnhancedChatBot = () => {
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="rounded-full h-14 w-14 bg-green-600 hover:bg-green-700 shadow-lg"
+          className="rounded-full h-16 w-16 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
         >
-          <MessageCircle className="w-6 h-6" />
+          <div className="relative">
+            <video
+              className="w-8 h-8 rounded-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+            >
+              <source src={AveoBuddyVideo} type="video/webm" />
+            </video>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+          </div>
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-96 max-h-[600px]">
-      <Card className="bg-white shadow-2xl border-0 rounded-2xl overflow-hidden">
+    <div ref={chatRef} className="fixed bottom-6 right-6 z-50 w-96 max-h-[600px]">
+      <Card className="bg-white shadow-2xl border-0 rounded-2xl overflow-hidden transform transition-all duration-300">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="relative">
                 <video
-                  className="w-10 h-10 rounded-full object-cover"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-white/20"
                   autoPlay
                   loop
                   muted
@@ -252,21 +281,24 @@ const EnhancedChatBot = () => {
                 >
                   <source src={AveoBuddyVideo} type="video/webm" />
                 </video>
-                <div className="absolute -bottom-1 -right-1">
+                <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1">
                   {getConnectionStatusIcon()}
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold">AveoBuddy</h3>
-                <p className="text-xs text-green-100">{getConnectionStatusText()}</p>
+                <h3 className="font-bold text-lg">AveoBuddy</h3>
+                <p className="text-xs text-green-100 flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                  {getConnectionStatusText()}
+                </p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="text-white hover:bg-green-600"
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
               >
                 {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
               </Button>
@@ -274,7 +306,7 @@ const EnhancedChatBot = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:bg-green-600"
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -285,32 +317,39 @@ const EnhancedChatBot = () => {
         {!isMinimized && (
           <>
             {/* Messages */}
-            <ScrollArea className="h-80 p-4">
+            <ScrollArea className="h-80 p-4 bg-gray-50">
               <div className="space-y-4">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`flex items-start space-x-2 max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        msg.role === 'user' 
-                          ? 'bg-blue-500' 
-                          : 'bg-green-500'
-                      }`}>
-                        {msg.role === 'user' ? (
+                    <div className={`flex items-start space-x-2 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                      {msg.role === 'assistant' && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center shadow-sm">
+                          <video
+                            className="w-6 h-6 rounded-full object-cover"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                          >
+                            <source src={AveoBuddyVideo} type="video/webm" />
+                          </video>
+                        </div>
+                      )}
+                      {msg.role === 'user' && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
                           <User className="w-4 h-4 text-white" />
-                        ) : (
-                          <Bot className="w-4 h-4 text-white" />
-                        )}
-                      </div>
-                      <div className={`rounded-2xl px-4 py-2 ${
+                        </div>
+                      )}
+                      <div className={`rounded-2xl px-4 py-3 shadow-sm ${
                         msg.role === 'user'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                          : 'bg-white text-gray-800 border border-gray-200'
                       }`}>
-                        <p className="text-sm">{msg.content}</p>
+                        <p className="text-sm leading-relaxed">{msg.content}</p>
                         {msg.function_calls && msg.function_calls.length > 0 && (
                           <div className="mt-2 space-y-1">
                             {msg.function_calls.map((call, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
+                              <Badge key={index} variant="secondary" className="text-xs bg-green-100 text-green-700">
                                 {call.function}
                               </Badge>
                             ))}
@@ -323,13 +362,21 @@ const EnhancedChatBot = () => {
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="flex items-start space-x-2">
-                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                        <Bot className="w-4 h-4 text-white" />
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center shadow-sm">
+                        <video
+                          className="w-6 h-6 rounded-full object-cover"
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                        >
+                          <source src={AveoBuddyVideo} type="video/webm" />
+                        </video>
                       </div>
-                      <div className="bg-gray-100 rounded-2xl px-4 py-2">
+                      <div className="bg-white rounded-2xl px-4 py-3 border border-gray-200 shadow-sm">
                         <div className="flex items-center space-x-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span className="text-sm text-gray-600">Thinking...</span>
+                          <Loader2 className="w-4 h-4 animate-spin text-green-500" />
+                          <span className="text-sm text-gray-600">AveoBuddy is thinking...</span>
                         </div>
                       </div>
                     </div>

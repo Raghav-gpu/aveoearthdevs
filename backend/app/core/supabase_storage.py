@@ -173,3 +173,104 @@ class SupabaseStorageClient:
         except Exception as e:
             logger.error(f"Failed to get file info: {str(e)}")
             return {}
+
+
+# Convenience functions for backward compatibility
+def upload_user_avatar(avatar_file, user_id: str) -> str:
+    """
+    Upload user avatar to Supabase Storage
+    """
+    storage_client = SupabaseStorageClient()
+    file_path = f"avatars/{user_id}/{uuid.uuid4()}.jpg"
+    
+    return storage_client.upload_image(
+        bucket_name="user-uploads",
+        file_path=file_path,
+        image_data=avatar_file.file.read(),
+        max_width=512,
+        max_height=512,
+        quality=90
+    )
+
+def delete_file_from_url(file_url: str) -> bool:
+    """
+    Delete file from Supabase Storage using its URL
+    """
+    try:
+        # Extract bucket and file path from URL
+        # Supabase URLs are typically: https://project.supabase.co/storage/v1/object/public/bucket/path
+        if "supabase.co/storage/v1/object/public/" in file_url:
+            parts = file_url.split("/storage/v1/object/public/")
+            if len(parts) == 2:
+                bucket_and_path = parts[1]
+                bucket_name = bucket_and_path.split("/")[0]
+                file_path = "/".join(bucket_and_path.split("/")[1:])
+                
+                storage_client = SupabaseStorageClient()
+                return storage_client.delete_file(bucket_name, file_path)
+    except Exception as e:
+        logger.error(f"Failed to delete file from URL: {str(e)}")
+        return False
+    
+    return False
+
+def extract_blob_path_from_url(file_url: str) -> tuple:
+    """
+    Extract bucket name and file path from Supabase Storage URL
+    Returns (bucket_name, file_path)
+    """
+    try:
+        if "supabase.co/storage/v1/object/public/" in file_url:
+            parts = file_url.split("/storage/v1/object/public/")
+            if len(parts) == 2:
+                bucket_and_path = parts[1]
+                bucket_name = bucket_and_path.split("/")[0]
+                file_path = "/".join(bucket_and_path.split("/")[1:])
+                return (bucket_name, file_path)
+    except Exception as e:
+        logger.error(f"Failed to extract blob path from URL: {str(e)}")
+    
+    return (None, None)
+
+def list_images(bucket_name: str, folder_path: str = "") -> list:
+    """
+    List images in a bucket folder
+    """
+    storage_client = SupabaseStorageClient()
+    return storage_client.list_files(bucket_name, folder_path)
+
+def upload_product_image(image_file, supplier_id: str) -> str:
+    """
+    Upload product image to Supabase Storage
+    """
+    storage_client = SupabaseStorageClient()
+    file_path = f"products/{supplier_id}/{uuid.uuid4()}.jpg"
+    
+    return storage_client.upload_image(
+        bucket_name="product-assets",
+        file_path=file_path,
+        image_data=image_file.file.read(),
+        max_width=1920,
+        max_height=1080,
+        quality=85
+    )
+
+def validate_image_file(image_file) -> bool:
+    """
+    Validate image file
+    """
+    if not image_file or not image_file.filename:
+        raise ValidationException("No image file provided")
+    
+    # Check file extension
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp'}
+    file_extension = os.path.splitext(image_file.filename.lower())[1]
+    
+    if file_extension not in allowed_extensions:
+        raise ValidationException(f"Invalid file type. Allowed: {', '.join(allowed_extensions)}")
+    
+    # Check file size (max 10MB)
+    if hasattr(image_file, 'size') and image_file.size > 10 * 1024 * 1024:
+        raise ValidationException("File size too large. Maximum 10MB allowed")
+    
+    return True

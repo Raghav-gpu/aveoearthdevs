@@ -8,8 +8,8 @@ from app.core.pagination import PaginationParams
 from app.database.session import get_async_session
 from app.core.exceptions import ValidationException, NotFoundException, AuthorizationException, ConflictException, BadRequestException
 from app.core.logging import get_logger
-from app.core.gcp_storage import (
-    get_storage_client,
+from app.core.supabase_storage import (
+    SupabaseStorageClient,
     validate_image_file,
     extract_blob_path_from_url,
     list_images,
@@ -168,11 +168,11 @@ async def create_product(
                 upload_errors.append(error)
     
     if upload_errors:
-        storage_client = get_storage_client()
+        storage_client = SupabaseStorageClient()
         for uploaded_img in uploaded_images:
             try:
                 blob_path = extract_blob_path_from_url(uploaded_img["url"])[1]
-                storage_client.delete_file("aveoearth-product-assets", blob_path)
+                storage_client.delete_file("product-assets", blob_path)
             except:
                 pass
         raise ValidationException(f"Image upload failed: {'; '.join(upload_errors)}")
@@ -216,15 +216,45 @@ async def create_product(
             raise ValidationException(f"Error processing product data: {str(e)}")
     except Exception as e:
         await db.rollback()
-        storage_client = get_storage_client()
+        storage_client = SupabaseStorageClient()
         for uploaded_img in uploaded_images:
             try:
                 blob_path = extract_blob_path_from_url(uploaded_img["url"])[1]
-                storage_client.delete_file("aveoearth-product-assets", blob_path)
+                storage_client.delete_file("product-assets", blob_path)
             except:
                 pass
         logger.error(f"Error creating product: {str(e)}")
         raise BadRequestException(f"Failed to create product: {str(e)}")
+
+@products_supplier_router.get("/categories", response_model=List[CategoryResponse])
+async def get_categories(
+    db: AsyncSession = Depends(get_async_session)
+):
+    category_crud = CategoryCrud()
+    categories = await category_crud.get_categories_tree(db)
+    result = []
+    for cat in categories:
+        try:
+            result.append(CategoryResponse(**cat))
+        except Exception as e:
+            logger.error(f"Error creating CategoryResponse: {str(e)}")
+            continue
+    return result
+
+@products_supplier_router.get("/brands", response_model=List[BrandResponse])
+async def get_brands(
+    db: AsyncSession = Depends(get_async_session)
+):
+    brand_crud = BrandCrud()
+    brands = await brand_crud.get_active_brands(db)
+    result = []
+    for brand in brands:
+        try:
+            result.append(BrandResponse(**brand))
+        except Exception as e:
+            logger.error(f"Error creating BrandResponse: {str(e)}")
+            continue
+    return result
 
 @products_supplier_router.get("/", response_model=PaginatedResponse[ProductListResponse])
 async def get_supplier_products(
@@ -370,14 +400,14 @@ async def update_product(
             raise ValidationException("Invalid SEO meta JSON")
     
     if new_images:
-        storage_client = get_storage_client()
+        storage_client = SupabaseStorageClient()
         
         if product.images:
             for img in product.images:
                 if img.url:
                     try:
                         blob_path = extract_blob_path_from_url(img.url)[1]
-                        storage_client.delete_file("aveoearth-product-assets", blob_path)
+                        storage_client.delete_file("product-assets", blob_path)
                     except:
                         pass
         
@@ -397,7 +427,7 @@ async def update_product(
                     for uploaded_img in uploaded_images:
                         try:
                             blob_path = extract_blob_path_from_url(uploaded_img["url"])[1]
-                            storage_client.delete_file("aveoearth-product-assets", blob_path)
+                            storage_client.delete_file("product-assets", blob_path)
                         except:
                             pass
                     logger.error(f"Failed to upload image {i}: {str(e)}")
@@ -425,11 +455,11 @@ async def update_product(
             raise ValidationException(f"Error processing product data: {str(e)}")
     except Exception as e:
         if new_images and "new_images" in update_data:
-            storage_client = get_storage_client()
+            storage_client = SupabaseStorageClient()
             for uploaded_img in update_data["new_images"]:
                 try:
                     blob_path = extract_blob_path_from_url(uploaded_img["url"])[1]
-                    storage_client.delete_file("aveoearth-product-assets", blob_path)
+                    storage_client.delete_file("product-assets", blob_path)
                 except:
                     pass
         logger.error(f"Error updating product: {str(e)}")
@@ -449,14 +479,14 @@ async def delete_product(
     if str(product.supplier_id) != current_user["id"]:
         raise AuthorizationException("You can only delete your own products")
     
-    storage_client = get_storage_client()
+    storage_client = SupabaseStorageClient()
     
     if product.images:
         for img in product.images:
             if img.url:
                 try:
                     blob_path = extract_blob_path_from_url(img.url)[1]
-                    storage_client.delete_file("aveoearth-product-assets", blob_path)
+                    storage_client.delete_file("product-assets", blob_path)
                 except:
                     pass
     
@@ -467,7 +497,7 @@ async def delete_product(
                     if variant_img.url:
                         try:
                             blob_path = extract_blob_path_from_url(variant_img.url)[1]
-                            storage_client.delete_file("aveoearth-product-assets", blob_path)
+                            storage_client.delete_file("product-assets", blob_path)
                         except:
                             pass
     
@@ -542,10 +572,9 @@ async def upload_product_images(
         await db.rollback()
         if uploaded_image_url:
             try:
-                from app.core.gcp_storage import get_storage_client, extract_blob_path_from_url
-                storage_client = get_storage_client()
+                storage_client = SupabaseStorageClient()
                 blob_path = extract_blob_path_from_url(uploaded_image_url)[1]
-                storage_client.delete_file("aveoearth-product-assets", blob_path)
+                storage_client.delete_file("product-assets", blob_path)
             except:
                 pass
         logger.error(f"Failed to upload image: {str(e)}")
@@ -596,43 +625,13 @@ async def get_low_stock_products(
     low_stock_products = await inventory_crud.get_low_stock_products(db, current_user["id"])
     return {"low_stock_products": low_stock_products}
 
-@products_supplier_router.get("/categories", response_model=List[CategoryResponse])
-async def get_categories(
-    db: AsyncSession = Depends(get_async_session)
-):
-    category_crud = CategoryCrud()
-    categories = await category_crud.get_categories_tree(db)
-    result = []
-    for cat in categories:
-        try:
-            result.append(CategoryResponse(**cat))
-        except Exception as e:
-            logger.error(f"Error creating CategoryResponse: {str(e)}")
-            continue
-    return result
-
-@products_supplier_router.get("/brands", response_model=List[BrandResponse])
-async def get_brands(
-    db: AsyncSession = Depends(get_async_session)
-):
-    brand_crud = BrandCrud()
-    brands = await brand_crud.get_active_brands(db)
-    result = []
-    for brand in brands:
-        try:
-            result.append(BrandResponse(**brand))
-        except Exception as e:
-            logger.error(f"Error creating BrandResponse: {str(e)}")
-            continue
-    return result
-
 @products_supplier_router.get("/images/product-images")
 async def list_product_images(
     current_user: Dict[str, Any] = Depends(require_supplier())
 ):
     try:
-        images = list_images("aveoearth-product-assets", "products/")
-        return {"bucket": "aveoearth-product-assets", "images": images, "total": len(images)}
+        images = list_images("product-assets", "products/")
+        return {"bucket": "product-assets", "images": images, "total": len(images)}
     except Exception as e:
         logger.error(f"Failed to list product images: {str(e)}")
         raise ValidationException(f"Failed to list product images: {str(e)}")
@@ -642,9 +641,9 @@ async def delete_product_image(
     file_name: str,
     current_user: Dict[str, Any] = Depends(require_supplier())
 ):
-    storage_client = get_storage_client()
+    storage_client = SupabaseStorageClient()
     try:
-        result = storage_client.delete_file("aveoearth-product-assets", file_name)
+        result = storage_client.delete_file("product-assets", file_name)
         if result:
             logger.info(f"Product image {file_name} deleted by supplier {current_user['id']}")
             return SuccessResponse(message=f"Image {file_name} deleted successfully")
@@ -659,8 +658,8 @@ async def list_business_images(
     current_user: Dict[str, Any] = Depends(require_supplier())
 ):
     try:
-        images = list_images("aveoearth-supplier-assets")
-        return {"bucket": "aveoearth-supplier-assets", "images": images, "total": len(images)}
+        images = list_images("supplier-assets")
+        return {"bucket": "supplier-assets", "images": images, "total": len(images)}
     except Exception as e:
         logger.error(f"Failed to list business images: {str(e)}")
         raise ValidationException(f"Failed to list business images: {str(e)}")
@@ -670,9 +669,9 @@ async def delete_business_image(
     file_name: str,
     current_user: Dict[str, Any] = Depends(require_supplier())
 ):
-    storage_client = get_storage_client()
+    storage_client = SupabaseStorageClient()
     try:
-        result = storage_client.delete_file("aveoearth-supplier-assets", file_name)
+        result = storage_client.delete_file("supplier-assets", file_name)
         if result:
             logger.info(f"Business image {file_name} deleted by supplier {current_user['id']}")
             return SuccessResponse(message=f"Image {file_name} deleted successfully")
@@ -735,9 +734,9 @@ async def delete_product_image_by_id(
     
     try:
         if image_to_delete.url:
-            storage_client = get_storage_client()
+            storage_client = SupabaseStorageClient()
             blob_path = extract_blob_path_from_url(image_to_delete.url)[1]
-            storage_client.delete_file("aveoearth-product-assets", blob_path)
+            storage_client.delete_file("product-assets", blob_path)
         
         await product_crud.delete_product_image_simple(db, image_id)
         logger.info(f"Product image {image_id} deleted by supplier {current_user['id']}")
@@ -918,12 +917,12 @@ async def delete_product_variant(
     variant = await variant_crud.get_variant_by_id(db, variant_id)
     
     if variant and hasattr(variant, 'images') and variant.images:
-        storage_client = get_storage_client()
+        storage_client = SupabaseStorageClient()
         for variant_img in variant.images:
             if variant_img.url:
                 try:
                     blob_path = extract_blob_path_from_url(variant_img.url)[1]
-                    storage_client.delete_file("aveoearth-product-assets", blob_path)
+                    storage_client.delete_file("product-assets", blob_path)
                 except:
                     pass
     
@@ -1010,10 +1009,10 @@ async def delete_variant_image(
     variant_image = await variant_image_crud.get_variant_image_by_id(db, image_id)
     
     if variant_image and variant_image.url:
-        storage_client = get_storage_client()
+        storage_client = SupabaseStorageClient()
         try:
             blob_path = extract_blob_path_from_url(variant_image.url)[1]
-            storage_client.delete_file("aveoearth-product-assets", blob_path)
+            storage_client.delete_file("product-assets", blob_path)
         except:
             pass
     

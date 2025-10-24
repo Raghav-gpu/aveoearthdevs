@@ -7,7 +7,7 @@ from app.core.pagination import PaginationParams
 from app.database.session import get_async_session
 from app.core.exceptions import ValidationException, NotFoundException, AuthorizationException, ConflictException, BadRequestException
 from app.core.logging import get_logger
-from app.core.gcp_storage import upload_category_icon, upload_category_image, upload_brand_logo, delete_file_from_url, extract_blob_path_from_url, list_bucket_files, delete_bucket_file, delete_multiple_files
+from app.core.supabase_storage import SupabaseStorageClient
 from app.features.products.cruds.product_crud import ProductCrud, ProductImageCrud, ProductImageCrud
 from app.features.products.cruds.category_crud import CategoryCrud
 from app.features.products.cruds.brand_crud import BrandCrud
@@ -117,7 +117,7 @@ async def delete_product(
     current_user: Dict[str, Any] = Depends(require_admin()),
     db: AsyncSession = Depends(get_async_session)
 ):
-    from app.core.gcp_storage import get_storage_client, extract_blob_path_from_url
+    storage_client = SupabaseStorageClient()
     
     product_crud = ProductCrud()
     product = await product_crud.get_by_id(db, product_id)

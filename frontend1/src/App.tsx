@@ -33,10 +33,11 @@ import VendorAnalyticsPage from "./pages/VendorAnalyticsPage";
 import VendorProfilePage from "./pages/VendorProfilePage";
 import VendorLayout from "./components/VendorLayout";
 import DebugAuth from "./components/DebugAuth";
-import UniversalChatBot from "./components/UniversalChatBot";
+import EnhancedChatBot from "./components/EnhancedChatBot";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import TestRunner from "./pages/TestRunner";
+import TrackOrderPage from "./pages/TrackOrderPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +76,7 @@ const App = () => (
                 <Route path="contact" element={<ContactPage />} />
                 <Route path="checkout" element={<CheckoutPage />} />
                 <Route path="community" element={<CommunityPage />} />
+                <Route path="track-order" element={<TrackOrderPage />} />
                 <Route path="terms" element={<TermsPage />} />
                 <Route path="privacy" element={<PrivacyPage />} />
                 <Route path="forgot-password" element={<ForgotPasswordPage />} />
@@ -98,7 +100,7 @@ const App = () => (
               <Route path="test-runner" element={<TestRunner />} />
             </Routes>
             <DebugAuth />
-            <UniversalChatBot />
+            <EnhancedChatBot />
           </SearchProvider>
         </BrowserRouter>
       </TooltipProvider>

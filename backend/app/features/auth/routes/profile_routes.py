@@ -13,7 +13,7 @@ from app.features.auth.cruds.profile_crud import ProfileCrud
 from app.features.auth.cruds.auth_crud import AuthCrud
 from app.core.role_auth import get_all_users
 from app.core.exceptions import ValidationException, AuthenticationException, NotFoundException
-from app.core.gcp_storage import upload_user_avatar, delete_file_from_url
+from app.core.supabase_storage import SupabaseStorageClient, upload_user_avatar, delete_file_from_url
 from app.database.session import get_async_session
 from app.core.logging import get_logger
 from app.core.base import SuccessResponse

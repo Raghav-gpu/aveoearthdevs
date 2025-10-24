@@ -263,7 +263,7 @@ async def delete_account(
         
         user_data = await auth_crud.get_by_id(db, current_user["id"])
         if user_data and user_data.avatar_url:
-            from app.core.gcp_storage import delete_file_from_url
+            storage_client = SupabaseStorageClient()
             try:
                 delete_file_from_url(user_data.avatar_url)
             except:
