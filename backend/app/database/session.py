@@ -20,14 +20,41 @@ async def init_database():
         return False
     
     try:
+        # Parse and convert DATABASE_URL to asyncpg format
         if settings.DATABASE_URL.startswith("postgresql://"):
             async_url = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
-        else:
+        elif settings.DATABASE_URL.startswith("postgresql+psycopg2://"):
             async_url = settings.DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
+        else:
+            async_url = settings.DATABASE_URL
+        
+        # Remove sslmode query parameter as asyncpg handles SSL differently
+        # asyncpg requires ssl in connect_args, not in URL query string
+        if "?sslmode=require" in async_url:
+            async_url = async_url.replace("?sslmode=require", "")
+        if "&sslmode=require" in async_url:
+            async_url = async_url.replace("&sslmode=require", "")
+        if "sslmode=require" in async_url and "?" in async_url:
+            # Handle case where sslmode is in query params with other params
+            parts = async_url.split("?")
+            base_url = parts[0]
+            query_params = parts[1] if len(parts) > 1 else ""
+            params = [p for p in query_params.split("&") if not p.startswith("sslmode")]
+            if params:
+                async_url = base_url + "?" + "&".join(params)
+            else:
+                async_url = base_url
         
         if settings.SUPABASE_SERVICE_ROLE_KEY and settings.SUPABASE_ANON_KEY in async_url:
             async_url = async_url.replace(settings.SUPABASE_ANON_KEY, settings.SUPABASE_SERVICE_ROLE_KEY)
             logger.info("Using service role for database operations to bypass RLS")
+        
+        # For Supabase, SSL is required - pass it via connect_args
+        connect_args = {}
+        if "supabase.co" in async_url:
+            # Supabase requires SSL - asyncpg uses ssl=True for require
+            import ssl
+            connect_args = {"ssl": ssl.create_default_context()}
         
         async_engine = create_async_engine(
             async_url,
@@ -38,6 +65,7 @@ async def init_database():
             pool_timeout=10,
             echo=False,
             future=True,
+            connect_args=connect_args,
             execution_options={
                 "isolation_level": "READ_COMMITTED",
             },

@@ -13,7 +13,7 @@ class User(BaseUUID, BaseTimeStamp, Base):
     
     email = Column(String(255), unique=True, nullable=False, index=True)
     phone = Column(String(25), unique=True, nullable=True)
-    user_type = Column(Enum(UserTypeEnum, native_enum=False), nullable=False, default=UserTypeEnum.BUYER)
+    user_type = Column(Enum(UserTypeEnum, native_enum=False), nullable=False, default=UserTypeEnum.BUYER.value)
     first_name = Column(String(100))
     last_name = Column(String(100))
     avatar_url = Column(Text)

@@ -44,13 +44,13 @@ class SupabaseStorageClient:
                 file_data,
                 file_options={
                     "content-type": content_type,
-                    "upsert": True
+                    "upsert": "true"
                 }
             )
             
             if public:
                 # Make file public
-                self.client.storage.from_(bucket_name).update_public_access(file_path, True)
+                self.client.storage.from_(bucket_name).update_public_access(file_path, "true")
             
             # Get public URL
             public_url = self.client.storage.from_(bucket_name).get_public_url(file_path)

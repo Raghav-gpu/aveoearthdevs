@@ -1,7 +1,7 @@
 import { toast } from '@/hooks/use-toast';
 
 // Configuration
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 const API_PREFIX = import.meta.env.VITE_BACKEND_API_PREFIX || '';
 
 // Types

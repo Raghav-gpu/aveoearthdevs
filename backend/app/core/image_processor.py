@@ -8,7 +8,11 @@ import io
 import asyncio
 from typing import List, Dict, Optional, Tuple, Union
 from PIL import Image, ImageOps, ImageEnhance
-import pillow_avif  # For AVIF support
+try:
+    import pillow_avif  # For AVIF support
+    AVIF_SUPPORT = True
+except ImportError:
+    AVIF_SUPPORT = False
 from fastapi import UploadFile, HTTPException
 import aiofiles
 import hashlib
@@ -171,7 +175,7 @@ class ImageProcessor:
         output = io.BytesIO()
         
         # Choose best format based on compression level
-        if compression_level == 'high':
+        if compression_level == 'high' and AVIF_SUPPORT:
             # Use AVIF for maximum compression
             optimized_image.save(output, format='AVIF', quality=quality, lossless=False)
         elif compression_level == 'medium':

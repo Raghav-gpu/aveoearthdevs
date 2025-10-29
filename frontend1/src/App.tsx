@@ -38,6 +38,7 @@ import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import TestRunner from "./pages/TestRunner";
 import TrackOrderPage from "./pages/TrackOrderPage";
+import AuthTestPage from "./pages/AuthTestPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,6 +99,8 @@ const App = () => (
               <Route path="admin" element={<AdminDashboard />} />
               {/* Test Runner Route */}
               <Route path="test-runner" element={<TestRunner />} />
+              {/* Auth Test Route */}
+              <Route path="auth-test" element={<AuthTestPage />} />
             </Routes>
             <DebugAuth />
             <EnhancedChatBot />

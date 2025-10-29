@@ -14,7 +14,7 @@ class SignupRequest(BaseModel):
     phone: str = Field(..., min_length=10, max_length=25)
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
-    user_type: UserTypeEnum = UserTypeEnum.BUYER
+    user_type: UserTypeEnum = UserTypeEnum.BUYER.value
     referral_code: Optional[str] = Field(None, max_length=20)
     
     @validator("phone")

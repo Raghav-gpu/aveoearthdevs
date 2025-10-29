@@ -77,9 +77,9 @@ class ProductCrud(BaseCrud[Product]):
                     raise ConflictException("Product with this slug already exists")
             
             product_data["supplier_id"] = supplier_id
-            product_data["status"] = ProductStatusEnum.DRAFT
-            product_data["approval_status"] = ProductApprovalEnum.PENDING
-            product_data["visibility"] = ProductVisibilityEnum.HIDDEN
+            product_data["status"] = ProductStatusEnum.DRAFT.value
+            product_data["approval_status"] = ProductApprovalEnum.PENDING.value
+            product_data["visibility"] = ProductVisibilityEnum.HIDDEN.value
             
             created_product = await self.create(db, product_data)
             result_dict = created_product.to_dict()
@@ -220,9 +220,9 @@ class ProductCrud(BaseCrud[Product]):
         try:
             query = select(Product).where(
                 and_(
-                    Product.status == ProductStatusEnum.ACTIVE,
-                    Product.approval_status == ProductApprovalEnum.APPROVED,
-                    Product.visibility == ProductVisibilityEnum.VISIBLE
+                    Product.status == ProductStatusEnum.ACTIVE.value,
+                    Product.approval_status == ProductApprovalEnum.APPROVED.value,
+                    Product.visibility == ProductVisibilityEnum.VISIBLE.value
                 )
             )
             
@@ -273,9 +273,9 @@ class ProductCrud(BaseCrud[Product]):
             
             count_query = select(func.count()).select_from(Product).where(
                 and_(
-                    Product.status == ProductStatusEnum.ACTIVE,
-                    Product.approval_status == ProductApprovalEnum.APPROVED,
-                    Product.visibility == ProductVisibilityEnum.VISIBLE
+                    Product.status == ProductStatusEnum.ACTIVE.value,
+                    Product.approval_status == ProductApprovalEnum.APPROVED.value,
+                    Product.visibility == ProductVisibilityEnum.VISIBLE.value
                 )
             )
             
@@ -333,7 +333,7 @@ class ProductCrud(BaseCrud[Product]):
                 raise AuthorizationException("You can only publish your own products")
             
             update_data = {
-                "status": ProductStatusEnum.PENDING,
+                "status": ProductStatusEnum.PENDING.value,
                 "published_at": datetime.utcnow()
             }
             
@@ -357,9 +357,9 @@ class ProductCrud(BaseCrud[Product]):
                 raise NotFoundException("Product not found")
             
             update_data = {
-                "approval_status": ProductApprovalEnum.APPROVED,
-                "status": ProductStatusEnum.ACTIVE,
-                "visibility": ProductVisibilityEnum.VISIBLE,
+                "approval_status": ProductApprovalEnum.APPROVED.value,
+                "status": ProductStatusEnum.ACTIVE.value,
+                "visibility": ProductVisibilityEnum.VISIBLE.value,
                 "approved_at": datetime.utcnow(),
                 "approved_by": admin_id,
                 "approval_notes": approval_notes
@@ -385,8 +385,8 @@ class ProductCrud(BaseCrud[Product]):
                 raise NotFoundException("Product not found")
             
             update_data = {
-                "approval_status": ProductApprovalEnum.REJECTED,
-                "status": ProductStatusEnum.REJECTED,
+                "approval_status": ProductApprovalEnum.REJECTED.value,
+                "status": ProductStatusEnum.REJECTED.value,
                 "approved_by": admin_id,
                 "approval_notes": rejection_notes
             }

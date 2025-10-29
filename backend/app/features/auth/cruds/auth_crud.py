@@ -64,12 +64,8 @@ class AuthCrud(BaseCrud[User]):
                 existing_phone = await self.get_by_field(db, "phone", signup_data["phone"])
                 if existing_phone:
                     raise ConflictException("User with this phone already exists")
-            try:
-                admin_user = self.client.auth.admin.get_user_by_email(signup_data["email"])
-                if getattr(admin_user, "user", None):
-                    raise ConflictException("User with this email already exists")
-            except Exception:
-                pass
+            # Note: Supabase auth admin methods are not available in the current setup
+            # The database check above should be sufficient for duplicate prevention
 
             auth_response = self.client.auth.sign_up({
                 "email": signup_data["email"],
@@ -89,11 +85,14 @@ class AuthCrud(BaseCrud[User]):
             while await self.get_by_field(db, "referral_code", issued_referral_code):
                 issued_referral_code = self.generate_referral_code(6)
 
+            # Ensure user_type is always lowercase for database compatibility
+            user_type_value = (signup_data.get("user_type") or "buyer").lower()
+            
             user_data = {
                 "id": auth_response.user.id,
                 "email": signup_data["email"],
                 "phone": signup_data.get("phone"),
-                "user_type": (signup_data.get("user_type") or "buyer").lower(),
+                "user_type": user_type_value,
                 "first_name": signup_data.get("first_name"),
                 "last_name": signup_data.get("last_name"),
                 "is_verified": False,
@@ -187,11 +186,14 @@ class AuthCrud(BaseCrud[User]):
             while await self.get_by_field(db, "referral_code", issued_referral_code):
                 issued_referral_code = self.generate_referral_code(6)
 
+            # Ensure user_type is always lowercase for database compatibility
+            user_type_value = (signup_data.get("user_type") or "buyer").lower()
+            
             user_data = {
                 "id": str(uuid.uuid4()),
                 "email": signup_data["email"],
                 "phone": signup_data["phone"],
-                "user_type": (signup_data.get("user_type") or "buyer").lower(),
+                "user_type": user_type_value,
                 "first_name": signup_data.get("first_name"),
                 "last_name": signup_data.get("last_name"),
                 "is_verified": False,
@@ -359,6 +361,20 @@ class AuthCrud(BaseCrud[User]):
                 }
 
                 user_obj = await self.create(db, new_user)
+                
+                # Create user profile for new Google OAuth users
+                try:
+                    profile_crud = ProfileCrud()
+                    profile_data = {
+                        "user_id": str(user_obj.id),
+                        "preferences": {},
+                        "social_links": {},
+                        "notification_settings": {}
+                    }
+                    await profile_crud.create(db, profile_data)
+                    logger.info(f"Created profile for Google OAuth user: {user_obj.id}")
+                except Exception as e:
+                    logger.warning(f"Could not create user profile for Google OAuth user {user_obj.id}: {e}")
             else:
                 user_data = self._user_to_dict(user_obj)
                 if not user_data.get("referral_code"):
