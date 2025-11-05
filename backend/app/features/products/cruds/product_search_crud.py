@@ -35,7 +35,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
     async def search_products(self, db: AsyncSession, request: ProductSearchRequest) -> Tuple[List[Product], int]:
         base_query = select(Product).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -43,7 +43,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         
         count_query = select(func.count(Product.id)).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -209,7 +209,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
             func.max(Product.price).label('max_price')
         ).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -231,21 +231,21 @@ class ProductSearchCRUD(BaseCrud[Product]):
         
         materials_query = select(Product.materials).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.materials.isnot(None)
             )
         ).distinct()
         
         countries_query = select(Product.origin_country).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.origin_country.isnot(None)
             )
         ).distinct()
         
         tags_query = select(Product.tags).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.tags.isnot(None)
             )
         ).distinct()
@@ -338,7 +338,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
                     Product.category_id == product.category_id,
                     Product.brand_id == product.brand_id
                 ),
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -376,7 +376,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
             co_viewed_subquery, Product.id == co_viewed_subquery.c.product_id
         ).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved"
             )
         ).options(
@@ -401,7 +401,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
                             Product.category_id == product.category_id,
                             Product.brand_id == product.brand_id
                         ),
-                        Product.status == "active",
+                        Product.status == ProductStatusEnum.ACTIVE,
                         Product.approval_status == "approved",
                         Product.visibility == "visible"
                     )
@@ -422,7 +422,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
             try:
                 trending_query = select(Product).outerjoin(ProductView).where(
                     and_(
-                        Product.status == "active",
+                        Product.status == ProductStatusEnum.ACTIVE,
                         Product.approval_status == "approved",
                         Product.visibility == "visible"
                     )
@@ -447,7 +447,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
             # Fallback: simple query without ProductView join
             fallback_query = select(Product).where(
                 and_(
-                    Product.status == "active",
+                    Product.status == ProductStatusEnum.ACTIVE,
                     Product.approval_status == "approved",
                     Product.visibility == "visible"
                 )
@@ -467,7 +467,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
     async def _get_top_rated_products(self, db: AsyncSession, limit: int) -> List[Product]:
         top_rated_query = select(Product).outerjoin(ProductReview).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -486,7 +486,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         if not products:
             fallback_query = select(Product).where(
                 and_(
-                    Product.status == "active",
+                    Product.status == ProductStatusEnum.ACTIVE,
                     Product.approval_status == "approved",
                     Product.visibility == "visible"
                 )
@@ -509,7 +509,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         recommendations_query = select(Product).where(
             and_(
                 Product.category_id.in_(select(user_viewed_categories)),
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -525,7 +525,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         if not products:
             fallback_query = select(Product).where(
                 and_(
-                    Product.status == "active",
+                    Product.status == ProductStatusEnum.ACTIVE,
                     Product.approval_status == "approved",
                     Product.visibility == "visible"
                 )
@@ -543,7 +543,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
     async def filter_products(self, db: AsyncSession, request: ProductFilterRequest) -> Tuple[List[Product], int]:
         base_query = select(Product).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -551,7 +551,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         
         count_query = select(func.count(Product.id)).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -608,7 +608,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         comparison_query = select(Product).where(
             and_(
                 Product.id.in_(request.product_ids),
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -633,7 +633,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
             products_query = select(Product.name, Product.id, Product.slug).where(
                 and_(
                     Product.name.ilike(f"%{query}%"),
-                    Product.status == "active",
+                    Product.status == ProductStatusEnum.ACTIVE,
                     Product.approval_status == "approved",
                     Product.visibility == "visible"
                 )
@@ -745,7 +745,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         
         trending_query = select(Product).join(ProductView).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible",
                 ProductView.viewed_at >= func.current_date() - text(f"INTERVAL '{interval}'")
@@ -783,7 +783,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         
         seasonal_query = select(Product).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible",
                 or_(*[cast(Product.tags, String).ilike(f"%{tag}%") for tag in tags])
@@ -809,7 +809,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         
         new_arrivals_query = select(Product).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible",
                 Product.created_at >= cutoff_date
@@ -836,7 +836,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
     async def get_best_sellers(self, db: AsyncSession, request: ProductBestSellersRequest) -> Tuple[List[Product], Dict[str, Any]]:
         trending_query = select(Product).join(ProductView).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -907,7 +907,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
                     Product.category_id == base_product.category_id,
                     Product.brand_id == base_product.brand_id
                 ),
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved"
             )
         ).options(
@@ -949,7 +949,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
                 Product.category_id == base_product.category_id,
                 Product.price > min_price,
                 Product.price <= max_price,
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -992,7 +992,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         recommendations_query = select(Product).where(
             and_(
                 Product.category_id.in_(category_ids),
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -1022,7 +1022,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         recommendations_query = select(Product).where(
             and_(
                 Product.category_id.in_(category_ids),
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved", 
                 Product.visibility == "visible"
             )
@@ -1071,7 +1071,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         recommendations_query = select(Product).where(
             and_(
                 or_(*filters),
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )
@@ -1224,7 +1224,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
         products_query = select(Product).where(
             and_(
                 Product.id.in_(request.product_ids),
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved"
             )
         ).options(
@@ -1348,7 +1348,7 @@ class ProductSearchCRUD(BaseCrud[Product]):
     async def advanced_filter_products(self, db: AsyncSession, request: AdvancedFilterRequest) -> Tuple[List[Product], Dict[str, Any]]:
         base_query = select(Product).where(
             and_(
-                Product.status == "active",
+                Product.status == ProductStatusEnum.ACTIVE,
                 Product.approval_status == "approved",
                 Product.visibility == "visible"
             )

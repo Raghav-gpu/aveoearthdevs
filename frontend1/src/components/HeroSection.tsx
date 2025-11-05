@@ -217,15 +217,15 @@ const HeroSection = () => {
             {/* Impact Stats */}
             <div className="grid grid-cols-3 gap-4 pt-6 mt-8 border-t border-border/20">
               <div className="text-center">
-                <div className="text-2xl font-bold text-forest">50K+</div>
+                <div className="text-2xl font-bold text-forest">XXX</div>
                 <div className="text-sm text-muted-foreground">Trees Planted</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-forest">25T</div>
+                <div className="text-2xl font-bold text-forest">XXT</div>
                 <div className="text-sm text-muted-foreground">CO₂ Offset</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-forest">1M+</div>
+                <div className="text-2xl font-bold text-forest">XX</div>
                 <div className="text-sm text-muted-foreground">Plastic Saved</div>
               </div>
             </div>
@@ -394,7 +394,7 @@ const HeroSection = () => {
                             setCurrentCarouselIndex(pageIndex * productsPerView);
                             setTimeout(() => setIsTransitioning(false), 300);
                           }}
-                          className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                          className={`w-2 h-2 rounded-full transition-all duration-300 ${
                             isActive 
                               ? 'bg-forest scale-110' 
                               : isVisible 

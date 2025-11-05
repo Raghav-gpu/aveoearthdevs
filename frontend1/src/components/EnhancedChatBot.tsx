@@ -34,9 +34,7 @@ const quickActions = [
 ];
 
 const suggestionChips = [
-  "What's your most eco-friendly product?",
   "How do I calculate my carbon footprint?",
-  "Tell me about your sustainability mission",
   "What are eco badges?",
   "How does the vendor program work?",
   "Show me trending products",
@@ -265,7 +263,7 @@ const EnhancedChatBot = () => {
   }
 
   return (
-    <div ref={chatRef} className="fixed bottom-[25px] right-[25px] z-50 w-96 max-h-[600px]">
+    <div ref={chatRef} className="fixed bottom-[85px] right-[25px] z-50 w-96 max-h-[575px]">
       <Card className="bg-white shadow-2xl border-0 rounded-2xl overflow-hidden transform transition-all duration-300">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 text-white">
@@ -321,33 +319,30 @@ const EnhancedChatBot = () => {
               <div className="space-y-4">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`flex items-start space-x-2 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                      {msg.role === 'assistant' && (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center shadow-sm">
-                          <video
-                            className="w-6 h-6 rounded-full object-cover"
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                          >
-                            <source src={AveoBuddyVideo} type="video/webm" />
-                          </video>
-                        </div>
-                      )}
-                      {msg.role === 'user' && (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
-                          <User className="w-4 h-4 text-white" />
-                        </div>
-                      )}
-                      <div className={`rounded-2xl px-4 py-3 shadow-sm ${
+                    <div className={`max-w-[85%] ${msg.role === 'user' ? 'ml-auto' : ''}`}>
+                      <div className={`relative px-4 py-3 shadow-sm ${
                         msg.role === 'user'
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                          : 'bg-white text-gray-800 border border-gray-200'
-                      }`}>
-                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-2xl rounded-bl-2xl'
+                          : 'bg-white text-gray-800 border border-gray-200 rounded-t-2xl rounded-bl-2xl'
+                      }`}
+                      style={msg.role === 'user' 
+                        ? {
+                            borderRadius: '1rem 1rem 0.25rem 1rem'
+                          }
+                        : {
+                            borderRadius: '1rem 1rem 1rem 0.25rem'
+                          }
+                      }>
+                        {/* Message tail */}
+                        {msg.role === 'user' && (
+                          <div className="absolute -right-2 bottom-0 w-0 h-0 border-l-[8px] border-l-blue-600 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent"></div>
+                        )}
+                        {msg.role === 'assistant' && (
+                          <div className="absolute -left-2 bottom-0 w-0 h-0 border-r-[8px] border-r-gray-200 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent"></div>
+                        )}
+                        <p className="text-sm leading-relaxed relative z-10">{msg.content}</p>
                         {msg.function_calls && msg.function_calls.length > 0 && (
-                          <div className="mt-2 space-y-1">
+                          <div className="mt-2 space-y-1 relative z-10">
                             {msg.function_calls.map((call, index) => (
                               <Badge key={index} variant="secondary" className="text-xs bg-green-100 text-green-700">
                                 {call.function}
@@ -361,23 +356,10 @@ const EnhancedChatBot = () => {
                 ))}
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="flex items-start space-x-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center shadow-sm">
-                        <video
-                          className="w-6 h-6 rounded-full object-cover"
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                        >
-                          <source src={AveoBuddyVideo} type="video/webm" />
-                        </video>
-                      </div>
-                      <div className="bg-white rounded-2xl px-4 py-3 border border-gray-200 shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-green-500" />
-                          <span className="text-sm text-gray-600">AveoBuddy is thinking...</span>
-                        </div>
+                    <div className="bg-white rounded-2xl px-4 py-3 border border-gray-200 shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-green-500" />
+                        <span className="text-sm text-gray-600">AveoBuddy is thinking...</span>
                       </div>
                     </div>
                   </div>
@@ -404,47 +386,36 @@ const EnhancedChatBot = () => {
                 ))}
               </div>
 
-              {/* Suggestion Chips */}
-              <div className="flex flex-wrap gap-1 mb-3">
-                {suggestionChips.slice(0, 4).map((suggestion, index) => (
-                  <Button
-                    key={index}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="text-xs h-6 px-2 text-gray-600 hover:text-gray-800"
-                    disabled={!isAIConnected}
-                  >
-                    {suggestion}
-                  </Button>
-                ))}
-              </div>
+            </div>
+          </>
+        )}
 
-              {/* Input */}
-              <div className="flex space-x-2">
-                <Input
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Ask me anything about sustainable products..."
-                  className="flex-1 text-sm"
-                  disabled={!isAIConnected || isLoading}
-                />
-                <Button
-                  onClick={() => handleSendMessage()}
-                  disabled={!message.trim() || !isAIConnected || isLoading}
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-
-              {/* Clear Chat Button */}
+          {/* Input Bar - Always Visible (Even when minimized) */}
+          <div className="border-t border-gray-200 bg-white p-3">
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message here..."
+                className="flex-1 h-11 text-sm border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-lg px-4 bg-white"
+                disabled={!isAIConnected || isLoading}
+              />
+              <Button
+                onClick={() => handleSendMessage()}
+                disabled={!message.trim() || !isAIConnected || isLoading}
+                size="default"
+                className="h-11 w-11 p-0 bg-green-600 hover:bg-green-700 rounded-lg flex items-center justify-center shadow-md"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-white" />
+                ) : (
+                  <Send className="w-5 h-5 text-white" />
+                )}
+              </Button>
+            </div>
+            {!isMinimized && (
               <div className="flex justify-end mt-2">
                 <Button
                   variant="ghost"
@@ -455,9 +426,8 @@ const EnhancedChatBot = () => {
                   Clear Chat
                 </Button>
               </div>
-            </div>
-          </>
-        )}
+            )}
+          </div>
       </Card>
     </div>
   );

@@ -33,7 +33,6 @@ const Header = () => {
     { label: 'Categories', href: '/category' },
     { label: 'New Arrivals', href: '/products' },
     { label: 'Best Sellers', href: '/products' },
-    { label: 'Track Order', href: '/track-order' },
     { label: 'Community', href: '/community' },
     { label: 'About Us', href: '/about' },
   ];
@@ -59,25 +58,25 @@ const Header = () => {
         <div className="flex items-center justify-center gap-4 max-w-4xl mx-auto">
           <div className="flex items-center gap-1">
             <TreePine className="w-4 h-4" />
-            <span>2,847 trees planted this month</span>
+            <span>XXX trees planted this month</span>
           </div>
           <div className="hidden md:flex items-center gap-1">
             <Recycle className="w-4 h-4" />
-            <span>15.2T CO₂ offset</span>
+            <span>XX Tonnes CO₂ offset</span>
           </div>
           <div className="hidden lg:flex items-center gap-1">
             <Leaf className="w-4 h-4" />
-            <span>500K+ plastic items saved</span>
+            <span>XX plastic items saved</span>
           </div>
         </div>
       </div>
 
       {/* Main Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/20">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto" style={{ paddingLeft: '35px', paddingRight: '40px' }}>
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3 flex-shrink-0">
               <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
                 <img 
                   src={logoImage} 
@@ -86,39 +85,42 @@ const Header = () => {
                 />
               </div>
               <div>
-                <h1 className="text-xl font-headline font-bold text-charcoal">
+                <h1 className="text-xl font-headline font-bold text-charcoal whitespace-nowrap">
                   AveoEarth
                 </h1>
-                <div className="text-xs text-moss">Sustainable Marketplace</div>
+                <div className="text-xs text-moss whitespace-nowrap">Sustainable Marketplace</div>
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.href}
-                  className="text-muted-foreground hover:text-forest transition-colors duration-200 font-medium"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            {/* Desktop Navigation - All on one line with space-between */}
+            <div className="hidden lg:flex items-center flex-1 justify-between mx-8" style={{ minWidth: 0 }}>
+              {/* Navigation Links */}
+              <nav className="flex items-center gap-6 flex-shrink-0">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    className="text-muted-foreground hover:text-forest transition-colors duration-200 font-medium whitespace-nowrap"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
 
-                {/* Search Bar */}
-                <div className="hidden md:flex items-center max-w-md flex-1 mx-8">
-                  <SearchAutocomplete
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    onSubmit={(query) => navigateToSearch(query)}
-                    placeholder="Search sustainable products..."
-                    className="w-full"
-                  />
-                </div>
+              {/* Search Bar */}
+              <div className="hidden md:flex items-center flex-1 mx-8" style={{ maxWidth: '400px', minWidth: '200px' }}>
+                <SearchAutocomplete
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  onSubmit={(query) => navigateToSearch(query)}
+                  placeholder="Search sustainable products..."
+                  className="w-full"
+                />
+              </div>
+            </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-3">
+            {/* Actions - Right side */}
+            <div className="flex items-center gap-3 flex-shrink-0">
               {/* Mobile Search */}
               <Button 
                 variant="ghost" 

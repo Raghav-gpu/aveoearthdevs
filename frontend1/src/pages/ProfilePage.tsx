@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
+import { useQuery } from '@tanstack/react-query';
+import { backendApi } from '@/services/backendApi';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Mail, 
@@ -24,12 +27,19 @@ import {
   LogOut,
   Award,
   TreePine,
-  Recycle
+  Recycle,
+  Truck,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2
 } from 'lucide-react';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -44,6 +54,18 @@ const ProfilePage = () => {
   const { user, userProfile, updateProfile, signOut, loadUserProfile } = useAuth();
   const { getTotalItems } = useCart();
   const { data: wishlist } = useWishlist();
+  
+  // Fetch orders for the orders tab
+  const { data: ordersResponse, isLoading: ordersLoading } = useQuery({
+    queryKey: ['orders', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      return await backendApi.getOrders(1, 10);
+    },
+    enabled: !!user && activeTab === 'orders'
+  });
+  
+  const orders = ordersResponse?.items || [];
 
   // Load profile data when userProfile changes
   useEffect(() => {
@@ -353,11 +375,134 @@ const ProfilePage = () => {
                     <CardTitle>Order History</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12">
-                      <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-charcoal mb-2">No orders yet</h3>
-                      <p className="text-muted-foreground">Your order history will appear here</p>
-                    </div>
+                    {ordersLoading ? (
+                      <div className="text-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-forest" />
+                        <p className="text-muted-foreground">Loading orders...</p>
+                      </div>
+                    ) : orders.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-charcoal mb-2">No orders yet</h3>
+                        <p className="text-muted-foreground mb-4">Your order history will appear here</p>
+                        <Button onClick={() => navigate('/products')}>
+                          Start Shopping
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {orders.map((order: any) => {
+                          const getStatusColor = (status: string) => {
+                            const colors: Record<string, string> = {
+                              pending: 'bg-yellow-100 text-yellow-800',
+                              confirmed: 'bg-blue-100 text-blue-800',
+                              processing: 'bg-blue-100 text-blue-800',
+                              shipped: 'bg-purple-100 text-purple-800',
+                              delivered: 'bg-green-100 text-green-800',
+                              cancelled: 'bg-red-100 text-red-800',
+                              returned: 'bg-gray-100 text-gray-800'
+                            };
+                            return colors[status] || 'bg-gray-100 text-gray-800';
+                          };
+                          
+                          const getStatusIcon = (status: string) => {
+                            if (status === 'shipped' || status === 'delivered') return Truck;
+                            if (status === 'delivered') return CheckCircle;
+                            if (status === 'cancelled') return XCircle;
+                            return Clock;
+                          };
+                          
+                          const StatusIcon = getStatusIcon(order.status);
+                          const formatPrice = (price: number) => `₹${price.toLocaleString('en-IN')}`;
+                          const formatDate = (dateString: string) => {
+                            if (!dateString) return 'N/A';
+                            return new Date(dateString).toLocaleDateString('en-IN', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            });
+                          };
+                          
+                          return (
+                            <Card key={order.id} className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-3">
+                                      <h3 className="font-semibold text-lg">Order #{order.id?.substring(0, 8)}</h3>
+                                      <Badge className={`${getStatusColor(order.status)} text-xs`}>
+                                        <StatusIcon className="w-3 h-3 mr-1" />
+                                        {order.status}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                      <span className="flex items-center gap-1">
+                                        <Calendar className="w-4 h-4" />
+                                        {formatDate(order.created_at)}
+                                      </span>
+                                      <span>{formatPrice(order.total_amount)}</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => navigate(`/orders?order_id=${order.id}`)}
+                                    >
+                                      <Eye className="w-4 h-4 mr-1" />
+                                      View
+                                    </Button>
+                                    {(order.status === 'shipped' || order.status === 'delivered') && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => navigate(`/track-order?order_id=${order.id}`)}
+                                      >
+                                        <Truck className="w-4 h-4 mr-1" />
+                                        Track
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="border-t pt-4">
+                                  <div className="space-y-2">
+                                    {order.items?.slice(0, 3).map((item: any, idx: number) => (
+                                      <div key={idx} className="flex items-center gap-3 text-sm">
+                                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                          <img
+                                            src={item.product?.image_url || '/api/placeholder/40/40'}
+                                            alt={item.product?.name || 'Product'}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium truncate">{item.product?.name || 'Product'}</div>
+                                          <div className="text-muted-foreground">
+                                            Qty: {item.quantity} × {formatPrice(item.price)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                    {order.items?.length > 3 && (
+                                      <div className="text-sm text-muted-foreground pt-2">
+                                        +{order.items.length - 3} more item(s)
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                        {orders.length >= 10 && (
+                          <div className="text-center pt-4">
+                            <Button variant="outline" onClick={() => navigate('/orders')}>
+                              View All Orders
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

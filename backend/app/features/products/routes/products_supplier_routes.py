@@ -283,7 +283,7 @@ async def create_product(
                     "p_category_id": product_data.get("category_id"),
                     "p_brand_id": product_data.get("brand_id"),
                     "p_supplier_id": current_user["id"],
-                    "p_status": "active",
+                    "p_status": "ACTIVE",
                     "p_approval_status": "approved",
                     "p_visibility": visibility if visibility else "visible",
                     "p_tags": json.dumps(tags) if tags else json.dumps([]),
@@ -334,7 +334,7 @@ async def create_product(
                             "care_instructions": product_data.get("care_instructions"),
                             "origin_country": product_data.get("origin_country"),
                             "manufacturing_details": product_data.get("manufacturing_details", {}),
-                            "status": "active",
+                            "status": "ACTIVE",
                             "approval_status": "approved",
                             "visibility": visibility if visibility else "visible",
                             "tags": tags if tags else [],
@@ -386,7 +386,7 @@ async def create_product(
                 "care_instructions": product_data.get("care_instructions"),
                 "origin_country": product_data.get("origin_country"),
                 "manufacturing_details": {},
-                "status": "active",  # Make it active so it shows in listings
+                "status": "ACTIVE",  # Make it active so it shows in listings
                 "approval_status": "approved",
                 "approval_notes": None,
                 "approved_at": now,
@@ -453,7 +453,7 @@ async def create_product(
                 "care_instructions": product_data.get("care_instructions"),
                 "origin_country": product_data.get("origin_country"),
                 "manufacturing_details": {},
-                "status": "draft",
+                "status": "DRAFT",
                 "approval_status": "approved",
                 "approval_notes": None,
                 "approved_at": None,
@@ -1743,7 +1743,7 @@ async def bulk_update_product_visibility(
 @products_supplier_router.put("/{product_id}/status")
 async def update_product_status(
     product_id: str,
-    status: str = Form(..., pattern="^(draft|pending|active|inactive)$"),
+    status: str = Form(..., pattern="^(DRAFT|PENDING|ACTIVE|INACTIVE)$"),
     current_user: Dict[str, Any] = Depends(require_supplier()),
     db: AsyncSession = Depends(get_async_session)
 ):
@@ -1768,7 +1768,7 @@ async def update_product_status(
 @products_supplier_router.post("/bulk-status-update")
 async def bulk_update_product_status(
     product_ids: str = Form(...),
-    status: str = Form(..., pattern="^(draft|pending|active|inactive)$"),
+    status: str = Form(..., pattern="^(DRAFT|PENDING|ACTIVE|INACTIVE)$"),
     current_user: Dict[str, Any] = Depends(require_supplier()),
     db: AsyncSession = Depends(get_async_session)
 ):

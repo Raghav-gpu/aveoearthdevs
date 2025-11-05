@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/EnhancedAuthContext';
 import { useToast } from '@/hooks/use-toast';
+import logoImage from '@/assets/logo.webp';
 import { 
   Mail, 
   Lock, 
@@ -164,8 +165,12 @@ const LoginPage = () => {
         {/* Welcome Section */}
         <div className="text-center lg:text-left space-y-6">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-moss rounded-2xl flex items-center justify-center">
-              <Leaf className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center">
+              <img 
+                src={logoImage} 
+                alt="AveoEarth Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-headline font-bold text-charcoal">

@@ -34,10 +34,10 @@ class CartCrud(BaseCrud[Cart]):
             # If user doesn't exist in public.users, we'll handle the foreign key error gracefully
             if user_id:
                 logger.info(f"User {user_id} is authenticated - proceeding with cart creation (skipping user verification)")
-                user_exists_via_rest = True  # Assume exists - they're authenticated
+                user_exists_via_rest = False  # Will check if user exists
+                rest_user_check = None
                 
-                # Skip all user verification - user is authenticated so they exist in auth.users
-                # Only check if user exists for logging purposes, but don't block cart creation
+                # Check if user exists in public.users table
                 try:
                     from app.features.auth.cruds.auth_crud import AuthCrud
                     auth_crud = AuthCrud()
@@ -48,16 +48,15 @@ class CartCrud(BaseCrud[Cart]):
                         logger.info(f"✅ User {user_id} exists in public.users table")
                         user_exists_via_rest = True
                     else:
-                        logger.info(f"User {user_id} not in public.users - will proceed anyway (authenticated in auth.users)")
-                        user_exists_via_rest = True  # Still proceed - user is authenticated
+                        logger.info(f"User {user_id} not in public.users - will create user record")
+                        user_exists_via_rest = False
                 except Exception as rest_check_err:
-                    logger.warning(f"User check failed: {rest_check_err} - proceeding anyway (user is authenticated)")
-                    user_exists_via_rest = True  # Proceed - user is authenticated
+                    logger.warning(f"User check failed: {rest_check_err} - will try to create user")
+                    user_exists_via_rest = False
                 
-                # Skip user creation - user is authenticated, so they exist in auth.users
-                # Cart creation will handle foreign key errors if user not in public.users
-                # DO NOT CREATE USER HERE - it will be created by auth flow or on first profile access
-                if False:  # Never execute user creation block
+                # Create user in public.users if they don't exist (they're authenticated in auth.users)
+                # This is needed for foreign key constraints when creating cart
+                if not user_exists_via_rest:  # User doesn't exist in public.users
                     logger.warning(f"User {user_id} not found in users table, creating user record via Supabase REST API before cart creation")
                     # CRITICAL: Use Supabase REST API with SERVICE ROLE to create user - bypasses SQLAlchemy transaction issues
                     # This ensures the user is committed to the database before we try to create the cart

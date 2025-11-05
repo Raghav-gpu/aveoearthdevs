@@ -99,6 +99,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setSession(session)
               setUser(session.user)
               
+              // Set token in backend API client
+              if (session.access_token) {
+                backendApi.setToken(session.access_token)
+                console.log('✅ Token set in backend API client')
+              }
+              
               // Clear hash from URL
               window.history.replaceState(null, '', window.location.pathname + window.location.search)
               
@@ -121,6 +127,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      // Set token in backend API client if session exists
+      if (session?.access_token) {
+        backendApi.setToken(session.access_token)
+        console.log('✅ Initial token set in backend API client')
+      }
       setLoading(false)
     })
 
@@ -132,6 +143,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+
+      // Set token in backend API client
+      if (session?.access_token) {
+        backendApi.setToken(session.access_token)
+        console.log('✅ Token updated in backend API client')
+      } else if (event === 'SIGNED_OUT') {
+        backendApi.setToken(null)
+      }
 
       // If user signs in, create or update user profile
       if (event === 'SIGNED_IN' && session?.user) {

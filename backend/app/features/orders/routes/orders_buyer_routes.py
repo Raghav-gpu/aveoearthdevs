@@ -29,17 +29,23 @@ async def get_cart(
     current_user: Optional[Dict[str, Any]] = Depends(get_all_users),
     db: Optional[AsyncSession] = Depends(get_async_session)
 ):
-    cart_crud = CartCrud()
-    
-    if current_user:
-        cart = await cart_crud.get_or_create_cart(db, user_id=current_user["id"])
-    else:
-        if not session_id:
-            raise ValidationException("Session ID is required for guest users")
-        cart = await cart_crud.get_or_create_cart(db, session_id=session_id)
-    
-    cart_with_items = await cart_crud.get_cart_with_items(db, str(cart.id))
-    return cart_with_items
+    try:
+        cart_crud = CartCrud()
+        
+        if current_user and current_user.get("id"):
+            cart = await cart_crud.get_or_create_cart(db, user_id=current_user["id"])
+        else:
+            if not session_id:
+                raise ValidationException("Session ID is required for guest users")
+            cart = await cart_crud.get_or_create_cart(db, session_id=session_id)
+        
+        cart_with_items = await cart_crud.get_cart_with_items(db, str(cart.id))
+        return cart_with_items
+    except Exception as e:
+        logger.error(f"Error in get_cart: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
 
 @orders_buyer_router.post("/cart/items", response_model=SuccessResponse)
 async def add_to_cart(

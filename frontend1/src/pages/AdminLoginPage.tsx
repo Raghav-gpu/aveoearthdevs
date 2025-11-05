@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import logoImage from '@/assets/logo.webp';
 
 const AdminLoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -50,8 +51,12 @@ const AdminLoginPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-emerald-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-xl">AE</span>
+          <div className="mx-auto h-16 w-16 rounded-full overflow-hidden flex items-center justify-center">
+            <img 
+              src={logoImage} 
+              alt="AveoEarth Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Admin Login

@@ -1,4 +1,5 @@
 import React from 'react';
+import logoImage from '@/assets/logo.webp';
 import { 
   Squares2X2Icon,
   TruckIcon,
@@ -108,8 +109,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeScreen, onScreenChang
       {/* Logo */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-emerald-600 rounded-md flex items-center justify-center">
-            <span className="text-white font-bold text-sm">AE</span>
+          <div className="w-8 h-8 rounded-md overflow-hidden flex items-center justify-center">
+            <img 
+              src={logoImage} 
+              alt="AveoEarth Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           {!collapsed && (
             <div className="text-xl font-semibold text-black">AveoEarth</div>

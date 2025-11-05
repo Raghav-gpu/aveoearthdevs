@@ -44,11 +44,30 @@ class AuthCrud(BaseCrud[User]):
             self.admin_client = self.client
     
     def _user_to_dict(self, user: User) -> Dict[str, Any]:
+        # Handle user_type enum - convert to string value
+        user_type_value = user.user_type
+        if hasattr(user_type_value, 'value'):
+            user_type_value = user_type_value.value
+        elif isinstance(user_type_value, str):
+            user_type_value = user_type_value.lower()
+        
+        # Ensure created_at is always a datetime object, not a string
+        created_at_val = user.created_at
+        if created_at_val is None:
+            from datetime import datetime
+            created_at_val = datetime.utcnow()
+        elif isinstance(created_at_val, str):
+            from datetime import datetime
+            try:
+                created_at_val = datetime.fromisoformat(created_at_val.replace('Z', '+00:00'))
+            except:
+                created_at_val = datetime.utcnow()
+        
         return {
             "id": str(user.id),
             "email": user.email,
             "phone": user.phone,
-            "user_type": user.user_type,
+            "user_type": user_type_value,
             "first_name": user.first_name,
             "last_name": user.last_name,
             "avatar_url": user.avatar_url,
@@ -59,7 +78,7 @@ class AuthCrud(BaseCrud[User]):
             "google_id": user.google_id,
             "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None,
             "referral_code": user.referral_code,
-            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "created_at": created_at_val,  # Return datetime object, not ISO string
             "updated_at": user.updated_at.isoformat() if user.updated_at else None
         }
     
@@ -129,13 +148,24 @@ class AuthCrud(BaseCrud[User]):
                 auth_response = self.admin_client.auth.admin.create_user({
                     "email": signup_data["email"],
                     "password": signup_data["password"],
-                    "email_confirm": True,  # Auto-confirm email to skip verification
+                    "email_confirm": False,  # Require email verification - user must verify email
                     "user_metadata": {
                         "first_name": signup_data.get("first_name"),
                         "last_name": signup_data.get("last_name"),
                         "user_type": (signup_data.get("user_type") or "buyer").lower()
                     }
                 })
+                
+                # Send verification email after user creation
+                try:
+                    self.auth_client.auth.resend({
+                        "type": "signup",
+                        "email": signup_data["email"]
+                    })
+                    logger.info(f"Verification email sent to: {signup_data['email']}")
+                except Exception as email_err:
+                    logger.warning(f"Could not send verification email: {str(email_err)}")
+                    # Continue anyway - user can request resend later
                 
                 # Admin API doesn't return a session, so we need to sign in to get session
                 if hasattr(auth_response, 'user') and auth_response.user:
@@ -162,9 +192,25 @@ class AuthCrud(BaseCrud[User]):
                             "first_name": signup_data.get("first_name"),
                             "last_name": signup_data.get("last_name"),
                             "user_type": (signup_data.get("user_type") or "buyer").lower()
-                        }
+                        },
+                        "email_redirect_to": None  # Let Supabase handle email verification
                     }
                 })
+                
+                # Supabase sign_up automatically sends verification email, but we can also explicitly resend
+                if auth_response and hasattr(auth_response, 'user') and auth_response.user:
+                    try:
+                        # Wait a moment for user to be created, then send verification email
+                        import asyncio
+                        await asyncio.sleep(0.5)
+                        self.auth_client.auth.resend({
+                            "type": "signup",
+                            "email": signup_data["email"]
+                        })
+                        logger.info(f"Verification email sent to: {signup_data['email']}")
+                    except Exception as email_err:
+                        logger.warning(f"Could not send verification email: {str(email_err)}")
+                        # Continue anyway - Supabase may have sent it automatically during sign_up
             
             if not getattr(auth_response, "user", None):
                 raise ValidationException("Failed to create user account")
@@ -857,12 +903,17 @@ class AuthCrud(BaseCrud[User]):
             if not user_obj:
                 raise NotFoundException("User not found")
 
-            reset_response = self.auth_client.auth.reset_password_email(email)
-            logger.info(f"Password reset email sent to: {email}")
+            try:
+                reset_response = self.auth_client.auth.reset_password_email(email)
+                logger.info(f"Password reset email sent successfully to: {email}")
+            except Exception as email_err:
+                logger.error(f"Supabase email sending failed: {str(email_err)}")
+                logger.error("Note: Ensure Supabase email settings are configured in the Supabase dashboard")
+                raise
             return {"message": "Password reset email sent", "email": email}
         except Exception as e:
             logger.error(f"Forgot password error: {str(e)}")
-            raise ValidationException("Failed to send password reset email")
+            raise ValidationException(f"Failed to send password reset email: {str(e)}. Please check Supabase email configuration.")
 
     async def reset_password(self, db: AsyncSession, user_id: str, new_password: str) -> Dict[str, Any]:
         try:

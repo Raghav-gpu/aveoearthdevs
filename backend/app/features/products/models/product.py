@@ -5,21 +5,21 @@ from enum import Enum as PyEnum
 from app.core.base import Base, BaseTimeStamp, BaseUUID
 
 class ProductStatusEnum(str, PyEnum):
-    DRAFT = "draft"
-    PENDING = "pending"
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-    REJECTED = "rejected"
+    DRAFT = "DRAFT"  # Database expects uppercase
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    REJECTED = "REJECTED"
 
 class ProductApprovalEnum(str, PyEnum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
+    PENDING = "PENDING"  # Database expects uppercase
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 
 class ProductVisibilityEnum(str, PyEnum):
-    VISIBLE = "visible"
-    HIDDEN = "hidden"
-    SCHEDULED = "scheduled"
+    VISIBLE = "VISIBLE"  # Database expects uppercase
+    HIDDEN = "HIDDEN"
+    SCHEDULED = "SCHEDULED"
 
 class Product(BaseUUID, BaseTimeStamp, Base):
     __tablename__ = "products"

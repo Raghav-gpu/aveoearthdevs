@@ -39,7 +39,7 @@ export const productsApi = {
       });
       
       // Backend returns {items: [], total: N, page: N, limit: N, pages: N}
-      const products = backendResponse.items || backendResponse.data || [];
+      const products = backendResponse.items || [];
       const total = backendResponse.total || 0;
       
       console.log('✅ Backend API response:', { productsCount: products.length, total });
@@ -51,7 +51,7 @@ export const productsApi = {
           categories: p.categories || p.category || { name: 'Uncategorized' },
         })),
         count: total,
-        totalPages: backendResponse.pages || backendResponse.total_pages || Math.ceil(total / limit) || 1,
+        totalPages: backendResponse.pages || Math.ceil(total / limit) || 1,
       };
     } catch (backendError) {
       console.log('⚠️ Backend API failed, trying Supabase...', backendError);
@@ -173,9 +173,10 @@ export const productsApi = {
     // Try backend first
     try {
       const response = await backendApi.searchProducts(query, { category_id: categoryId });
-      if (response && response.data && response.data.length > 0) {
-        console.log('✅ Search results from backend:', response.data.length);
-        return response.data;
+      const items = response?.items || [];
+      if (items.length > 0) {
+        console.log('✅ Search results from backend:', items.length);
+        return items;
       }
     } catch (backendError) {
       console.log('⚠️ Backend search failed, trying Supabase...', backendError);
@@ -308,7 +309,7 @@ export const productsApi = {
     try {
       const backendProducts = await backendApi.getEcoFriendlyProducts(limit);
       // Backend returns array or PaginatedResponse
-      const products = Array.isArray(backendProducts) ? backendProducts : (backendProducts.items || backendProducts.data || []);
+      const products = Array.isArray(backendProducts) ? backendProducts : ((backendProducts as any)?.items || []);
       console.log('✅ Backend eco-friendly response:', { productsCount: products.length });
       
       // Return even if empty - backend worked correctly
@@ -494,30 +495,24 @@ export const reviewsApi = {
   }
 }
 
-// Wishlist API
+// Wishlist API - Use backend API to bypass RLS permission issues
 export const wishlistApi = {
   async getByUserId(userId: string) {
     try {
       console.log('🔄 Fetching wishlist for user:', userId)
       
-      const { data, error } = await supabase
-        .from('wishlists')
-        .select(`
-          *,
-          products(*)
-        `)
-        .eq('user_id', userId)
-
-      if (error) {
-        console.error('❌ Error fetching wishlist:', error)
-        throw error
-      }
+      // Use backend API instead of direct Supabase to bypass RLS
+      const { backendApi } = await import('./backendApi')
+      const response = await backendApi.getWishlist()
       
-      console.log('✅ Wishlist fetched successfully:', data?.length || 0, 'items')
-      return data || []
+      // Backend returns PaginatedResponse with items array
+      const items = response?.items || (Array.isArray(response) ? response : [])
+      console.log('✅ Wishlist fetched successfully:', items?.length || 0, 'items')
+      return items
     } catch (error) {
       console.error('❌ Wishlist fetch failed:', error)
-      throw error
+      // Fallback to empty array instead of throwing
+      return []
     }
   },
 
@@ -525,37 +520,12 @@ export const wishlistApi = {
     try {
       console.log('🔄 Adding to wishlist:', { userId, productId })
       
-      // First check if item already exists in wishlist
-      const { data: existingItem, error: checkError } = await supabase
-        .from('wishlists')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('product_id', productId)
-        .single()
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error('❌ Error checking existing wishlist item:', checkError)
-        throw checkError
-      }
-
-      if (existingItem) {
-        console.log('⚠️ Item already in wishlist, skipping add')
-        return existingItem
-      }
+      // Use backend API instead of direct Supabase to bypass RLS
+      const { backendApi } = await import('./backendApi')
+      const result = await backendApi.addToWishlist(productId)
       
-      const { data, error } = await supabase
-        .from('wishlists')
-        .insert({ user_id: userId, product_id: productId })
-        .select()
-        .single()
-
-      if (error) {
-        console.error('❌ Error adding to wishlist:', error)
-        throw error
-      }
-      
-      console.log('✅ Added to wishlist successfully:', data)
-      return data
+      console.log('✅ Added to wishlist successfully')
+      return result
     } catch (error) {
       console.error('❌ Add to wishlist failed:', error)
       throw error
@@ -566,18 +536,12 @@ export const wishlistApi = {
     try {
       console.log('🔄 Removing from wishlist:', { userId, productId })
       
-      const { error } = await supabase
-        .from('wishlists')
-        .delete()
-        .eq('user_id', userId)
-        .eq('product_id', productId)
-
-      if (error) {
-        console.error('❌ Error removing from wishlist:', error)
-        throw error
-      }
+      // Use backend API instead of direct Supabase to bypass RLS
+      const { backendApi } = await import('./backendApi')
+      await backendApi.removeFromWishlist(productId)
       
       console.log('✅ Removed from wishlist successfully')
+      return true
     } catch (error) {
       console.error('❌ Remove from wishlist failed:', error)
       throw error

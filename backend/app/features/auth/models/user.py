@@ -10,21 +10,38 @@ class UserTypeEnum(str, PyEnum):
 
 class UserTypeEnumType(TypeDecorator):
     """Custom type that ensures enum values (lowercase strings) are used, not names"""
-    impl = String
+    impl = Enum(UserTypeEnum, native_enum=False)
     cache_ok = True
     
     def __init__(self):
-        super().__init__(length=20)
+        super().__init__(UserTypeEnum, native_enum=False)
+    
+    def load_dialect_impl(self, dialect):
+        """Use PostgreSQL ENUM type when using PostgreSQL, String otherwise"""
+        if dialect.name == 'postgresql':
+            # Use PostgreSQL native enum type
+            return dialect.type_descriptor(PG_ENUM(UserTypeEnum, name='user_type', create_type=False))
+        else:
+            return dialect.type_descriptor(String(20))
     
     def process_bind_param(self, value, dialect):
-        """Convert enum to lowercase string value when binding to database"""
+        """Convert enum to lowercase string value"""
         if value is None:
             return None
+        # Get the lowercase string value
         if isinstance(value, UserTypeEnum):
-            return value.value  # Return the lowercase string value ("buyer")
-        if isinstance(value, str):
-            return value.lower()  # Ensure lowercase
-        return str(value).lower()
+            value_str = value.value  # "buyer", "supplier", "admin"
+        elif isinstance(value, str):
+            value_str = value.lower()
+        else:
+            value_str = str(value).lower()
+        
+        # Ensure it's a valid enum value
+        valid_values = ["buyer", "supplier", "admin"]
+        if value_str not in valid_values:
+            value_str = "buyer"  # Default
+        
+        return value_str
     
     def process_result_value(self, value, dialect):
         """Convert string from database to enum object"""
@@ -38,10 +55,6 @@ class UserTypeEnumType(TypeDecorator):
             if enum_member.value == value_lower:
                 return enum_member
         return UserTypeEnum.BUYER  # Default fallback
-    
-    def load_dialect_impl(self, dialect):
-        """Tell SQLAlchemy to use String type at database level"""
-        return dialect.type_descriptor(String(20))
 
 class User(BaseUUID, BaseTimeStamp, Base):
     __tablename__ = "users"

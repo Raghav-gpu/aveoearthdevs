@@ -152,10 +152,68 @@ async def get_current_user_info(
     db: AsyncSession = Depends(get_async_session)
 ):
     auth_crud = AuthCrud()
-    user_data = await auth_crud.get_by_id(db, current_user["id"])
+    try:
+        user_data = await auth_crud.get_by_id(db, current_user["id"])
+    except Exception as get_error:
+        logger.error(f"Error getting user {current_user['id']}: {get_error}")
+        user_data = None
     
     if not user_data:
-        raise AuthenticationException("User not found")
+        # User is authenticated in Supabase but doesn't exist in database - create them
+        logger.info(f"User {current_user['id']} authenticated but not in database, creating user record")
+        try:
+            # Create user using REST API to ensure it persists immediately
+            admin_client = auth_crud.admin_client
+            
+            user_rest_data = {
+                "id": current_user["id"],
+                "email": current_user.get("email", ""),
+                "phone": current_user.get("phone") or "+10000000000",
+                "user_type": current_user.get("user_role", "buyer").lower(),
+                "first_name": current_user.get("first_name") or "User",
+                "last_name": current_user.get("last_name") or "",
+                "is_verified": current_user.get("is_verified", True),
+                "is_active": True,
+                "is_email_verified": current_user.get("is_verified", True)
+            }
+            
+            # Insert via REST API
+            rest_response = admin_client.table("users").insert(user_rest_data).execute()
+            if rest_response.data:
+                logger.info(f"✅ Created user {current_user['id']} via REST API")
+                # Wait a bit for propagation, then fetch
+                import asyncio
+                await asyncio.sleep(0.5)
+                user_data = await auth_crud.get_by_id(db, current_user["id"])
+            else:
+                # REST API failed, try to create via SQLAlchemy
+                logger.warning("REST API insert returned no data, trying SQLAlchemy")
+                user_data = await auth_crud.create(db, user_rest_data)
+        except Exception as create_error:
+            logger.error(f"Failed to create user record: {create_error}")
+            # Return basic user info from current_user if creation fails
+            from datetime import datetime
+            # Ensure user_type is properly formatted
+            user_type_str = current_user.get("user_role", "buyer")
+            if isinstance(user_type_str, str):
+                user_type_str = user_type_str.lower()
+            
+            return UserResponse(
+                id=current_user["id"],
+                email=current_user.get("email", "unknown@example.com"),
+                phone=current_user.get("phone", "+10000000000"),
+                user_type=user_type_str,
+                first_name=current_user.get("first_name", "User"),
+                last_name=current_user.get("last_name", ""),
+                avatar_url=None,
+                is_verified=current_user.get("is_verified", True),
+                is_active=True,
+                is_email_verified=current_user.get("is_verified", True),
+                is_phone_verified=False,
+                last_login_at=None,
+                referral_code="",
+                created_at=datetime.utcnow()
+            )
     
     if not user_data.referral_code:
         issued_referral_code = auth_crud.generate_referral_code(6)
@@ -165,7 +223,76 @@ async def get_current_user_info(
         await auth_crud.update(db, current_user["id"], {"referral_code": issued_referral_code})
         user_data.referral_code = issued_referral_code
     
-    return UserResponse(**user_data.to_dict())
+    # Use _user_to_dict method instead of to_dict() which may not exist
+    try:
+        user_dict = auth_crud._user_to_dict(user_data)
+        return UserResponse(**user_dict)
+    except Exception as dict_error:
+        logger.error(f"Error converting user to dict: {dict_error}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        # Fallback: create dict manually
+        from datetime import datetime
+        try:
+            # Ensure all required fields are present
+            user_type_str = "buyer"
+            if user_data.user_type:
+                if hasattr(user_data.user_type, 'value'):
+                    user_type_str = user_data.user_type.value
+                elif isinstance(user_data.user_type, str):
+                    user_type_str = user_data.user_type.lower()
+                else:
+                    user_type_str = str(user_data.user_type).lower()
+            
+            # Ensure created_at is a datetime object
+            created_at_val = getattr(user_data, 'created_at', None)
+            if created_at_val is None:
+                created_at_val = datetime.utcnow()
+            elif isinstance(created_at_val, str):
+                try:
+                    from datetime import datetime as dt
+                    created_at_val = dt.fromisoformat(created_at_val.replace('Z', '+00:00'))
+                except:
+                    created_at_val = datetime.utcnow()
+            
+            return UserResponse(
+                id=str(user_data.id),
+                email=user_data.email or current_user.get("email", ""),
+                phone=user_data.phone or current_user.get("phone", "+10000000000"),
+                user_type=user_type_str,
+                first_name=user_data.first_name or current_user.get("first_name", "User"),
+                last_name=user_data.last_name or current_user.get("last_name", ""),
+                avatar_url=getattr(user_data, 'avatar_url', None),
+                is_verified=getattr(user_data, 'is_email_verified', False) if hasattr(user_data, 'is_email_verified') else (getattr(user_data, 'is_verified', True) if hasattr(user_data, 'is_verified') else True),
+                is_active=getattr(user_data, 'is_active', True) if hasattr(user_data, 'is_active') else True,
+                is_phone_verified=getattr(user_data, 'is_phone_verified', False) if hasattr(user_data, 'is_phone_verified') else False,
+                is_email_verified=getattr(user_data, 'is_email_verified', False) if hasattr(user_data, 'is_email_verified') else (getattr(user_data, 'is_verified', True) if hasattr(user_data, 'is_verified') else True),
+                last_login_at=user_data.last_login_at if hasattr(user_data, 'last_login_at') and user_data.last_login_at else None,
+                referral_code=getattr(user_data, 'referral_code', None) or "",
+                created_at=created_at_val
+            )
+        except Exception as fallback_error:
+            logger.error(f"Fallback user dict creation also failed: {fallback_error}")
+            import traceback
+            logger.error(f"Fallback traceback: {traceback.format_exc()}")
+            # Last resort: return basic user info from current_user
+            from datetime import datetime
+            return UserResponse(
+                id=current_user.get("id", "unknown"),
+                email=current_user.get("email", "unknown@example.com"),
+                phone=current_user.get("phone", "+10000000000"),
+                user_type=current_user.get("user_role", "buyer").lower(),
+                first_name=current_user.get("first_name", "User"),
+                last_name=current_user.get("last_name", ""),
+                avatar_url=None,
+                is_verified=current_user.get("is_verified", True),
+                is_active=True,
+                is_phone_verified=False,
+                is_email_verified=current_user.get("is_verified", True),
+                last_login_at=None,
+                referral_code="",
+                created_at=datetime.utcnow()
+            )
 
 @auth_router.post("/refresh")
 async def refresh_token(current_user: Dict[str, Any] = Depends(get_all_users)):
@@ -241,17 +368,23 @@ async def resend_email_verification(
             return SuccessResponse(message="Email is already verified")
         
         supabase = get_supabase_client()
-        supabase.auth.resend({
-            "type": "signup",
-            "email": user_data.email
-        })
+        try:
+            result = supabase.auth.resend({
+                "type": "signup",
+                "email": user_data.email
+            })
+            logger.info(f"Verification email sent successfully to: {user_data.email}")
+        except Exception as email_err:
+            logger.error(f"Supabase email sending failed: {str(email_err)}")
+            logger.error("Note: Ensure Supabase email settings are configured in the Supabase dashboard")
+            raise
         
         from app.core.base import SuccessResponse
         return SuccessResponse(message="Verification email sent")
     except Exception as e:
         logger.error(f"Resend verification error: {str(e)}")
         from app.core.exceptions import ValidationException
-        raise ValidationException("Failed to resend verification email")
+        raise ValidationException(f"Failed to resend verification email: {str(e)}. Please check Supabase email configuration.")
 
 @auth_router.delete("/account")
 async def delete_account(

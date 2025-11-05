@@ -165,20 +165,28 @@ export interface UserProfile {
   updated_at: string;
 }
 
-export interface AuthResponse {
-  user: UserProfile;
+export interface TokenResponse {
   access_token: string;
   refresh_token: string;
   token_type: string;
   expires_in: number;
 }
 
+export interface AuthResponse {
+  user: UserProfile;
+  tokens: TokenResponse;
+  requires_phone_verification?: boolean;
+  referral_code?: string;
+}
+
 export interface PaginatedResponse<T> {
-  data: T[];
+  items: T[];
   total: number;
   page: number;
   limit: number;
-  total_pages: number;
+  pages: number;
+  has_next: boolean;
+  has_prev: boolean;
 }
 
 export interface SearchRequest {
@@ -203,6 +211,20 @@ class BackendApiClient {
     // Force empty prefix - backend routes are at root, NOT under /api/v1
     this.baseUrl = BACKEND_URL;
     this.token = localStorage.getItem('auth_token');
+    // Also try to get token from Supabase session if not set
+    if (!this.token) {
+      try {
+        const { supabase } = require('../lib/supabase');
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.access_token) {
+            this.token = session.access_token;
+            localStorage.setItem('auth_token', session.access_token);
+          }
+        });
+      } catch (e) {
+        // Supabase not available, continue with null token
+      }
+    }
     console.log('🔗 BackendApiClient initialized with baseUrl:', this.baseUrl);
   }
 
@@ -221,13 +243,35 @@ class BackendApiClient {
     
     // Don't set Content-Type for FormData - browser will set it with boundary
     const isFormData = options.body instanceof FormData;
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       ...(!isFormData && { 'Content-Type': 'application/json' }),
-      ...options.headers,
+      ...(options.headers as Record<string, string> || {}),
     };
 
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
+    // Get token from localStorage or Supabase session
+    let token = this.token || localStorage.getItem('auth_token');
+    if (!token) {
+      try {
+        // Dynamic import to avoid circular dependencies
+        const { supabase } = await import('../lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          token = session.access_token;
+          this.token = token;
+          localStorage.setItem('auth_token', token);
+          console.log('✅ Token retrieved from Supabase session');
+        }
+      } catch (e) {
+        console.warn('⚠️ Could not get token from Supabase session:', e);
+        // Supabase not available, continue without token
+      }
+    }
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      console.log('🔑 Using token for request (length:', token.length, ')');
+    } else {
+      console.warn('⚠️ No token available for request');
     }
 
     try {
@@ -317,8 +361,8 @@ class BackendApiClient {
     // Set token from response (could be in tokens.access_token or access_token)
     if (response.tokens?.access_token) {
       this.setToken(response.tokens.access_token);
-    } else if (response.access_token) {
-      this.setToken(response.access_token);
+    } else if ((response as any).access_token) {
+      this.setToken((response as any).access_token);
     }
     
     return response;
@@ -375,7 +419,7 @@ class BackendApiClient {
         console.log('⚠️ Trending products empty, falling back to recent products');
         try {
           const fallbackResponse = await this.request<PaginatedResponse<Product>>(`/products?limit=${limit}&sort_by=created_at&sort_order=desc`);
-          products = fallbackResponse.data || fallbackResponse.items || [];
+          products = fallbackResponse.items || [];
           console.log('✅ Featured products (fallback) response:', { productsCount: products.length });
         } catch (fallbackError) {
           console.error('❌ Featured products fallback also failed:', fallbackError);
@@ -388,7 +432,7 @@ class BackendApiClient {
       console.log('⚠️ Featured products (trending) endpoint failed, trying fallback:', error);
       try {
         const fallbackResponse = await this.request<PaginatedResponse<Product>>(`/products?limit=${limit}&sort_by=created_at&sort_order=desc`);
-        const products = fallbackResponse.data || fallbackResponse.items || [];
+        const products = fallbackResponse.items || [];
         console.log('✅ Featured products (fallback) response:', { productsCount: products.length });
         return products;
       } catch (fallbackError) {
@@ -403,7 +447,7 @@ class BackendApiClient {
       // Backend doesn't have eco-friendly endpoint, use regular products with filter
       const response = await this.request<PaginatedResponse<Product>>(`/products?limit=${limit}&sort_by=created_at&sort_order=desc`);
       // Backend returns {items: [], total, ...}
-      return response.items || response.data || [];
+      return response.items || [];
     } catch (error) {
       // Return empty array instead of trying fallbacks
       console.log('Eco-friendly products endpoint failed, returning empty array');
@@ -543,7 +587,7 @@ class BackendApiClient {
 
   // Wishlist API
   async getWishlist() {
-    return this.request<WishlistItem[]>('/products/wishlist');
+    return this.request<PaginatedResponse<WishlistItem>>('/products/wishlist');
   }
 
   async addToWishlist(productId: string) {
@@ -645,9 +689,9 @@ export const productsApi = {
       category_id: categoryId,
     });
     return {
-      data: response.data,
+      data: response.items,
       count: response.total,
-      totalPages: response.total_pages,
+      totalPages: response.pages,
     };
   },
 
@@ -659,7 +703,7 @@ export const productsApi = {
     const response = await backendApi.searchProducts(query, {
       category_id: categoryId,
     });
-    return response.data;
+    return response.items;
   },
 
   async getFeatured(limit: number = 16) {
@@ -689,7 +733,7 @@ export const ordersApi = {
 
   async getByUserId(userId: string) {
     const response = await backendApi.getOrders();
-    return response.data;
+    return response.items;
   },
 
   async updateStatus(id: string, status: string) {

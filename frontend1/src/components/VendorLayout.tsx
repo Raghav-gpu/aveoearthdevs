@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useVendorAuth } from '@/hooks/useVendorAuth';
+import logoImage from '@/assets/logo.webp';
 import { 
   BarChart3, 
   Package, 
@@ -56,8 +57,12 @@ const VendorLayout = () => {
       {/* Mobile Header */}
       <div className="lg:hidden bg-white/95 backdrop-blur-md border-b border-forest/20 px-4 py-3 flex items-center justify-between relative z-50 fixed top-0 left-0 right-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-forest rounded-xl flex items-center justify-center">
-            <Leaf className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center">
+            <img 
+              src={logoImage} 
+              alt="AveoEarth Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <span className="font-bold text-lg text-forest">AveoEarth</span>
         </div>
@@ -78,8 +83,12 @@ const VendorLayout = () => {
         <div className="h-full flex flex-col">
           {/* Logo Section */}
           <div className="flex items-center gap-3 px-6 py-6 border-b border-forest/20">
-            <div className="w-10 h-10 bg-gradient-to-br from-forest to-moss rounded-2xl flex items-center justify-center">
-              <Leaf className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-2xl overflow-hidden flex items-center justify-center">
+              <img 
+                src={logoImage} 
+                alt="AveoEarth Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <span className="font-bold text-xl text-forest">AveoEarth</span>

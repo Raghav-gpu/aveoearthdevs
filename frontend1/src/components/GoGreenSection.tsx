@@ -311,9 +311,9 @@ const GoGreenSection = () => {
                         setCurrentPage(pageIndex);
                         setTimeout(() => setIsTransitioning(false), 300);
                       }}
-                      className={`w-4 h-4 rounded-full transition-all duration-300 ${
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
                         isActive 
-                          ? 'bg-forest scale-125 shadow-lg animate-pulse' 
+                          ? 'bg-forest scale-110' 
                           : 'bg-forest/30 hover:bg-moss hover:scale-110'
                       }`}
                       disabled={isTransitioning}

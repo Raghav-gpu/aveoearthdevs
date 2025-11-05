@@ -17,15 +17,13 @@ export const useWishlistNew = () => {
       const { data, error } = await supabase
         .from('wishlists')
         .select(`
-          id,
+          user_id,
           product_id,
+          added_at,
           products (
             id,
             name,
-            price,
-            discount,
-            image_url,
-            sustainability_score
+            price
           )
         `)
         .eq('user_id', user.id)

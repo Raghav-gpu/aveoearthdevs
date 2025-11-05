@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
+import logoImage from '@/assets/logo.webp';
 import { 
   Building2, 
   User, 
@@ -120,8 +121,12 @@ const VendorLoginPage = () => {
       <nav className="bg-white/80 backdrop-blur-sm border-b border-forest/10 px-6 py-4 sticky top-0 z-50">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-forest to-moss">
-              <Leaf className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
+              <img 
+                src={logoImage} 
+                alt="AveoEarth Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <span className="font-headline font-bold text-xl text-charcoal">AveoEarth</span>

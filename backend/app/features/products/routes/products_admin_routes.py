@@ -222,9 +222,9 @@ async def bulk_update_products(
             elif action == "reject":
                 await product_crud.reject_product(db, product_id, current_user["id"], notes)
             elif action == "activate":
-                await product_crud.update_product(db, product_id, None, {"status": "active"})
+                await product_crud.update_product(db, product_id, None, {"status": "ACTIVE"})
             elif action == "deactivate":
-                await product_crud.update_product(db, product_id, None, {"status": "inactive"})
+                await product_crud.update_product(db, product_id, None, {"status": "INACTIVE"})
             
             updated_count += 1
         except Exception as e:
@@ -299,7 +299,7 @@ async def bulk_update_product_visibility(
 @products_admin_router.put("/{product_id}/status")
 async def update_product_status(
     product_id: str,
-    status: str = Form(..., pattern="^(draft|pending|active|inactive|rejected)$"),
+    status: str = Form(..., pattern="^(DRAFT|PENDING|ACTIVE|INACTIVE|REJECTED)$"),
     current_user: Dict[str, Any] = Depends(require_admin()),
     db: AsyncSession = Depends(get_async_session)
 ):
@@ -321,7 +321,7 @@ async def update_product_status(
 @products_admin_router.post("/bulk-status-update")
 async def bulk_update_product_status(
     product_ids: List[str] = Form(...),
-    status: str = Form(..., pattern="^(draft|pending|active|inactive|rejected)$"),
+    status: str = Form(..., pattern="^(DRAFT|PENDING|ACTIVE|INACTIVE|REJECTED)$"),
     current_user: Dict[str, Any] = Depends(require_admin()),
     db: AsyncSession = Depends(get_async_session)
 ):

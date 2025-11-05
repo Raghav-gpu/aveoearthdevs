@@ -18,8 +18,8 @@
   
   /* Touch-friendly tap targets */
   button, a, input, select, textarea {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 10px;
+    min-width: 10px;
   }
   
   /* Prevent zoom on input focus (iOS) */

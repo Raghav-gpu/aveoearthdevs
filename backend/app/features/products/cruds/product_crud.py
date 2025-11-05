@@ -232,7 +232,7 @@ class ProductCrud(BaseCrud[Product]):
                             debug_data = debug_response.json()
                             if isinstance(debug_data, list) and len(debug_data) > 0:
                                 # Filter client-side for products matching our criteria
-                                matching = [p for p in debug_data if str(p.get('status', '')).lower() == 'active' and str(p.get('approval_status', '')).lower() == 'approved' and str(p.get('visibility', '')).lower() == 'visible']
+                                matching = [p for p in debug_data if str(p.get('status', '')).upper() == 'ACTIVE' and str(p.get('approval_status', '')).upper() == 'APPROVED' and str(p.get('visibility', '')).upper() == 'VISIBLE']
                                 if len(matching) > 0:
                                     logger.info(f"✅ Found {len(matching)} matching products (client-side filtered)")
                                     # Apply pagination
@@ -267,7 +267,7 @@ class ProductCrud(BaseCrud[Product]):
                                             "short_description": p.get("short_description") or None,
                                             "price": float(p.get("price", 0)),
                                             "compare_at_price": None,
-                                            "status": p.get("status", "active"),
+                                            "status": p.get("status", "ACTIVE"),
                                             "approval_status": p.get("approval_status", "approved"),
                                             "visibility": p.get("visibility", "visible"),
                                             "tags": tags_list,
@@ -289,12 +289,12 @@ class ProductCrud(BaseCrud[Product]):
                 # Continue with PostgREST query if client-side filtering didn't return results
                 # Add filters for PostgREST query
                 query_params.extend([
-                    "status=eq.active",
+                    "status=eq.ACTIVE",
                     "approval_status=eq.approved",
                     "visibility=eq.visible"
                 ])
-                logger.info(f"Querying with filters: status=active, approval_status=approved, visibility=visible")
-                print(f"🔍 Filters: status=active, approval_status=approved, visibility=visible")
+                logger.info(f"Querying with filters: status=ACTIVE, approval_status=APPROVED, visibility=VISIBLE")
+                print(f"🔍 Filters: status=ACTIVE, approval_status=APPROVED, visibility=VISIBLE")
                 
                 if category_id:
                     query_params.append(f"category_id=eq.{category_id}")
@@ -383,7 +383,7 @@ class ProductCrud(BaseCrud[Product]):
                                     "short_description": p.get("short_description") or None,
                                     "price": float(p.get("price", 0)),
                                     "compare_at_price": None,
-                                    "status": p.get("status", "active"),
+                                    "status": p.get("status", "ACTIVE"),
                                     "approval_status": p.get("approval_status", "approved"),
                                     "visibility": p.get("visibility", "visible"),
                                     "tags": tags_list,
