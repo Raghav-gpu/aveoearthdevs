@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useQuery } from '@tanstack/react-query';
+import { backendApi } from '@/services/backendApi';
+import { useAuth } from '@/contexts/EnhancedAuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Search, 
   Package, 
@@ -16,346 +21,257 @@ import {
   Calendar,
   ArrowLeft,
   RefreshCw,
-  Leaf
+  Leaf,
+  Loader2
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-interface TrackingInfo {
-  orderId: string;
-  orderNumber: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  statusText: string;
-  trackingNumber: string;
-  carrier: string;
-  estimatedDelivery: string;
-  actualDelivery?: string;
-  currentLocation?: string;
-  timeline: {
-    status: string;
-    timestamp: string;
-    location?: string;
-    description: string;
-  }[];
-  items: {
-    id: string;
-    name: string;
-    quantity: number;
-    price: string;
-    image: string;
-  }[];
-  shippingAddress: {
-    name: string;
-    address: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  };
-}
 
 const TrackOrderPage = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [orderId, setOrderId] = useState(searchParams.get('order_id') || '');
   const [trackingNumber, setTrackingNumber] = useState('');
-  const [orderNumber, setOrderNumber] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [trackingInfo, setTrackingInfo] = useState<TrackingInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  // Mock tracking data for demonstration
-  const mockTrackingData: Record<string, TrackingInfo> = {
-    'AVEO847291': {
-      orderId: 'ORD-2024-001',
-      orderNumber: 'AVEO847291',
-      status: 'delivered',
-      statusText: 'Delivered',
-      trackingNumber: 'AVEO847291',
-      carrier: 'EcoShip',
-      estimatedDelivery: '2024-01-18',
-      actualDelivery: '2024-01-17',
-      currentLocation: 'Delivered to recipient',
-      timeline: [
-        {
-          status: 'delivered',
-          timestamp: '2024-01-17 14:30',
-          location: 'Customer Address',
-          description: 'Package delivered successfully'
-        },
-        {
-          status: 'out_for_delivery',
-          timestamp: '2024-01-17 08:15',
-          location: 'Local Distribution Center',
-          description: 'Out for delivery'
-        },
-        {
-          status: 'in_transit',
-          timestamp: '2024-01-16 22:45',
-          location: 'Regional Hub',
-          description: 'Package in transit'
-        },
-        {
-          status: 'processing',
-          timestamp: '2024-01-15 10:20',
-          location: 'Warehouse',
-          description: 'Order processed and packed'
-        },
-        {
-          status: 'confirmed',
-          timestamp: '2024-01-15 09:00',
-          location: 'Order Center',
-          description: 'Order confirmed'
-        }
-      ],
-      items: [
-        {
-          id: '1',
-          name: 'Eco Bamboo Kitchen Utensil Set',
-          quantity: 2,
-          price: '₹1,299',
-          image: '/api/placeholder/80/80'
-        },
-        {
-          id: '2',
-          name: 'Organic Cotton Bags',
-          quantity: 1,
-          price: '₹549',
-          image: '/api/placeholder/80/80'
-        }
-      ],
-      shippingAddress: {
-        name: 'John Doe',
-        address: '123 Green Street',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        postalCode: '400001',
-        country: 'India'
-      }
+  const { data: order, isLoading, error, refetch } = useQuery({
+    queryKey: ['order', orderId],
+    queryFn: async () => {
+      if (!orderId) return null;
+      return await backendApi.getOrder(orderId);
     },
-    'AVEO847292': {
-      orderId: 'ORD-2024-002',
-      orderNumber: 'AVEO847292',
-      status: 'shipped',
-      statusText: 'Shipped',
-      trackingNumber: 'AVEO847292',
-      carrier: 'GreenLogistics',
-      estimatedDelivery: '2024-01-20',
-      currentLocation: 'In Transit - Mumbai Hub',
-      timeline: [
-        {
-          status: 'shipped',
-          timestamp: '2024-01-18 16:20',
-          location: 'Origin Warehouse',
-          description: 'Package shipped'
-        },
-        {
-          status: 'processing',
-          timestamp: '2024-01-18 14:30',
-          location: 'Warehouse',
-          description: 'Order processed and packed'
-        },
-        {
-          status: 'confirmed',
-          timestamp: '2024-01-18 12:00',
-          location: 'Order Center',
-          description: 'Order confirmed'
-        }
-      ],
-      items: [
-        {
-          id: '3',
-          name: 'Sustainable Water Bottle',
-          quantity: 1,
-          price: '₹899',
-          image: '/api/placeholder/80/80'
-        }
-      ],
-      shippingAddress: {
-        name: 'Jane Smith',
-        address: '456 Eco Avenue',
-        city: 'Delhi',
-        state: 'Delhi',
-        postalCode: '110001',
-        country: 'India'
-      }
+    enabled: !!orderId && !!user
+  });
+
+  const handleTrack = () => {
+    if (!orderId && !trackingNumber) {
+      toast({
+        title: "Order ID or Tracking Number required",
+        description: "Please enter an order ID or tracking number.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (orderId) {
+      refetch();
+    } else if (trackingNumber) {
+      setOrderId(trackingNumber);
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'delivered':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'shipped':
-      case 'out_for_delivery':
-        return <Truck className="w-5 h-5 text-blue-600" />;
-      case 'processing':
-        return <Package className="w-5 h-5 text-yellow-600" />;
-      case 'confirmed':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'cancelled':
-        return <XCircle className="w-5 h-5 text-red-600" />;
-      default:
-        return <Clock className="w-5 h-5 text-gray-600" />;
-    }
+  const formatPrice = (price: number) => `₹${price.toLocaleString('en-IN')}`;
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'shipped':
-      case 'out_for_delivery':
-        return 'bg-blue-100 text-blue-800';
-      case 'processing':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    const colors: Record<string, string> = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-blue-100 text-blue-800',
+      processing: 'bg-blue-100 text-blue-800',
+      shipped: 'bg-purple-100 text-purple-800',
+      delivered: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      returned: 'bg-gray-100 text-gray-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const handleTrackOrder = async () => {
-    if (!trackingNumber.trim() && !orderNumber.trim()) {
-      setError('Please enter either a tracking number or order number');
-      return;
+  const getStatusIcon = (status: string) => {
+    const icons: Record<string, typeof Package> = {
+      pending: Clock,
+      confirmed: Package,
+      processing: Package,
+      shipped: Truck,
+      delivered: CheckCircle,
+      cancelled: XCircle,
+      returned: RefreshCw
+    };
+    return icons[status] || Package;
+  };
+
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+      pending: 'Pending',
+      confirmed: 'Confirmed',
+      processing: 'Processing',
+      shipped: 'Shipped',
+      delivered: 'Delivered',
+      cancelled: 'Cancelled',
+      returned: 'Returned'
+    };
+    return statusMap[status] || status;
+  };
+
+  const buildTimeline = (order: any) => {
+    const timeline = [];
+    
+    if (order.created_at) {
+      timeline.push({
+        status: 'confirmed',
+        timestamp: order.created_at,
+        description: 'Order confirmed',
+        location: 'Order Center'
+      });
     }
 
-    setIsLoading(true);
-    setError(null);
+    if (order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered') {
+      timeline.push({
+        status: 'processing',
+        timestamp: order.updated_at || order.created_at,
+        description: 'Order being processed',
+        location: 'Warehouse'
+      });
+    }
 
-    // Simulate API call
-    setTimeout(() => {
-      const searchKey = trackingNumber.trim() || orderNumber.trim();
-      const found = mockTrackingData[searchKey];
-      
-      if (found) {
-        setTrackingInfo(found);
-      } else {
-        setError('Order not found. Please check your tracking number or order number.');
-      }
-      
-      setIsLoading(false);
-    }, 1000);
+    if (order.status === 'shipped' || order.status === 'delivered') {
+      timeline.push({
+        status: 'shipped',
+        timestamp: order.updated_at || order.created_at,
+        description: 'Package shipped',
+        location: 'Origin Warehouse'
+      });
+    }
+
+    if (order.status === 'delivered') {
+      timeline.push({
+        status: 'delivered',
+        timestamp: order.updated_at || order.created_at,
+        description: 'Package delivered',
+        location: 'Customer Address'
+      });
+    }
+
+    if (order.status === 'cancelled') {
+      timeline.push({
+        status: 'cancelled',
+        timestamp: order.updated_at || order.created_at,
+        description: 'Order cancelled',
+        location: 'Order Center'
+      });
+    }
+
+    return timeline.reverse();
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-forest" />
+          <p className="text-muted-foreground">Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link to="/" className="inline-flex items-center text-green-600 hover:text-green-700 mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              <Leaf className="w-8 h-8 inline-block mr-2 text-green-600" />
+    <div className="min-h-screen bg-background">
+      <div className="bg-gradient-moss text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl lg:text-5xl font-headline font-bold">
               Track Your Order
             </h1>
-            <p className="text-gray-600">
-              Enter your tracking number or order number to see the status of your eco-friendly purchase
+            <p className="text-xl text-white/90 max-w-2xl mx-auto">
+              Track your order status and delivery
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Tracking Form */}
-        <Card className="max-w-2xl mx-auto mb-8">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/orders')}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Orders
+          </Button>
+        </div>
+
+        {/* Search Form */}
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-center">Order Tracking</CardTitle>
+            <CardTitle>Track Order</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="tracking-number">Tracking Number</Label>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <Label htmlFor="order-id">Order ID</Label>
                 <Input
-                  id="tracking-number"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                  placeholder="Enter tracking number (e.g., AVEO847291)"
-                  className="mt-1"
+                  id="order-id"
+                  placeholder="Enter Order ID"
+                  value={orderId}
+                  onChange={(e) => setOrderId(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleTrack()}
                 />
               </div>
-              
-              <div className="text-center text-gray-500">OR</div>
-              
-              <div>
-                <Label htmlFor="order-number">Order Number</Label>
-                <Input
-                  id="order-number"
-                  value={orderNumber}
-                  onChange={(e) => setOrderNumber(e.target.value)}
-                  placeholder="Enter order number"
-                  className="mt-1"
-                />
+              <div className="flex items-end">
+                <Button onClick={handleTrack}>
+                  <Search className="w-4 h-4 mr-2" />
+                  Track
+                </Button>
               </div>
-
-              {error && (
-                <Alert variant="destructive">
-                  <XCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <Button 
-                onClick={handleTrackOrder}
-                disabled={isLoading}
-                className="w-full bg-green-600 hover:bg-green-700"
-              >
-                {isLoading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Tracking...
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 mr-2" />
-                    Track Order
-                  </>
-                )}
-              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tracking Results */}
-        {trackingInfo && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Order Summary */}
+        {/* Order Details */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>
+              {error instanceof Error ? error.message : 'Failed to load order details'}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {order && (
+          <div className="space-y-6">
+            {/* Order Status Card */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl">Order #{trackingInfo.orderNumber}</CardTitle>
-                    <p className="text-gray-600">Tracking: {trackingInfo.trackingNumber}</p>
+                    <CardTitle>Order #{order.id?.substring(0, 8)}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Placed on {formatDate(order.created_at)}
+                    </p>
                   </div>
-                  <Badge className={getStatusColor(trackingInfo.status)}>
-                    {getStatusIcon(trackingInfo.status)}
-                    <span className="ml-2">{trackingInfo.statusText}</span>
-                  </Badge>
+                  {(() => {
+                    const StatusIcon = getStatusIcon(order.status);
+                    return (
+                      <Badge className={`${getStatusColor(order.status)} text-sm`}>
+                        <StatusIcon className="w-3 h-3 mr-1" />
+                        {getStatusText(order.status)}
+                      </Badge>
+                    );
+                  })()}
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Truck className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">Carrier</p>
-                      <p className="text-gray-600">{trackingInfo.carrier}</p>
-                    </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">Total Amount</Label>
+                    <p className="text-xl font-bold">{formatPrice(order.total_amount)}</p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="font-medium">Estimated Delivery</p>
-                      <p className="text-gray-600">{trackingInfo.estimatedDelivery}</p>
-                    </div>
+                  <div>
+                    <Label className="text-muted-foreground">Payment Status</Label>
+                    <p className="text-lg font-semibold capitalize">{order.payment_status || 'N/A'}</p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <p className="font-medium">Current Location</p>
-                      <p className="text-gray-600">{trackingInfo.currentLocation}</p>
-                    </div>
+                  <div>
+                    <Label className="text-muted-foreground">Payment Method</Label>
+                    <p className="text-lg font-semibold">{order.payment_method || 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -364,29 +280,38 @@ const TrackOrderPage = () => {
             {/* Timeline */}
             <Card>
               <CardHeader>
-                <CardTitle>Shipping Timeline</CardTitle>
+                <CardTitle>Order Timeline</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {trackingInfo.timeline.map((event, index) => (
-                    <div key={index} className="flex items-start space-x-4">
-                      <div className="flex-shrink-0">
-                        {getStatusIcon(event.status)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium text-gray-900">{event.description}</p>
-                          <p className="text-sm text-gray-500">{event.timestamp}</p>
+                  {buildTimeline(order).map((event, index) => {
+                    const StatusIcon = getStatusIcon(event.status);
+                    const isLast = index === 0;
+                    return (
+                      <div key={index} className="flex gap-4">
+                        <div className="flex flex-col items-center">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            isLast ? 'bg-forest text-white' : 'bg-muted text-muted-foreground'
+                          }`}>
+                            <StatusIcon className="w-5 h-5" />
+                          </div>
+                          {!isLast && <div className="w-0.5 h-full bg-border mt-2" />}
                         </div>
-                        {event.location && (
-                          <p className="text-sm text-gray-600 mt-1">
-                            <MapPin className="w-4 h-4 inline mr-1" />
-                            {event.location}
-                          </p>
-                        )}
+                        <div className="flex-1 pb-4">
+                          <div className="font-semibold">{event.description}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {formatDate(event.timestamp)}
+                          </div>
+                          {event.location && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <MapPin className="w-3 h-3" />
+                              {event.location}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -398,17 +323,23 @@ const TrackOrderPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {trackingInfo.items.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-4">
-                      <img 
-                        src={item.image} 
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
+                  {order.items?.map((item: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-4 border-b pb-4 last:border-b-0">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        <img
+                          src={item.product?.image_url || '/api/placeholder/64/64'}
+                          alt={item.product?.name || 'Product'}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                       <div className="flex-1">
-                        <h4 className="font-medium">{item.name}</h4>
-                        <p className="text-gray-600">Quantity: {item.quantity}</p>
-                        <p className="text-green-600 font-medium">{item.price}</p>
+                        <div className="font-semibold">{item.product?.name || 'Product'}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Quantity: {item.quantity} × {formatPrice(item.price)}
+                        </div>
+                      </div>
+                      <div className="text-right font-semibold">
+                        {formatPrice(item.price * item.quantity)}
                       </div>
                     </div>
                   ))}
@@ -417,45 +348,50 @@ const TrackOrderPage = () => {
             </Card>
 
             {/* Shipping Address */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Shipping Address</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="font-medium">{trackingInfo.shippingAddress.name}</p>
-                  <p>{trackingInfo.shippingAddress.address}</p>
-                  <p>
-                    {trackingInfo.shippingAddress.city}, {trackingInfo.shippingAddress.state} {trackingInfo.shippingAddress.postalCode}
-                  </p>
-                  <p>{trackingInfo.shippingAddress.country}</p>
-                </div>
-              </CardContent>
-            </Card>
+            {order.shipping_address && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-forest" />
+                    Shipping Address
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-muted-foreground">
+                    {order.shipping_address.first_name} {order.shipping_address.last_name}
+                    <br />
+                    {order.shipping_address.address_line_1}
+                    {order.shipping_address.address_line_2 && (
+                      <><br />{order.shipping_address.address_line_2}</>
+                    )}
+                    <br />
+                    {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postal_code}
+                    <br />
+                    {order.shipping_address.country}
+                    {order.shipping_address.phone && (
+                      <><br />{order.shipping_address.phone}</>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
-        {/* Help Section */}
-        <Card className="max-w-2xl mx-auto mt-8">
-          <CardHeader>
-            <CardTitle className="text-center">Need Help?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center space-y-4">
-              <p className="text-gray-600">
-                Can't find your order? Contact our customer support team.
+        {!order && !isLoading && !error && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No order found</h3>
+              <p className="text-muted-foreground mb-4">
+                Enter an order ID above to track your order.
               </p>
-              <div className="flex justify-center space-x-4">
-                <Button variant="outline" asChild>
-                  <Link to="/contact">Contact Support</Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link to="/orders">View All Orders</Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              <Button onClick={() => navigate('/orders')}>
+                View All Orders
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 const CartPage = () => {
+  const navigate = useNavigate();
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
@@ -146,11 +147,13 @@ const CartPage = () => {
                         </p>
                         
                         <div className="flex items-center gap-2 mt-2">
-                          <Badge className="bg-moss/20 text-forest text-xs">
-                            <Leaf className="w-3 h-3 mr-1" />
-                            {item.product.sustainability_score}%
-                          </Badge>
-                          {item.product.discount > 0 && (
+                          {item.product.sustainability_score && (
+                            <Badge className="bg-moss/20 text-forest text-xs">
+                              <Leaf className="w-3 h-3 mr-1" />
+                              {item.product.sustainability_score}%
+                            </Badge>
+                          )}
+                          {item.product.discount && item.product.discount > 0 && (
                             <Badge className="bg-clay text-white text-xs">
                               {item.product.discount}% OFF
                             </Badge>
@@ -161,13 +164,13 @@ const CartPage = () => {
                       <div className="flex flex-col items-end space-y-2">
                         <div className="text-right">
                           <div className="text-lg font-bold text-charcoal">
-                            {formatPrice((item.product.discount > 0 
+                            {formatPrice((item.product.discount && item.product.discount > 0 
                               ? item.product.price * (1 - item.product.discount / 100) 
                               : item.product.price) * item.quantity)}
                           </div>
                           {item.quantity > 1 && (
                             <div className="text-sm text-muted-foreground">
-                              {formatPrice(item.product.discount > 0 
+                              {formatPrice(item.product.discount && item.product.discount > 0 
                                 ? item.product.price * (1 - item.product.discount / 100) 
                                 : item.product.price)} each
                             </div>
@@ -291,7 +294,7 @@ const CartPage = () => {
                 </div>
 
                 {/* Checkout Button */}
-                <Button className="w-full" size="lg">
+                <Button className="w-full" size="lg" onClick={() => navigate('/checkout')}>
                   <Lock className="w-4 h-4 mr-2" />
                   Proceed to Checkout
                 </Button>
