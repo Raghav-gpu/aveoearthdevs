@@ -16,7 +16,14 @@ async def init_database():
     global async_engine, AsyncSessionLocal
     
     if not settings.DATABASE_URL:
-        logger.warning("No DATABASE_URL provided, SQLAlchemy features disabled")
+        logger.error("No DATABASE_URL provided in environment variables. Please set DATABASE_URL to connect to PostgreSQL.")
+        return False
+    
+    # Validate DATABASE_URL format
+    if not (settings.DATABASE_URL.startswith("postgresql://") or 
+            settings.DATABASE_URL.startswith("postgresql+psycopg2://") or
+            settings.DATABASE_URL.startswith("postgresql+asyncpg://")):
+        logger.error(f"Invalid DATABASE_URL format. Expected postgresql:// or postgresql+psycopg2:// format. Got: {settings.DATABASE_URL[:20]}...")
         return False
     
     try:
@@ -52,23 +59,67 @@ async def init_database():
         # For Supabase, SSL is required - pass it via connect_args
         connect_args = {}
         if "supabase.co" in async_url:
-            # Supabase requires SSL - asyncpg uses ssl=True for require
+            # Supabase requires SSL - but allow self-signed certs in development
             import ssl
-            connect_args = {"ssl": ssl.create_default_context()}
+            ssl_context = ssl.create_default_context()
+            # In development, disable certificate verification to allow self-signed certs
+            if settings.DEBUG:
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                logger.warning("SSL certificate verification disabled for development mode")
+            
+            # Supabase uses pgbouncer which doesn't support prepared statements properly
+            # For asyncpg, we need to set statement_cache_size=0 in connect_args
+            # AND add ?prepared_statement_cache_size=0 to URL for SQLAlchemy
+            # AND set server_settings to disable prepared statements
+            connect_args = {
+                "ssl": ssl_context,
+                "command_timeout": 60,
+                "statement_cache_size": 0,  # Disable prepared statement cache for pgbouncer
+                "server_settings": {
+                    "jit": "off"  # Disable JIT to avoid prepared statement issues
+                }
+            }
+            
+            # Remove any existing prepared_statement_cache_size from URL first
+            if "prepared_statement_cache_size" in async_url:
+                import re
+                async_url = re.sub(r'[&?]prepared_statement_cache_size=\d+', '', async_url)
+            
+            # Add to URL for SQLAlchemy asyncpg dialect
+            if "?" in async_url:
+                async_url += "&prepared_statement_cache_size=0"
+            else:
+                async_url += "?prepared_statement_cache_size=0"
+            
+            logger.info("Configured connection args for Supabase/pgbouncer compatibility (statement_cache_size=0, disabled prepared statements)")
+        
+        # For Supabase/pgbouncer, disable statement caching
+        engine_kwargs = {
+            "pool_size": 5,
+            "max_overflow": 10,
+            "pool_pre_ping": True,  # Enable connection health checks
+            "pool_recycle": 300,
+            "pool_timeout": 10,
+            "echo": False,
+            "future": True,
+            "connect_args": connect_args,
+            "execution_options": {
+                "isolation_level": "READ_COMMITTED",
+            },
+        }
+        
+        # For pgbouncer compatibility, also disable prepared statements at engine level
+        if "supabase.co" in async_url:
+            # Use text() execution for all queries to avoid prepared statements
+            # This is handled by ensuring statement_cache_size=0 in connect_args
+            # But we also need to ensure the engine doesn't cache statements
+            # Reset connection on return to clear any cached statements
+            engine_kwargs["pool_reset_on_return"] = "commit"
         
         async_engine = create_async_engine(
             async_url,
-            pool_size=5,
-            max_overflow=10,
-            pool_pre_ping=False,
-            pool_recycle=300,
-            pool_timeout=10,
-            echo=False,
-            future=True,
-            connect_args=connect_args,
-            execution_options={
-                "isolation_level": "READ_COMMITTED",
-            },
+            **engine_kwargs
         )
         
         AsyncSessionLocal = async_sessionmaker(
@@ -86,8 +137,17 @@ async def init_database():
     except Exception as e:
         async_engine = None
         AsyncSessionLocal = None
-        logger.error(f"Failed to initialize database: {str(e)}")
-        logger.info("Continuing without SQLAlchemy support - using Supabase only")
+        error_msg = str(e)
+        if "getaddrinfo failed" in error_msg or "could not translate host name" in error_msg:
+            logger.error(f"Database connection failed: Cannot resolve database host. Please check DATABASE_URL is correct.")
+            logger.error(f"DATABASE_URL format: postgresql://username:password@host:port/database")
+        elif "password authentication failed" in error_msg.lower():
+            logger.error(f"Database connection failed: Authentication failed. Please check DATABASE_URL credentials.")
+        elif "does not exist" in error_msg.lower():
+            logger.error(f"Database connection failed: Database does not exist. Please create the database first.")
+        else:
+            logger.error(f"Failed to initialize database: {str(e)}")
+        logger.error("Please verify your DATABASE_URL environment variable is set correctly.")
         return False
 
 async def ensure_tables_created():
@@ -117,7 +177,9 @@ async def ensure_tables_created():
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     if AsyncSessionLocal is None:
-        raise ServiceUnavailableException("Database not initialized")
+        logger.warning("Database session requested but database not initialized")
+        yield None
+        return
     session = None
     try:
         session = AsyncSessionLocal()

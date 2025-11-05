@@ -153,79 +153,67 @@ const VendorProductsPage = () => {
   };
 
   const handleSave = async () => {
-    if (!vendor?.id) return;
-
     setIsSaving(true);
     try {
-      if (editingProduct) {
-        const updatedProduct = await vendorProductService.updateProduct(editingProduct.id, formData);
-        if (updatedProduct) {
-          setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+      // Use backend API for product creation/update
+      const { backendApi } = await import('@/services/backendApi');
+      
+      const productFormData = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            productFormData.append(key, JSON.stringify(value));
+          } else if (typeof value === 'object') {
+            productFormData.append(key, JSON.stringify(value));
+          } else {
+            productFormData.append(key, String(value));
+          }
         }
+      });
+      
+      let product;
+      if (editingProduct) {
+        // TODO: Implement update endpoint
+        throw new Error('Update not yet implemented - use create for now');
       } else {
-        const newProduct = await vendorProductService.createProduct({
-          ...formData,
-          vendor_id: vendor.id
-        });
-        if (newProduct) {
-          setProducts(prev => [newProduct, ...prev]);
+        product = await backendApi.createProduct(productFormData);
+        if (product) {
+          setProducts(prev => [product, ...prev]);
         }
       }
+      
       setIsDialogOpen(false);
       setEditingProduct(null);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving product:', error);
+      alert(`Failed to save product: ${error.message || 'Unknown error'}`);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleBulkUpload = async () => {
-    if (!bulkFile || !vendor?.id) return;
+    if (!bulkFile) return;
     
     setBulkUploading(true);
     try {
-      // Parse CSV file
-      const text = await bulkFile.text();
-      const lines = text.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      // Use backend API for bulk CSV upload
+      const { backendApi } = await import('@/services/backendApi');
+      const result = await backendApi.bulkImportCSV(bulkFile);
       
-      const products = lines.slice(1).map((line, index) => {
-        const values = line.split(',').map(v => v.trim());
-        const product: Partial<VendorProduct> = {
-          name: values[headers.indexOf('name')] || `Bulk Product ${index + 1}`,
-          description: values[headers.indexOf('description')] || '',
-          short_description: values[headers.indexOf('short_description')] || '',
-          price: parseFloat(values[headers.indexOf('price')]) || 0,
-          stock_quantity: parseInt(values[headers.indexOf('stock_quantity')]) || 0,
-          category_id: values[headers.indexOf('category_id')] || categories[0]?.id || '',
-          is_active: values[headers.indexOf('is_active')]?.toLowerCase() === 'true',
-          is_featured: values[headers.indexOf('is_featured')]?.toLowerCase() === 'true',
-          weight: parseFloat(values[headers.indexOf('weight')]) || 0,
-          dimensions: values[headers.indexOf('dimensions')] || '',
-          materials: values[headers.indexOf('materials')] || '',
-          care_instructions: values[headers.indexOf('care_instructions')] || '',
-          sustainability_notes: values[headers.indexOf('sustainability_notes')] || '',
-          tags: values[headers.indexOf('tags')]?.split(';').map(t => t.trim()) || [],
-          vendor_id: vendor.id
-        };
-        return product;
-      });
-
-      // Create products in batches
-      const batchSize = 5;
-      for (let i = 0; i < products.length; i += batchSize) {
-        const batch = products.slice(i, i + batchSize);
-        await Promise.all(batch.map(product => vendorProductService.createProduct(product as VendorProduct)));
-      }
-
+      console.log('Bulk upload result:', result);
+      
       // Refresh products list
-      await fetchProducts();
+      await loadProducts();
       setBulkUploadOpen(false);
       setBulkFile(null);
-    } catch (error) {
+      
+      // Show success message
+      alert(`Bulk upload completed: ${result.results.successful} successful, ${result.results.failed} failed`);
+    } catch (error: any) {
       console.error('Bulk upload failed:', error);
+      alert(`Bulk upload failed: ${error.message || 'Unknown error'}`);
     } finally {
       setBulkUploading(false);
     }

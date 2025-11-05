@@ -7,7 +7,6 @@ import os
 import asyncio
 from typing import Dict, List, Optional, Tuple
 from fastapi import UploadFile, HTTPException
-import aiofiles
 from pathlib import Path
 import logging
 from datetime import datetime
@@ -116,6 +115,22 @@ class OptimizedStorageService:
         except Exception as e:
             logger.error(f"Upload failed: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+    async def save_raw_image(self, file: UploadFile, vendor_id: str, product_id: str) -> Dict[str, any]:
+        """Save raw uploaded image without processing, to ensure real persistence when compression fails."""
+        try:
+            data = await file.read()
+            filename = self._generate_filename(vendor_id, product_id, 'original', 'JPEG', 'low')
+            result = await self._upload_processed_image(data, filename, 'original')
+            return {
+                'success': result.get('success', False),
+                'url': result.get('url'),
+                'path': result.get('path'),
+                'size': result.get('size')
+            }
+        except Exception as e:
+            logger.error(f"Saving raw image failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Saving raw image failed: {str(e)}")
     
     async def batch_upload_vendor_images(
         self,
@@ -202,26 +217,60 @@ class OptimizedStorageService:
             bucket_name = self._get_bucket_for_size(size_name)
             
             # Upload to Supabase storage
-            upload_result = await self.storage_client.upload_file(
-                bucket_name, filename, image_data
+            upload_result = await asyncio.get_event_loop().run_in_executor(
+                None, self.storage_client.upload_file, bucket_name, filename, image_data
             )
-            
-            return {
-                'success': True,
-                'filename': filename,
-                'bucket': bucket_name,
-                'size': len(image_data),
-                'url': upload_result.get('url'),
-                'path': upload_result.get('path')
-            }
+
+            # Supabase client returns a public URL string in current implementation
+            if isinstance(upload_result, str):
+                public_url = upload_result
+                return {
+                    'success': True,
+                    'filename': filename,
+                    'bucket': bucket_name,
+                    'size': len(image_data),
+                    'url': public_url,
+                    'path': filename
+                }
+            else:
+                # Fallback if a dict-like result is returned
+                return {
+                    'success': True,
+                    'filename': filename,
+                    'bucket': bucket_name,
+                    'size': len(image_data),
+                    'url': upload_result.get('url') if upload_result else None,
+                    'path': upload_result.get('path') if upload_result else filename
+                }
             
         except Exception as e:
             logger.error(f"Storage upload failed: {str(e)}")
-            return {
-                'success': False,
-                'error': str(e),
-                'filename': filename
-            }
+            # Real fallback: write to local media folder so feature still works without Supabase
+            try:
+                local_root = Path(os.getenv('MEDIA_ROOT', 'media')).resolve()
+                local_path = local_root / bucket_name / filename
+                local_path.parent.mkdir(parents=True, exist_ok=True)
+                def _write_file():
+                    with open(local_path, 'wb') as f:
+                        f.write(image_data)
+                await asyncio.get_event_loop().run_in_executor(None, _write_file)
+                local_url_base = os.getenv('MEDIA_URL', '/media')
+                local_url = f"{local_url_base}/{bucket_name}/{filename}"
+                return {
+                    'success': True,
+                    'filename': filename,
+                    'bucket': bucket_name,
+                    'size': len(image_data),
+                    'url': local_url,
+                    'path': str(local_path)
+                }
+            except Exception as e2:
+                logger.error(f"Local media fallback failed: {str(e2)}")
+                return {
+                    'success': False,
+                    'error': str(e2),
+                    'filename': filename
+                }
     
     def _get_bucket_for_size(self, size_name: str) -> str:
         """Get appropriate bucket for image size"""

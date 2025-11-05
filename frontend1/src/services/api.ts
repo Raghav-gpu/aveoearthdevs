@@ -1,5 +1,9 @@
 import { supabase } from '../lib/supabase'
 import { Database } from '../lib/supabase'
+import { backendApi } from './backendApi'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
 
 type Product = Database['public']['Tables']['products']['Row']
 type ProductInsert = Database['public']['Tables']['products']['Insert']
@@ -22,452 +26,189 @@ type WishlistItemInsert = Database['public']['Tables']['wishlist']['Insert']
 
 // Products API
 export const productsApi = {
-  // Get all products with pagination
+  // Get all products with pagination - tries backend first, then Supabase
   async getAll(page: number = 1, limit: number = 50, categoryId?: string) {
-    console.log('🔍 Fetching products from Supabase...', { page, limit, categoryId });
+    console.log('🔍 Fetching products...', { page, limit, categoryId });
     
+    // Try backend API first
     try {
-      let query = supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          price,
-          image_url,
-          discount,
-          sustainability_score,
-          stock,
-          category_id,
-          categories(name),
-          brand,
-          short_description,
-          status,
-          approval_status
-        `, { count: 'exact' })
-        .eq('status', 'active')
-        .eq('approval_status', 'approved');
-
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-
-      const { data, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range((page - 1) * limit, page * limit - 1);
-
-      if (error) {
-        console.error('❌ Supabase query error:', error);
-        throw error;
-      }
-
-      console.log('✅ Found', data?.length || 0, 'products from Supabase');
+      const backendResponse = await backendApi.getProducts({
+        page,
+        limit,
+        category_id: categoryId,
+      });
       
+      // Backend returns {items: [], total: N, page: N, limit: N, pages: N}
+      const products = backendResponse.items || backendResponse.data || [];
+      const total = backendResponse.total || 0;
+      
+      console.log('✅ Backend API response:', { productsCount: products.length, total });
+      
+      // Return even if empty - backend worked correctly
+      return {
+        data: products.map((p: any) => ({
+          ...p,
+          categories: p.categories || p.category || { name: 'Uncategorized' },
+        })),
+        count: total,
+        totalPages: backendResponse.pages || backendResponse.total_pages || Math.ceil(total / limit) || 1,
+      };
+    } catch (backendError) {
+      console.log('⚠️ Backend API failed, trying Supabase...', backendError);
+    }
+    
+    // Fallback to Supabase
+    try {
+      // Use REST API directly for better compatibility
+      let url = `${supabaseUrl}/rest/v1/products?select=id,name,price,image_url,discount,sustainability_score,stock,category_id,brand,short_description,status,approval_status&status=eq.active&approval_status=eq.approved`;
+      
+      if (categoryId) {
+        url += `&category_id=eq.${encodeURIComponent(categoryId)}`;
+      }
+      
+      url += `&order=created_at.desc&offset=${(page - 1) * limit}&limit=${limit}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'count=exact'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Supabase query failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      // Get count from Content-Range header
+      const contentRange = response.headers.get('content-range');
+      const count = contentRange ? parseInt(contentRange.split('/')[1]) : data.length;
+
+      console.log('✅ Found', data.length, 'products from Supabase');
       return {
         data: data || [],
         count: count || 0,
         totalPages: Math.ceil((count || 0) / limit)
       };
-    } catch (error) {
-      console.error('❌ Error fetching products:', error);
-      // Return empty data instead of mock data
-      return {
-        data: [],
-        count: 0,
-        totalPages: 0
-      };
+    } catch (supabaseError) {
+      console.log('⚠️ Supabase failed:', supabaseError);
     }
-  },
-
-  // Mock products for fallback
-  getMockProducts(page: number = 1, limit: number = 12) {
-    const mockProducts = [
-      {
-        id: 'mock-1',
-        name: 'Bamboo Kitchen Utensil Set',
-        price: 1299,
-        discount: 32,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 95,
-        stock: 75,
-        categories: { name: 'Home & Living' }
-      },
-      {
-        id: 'mock-2',
-        name: 'Organic Cotton Bath Towel',
-        price: 999,
-        discount: 10,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 90,
-        stock: 80,
-        categories: { name: 'Home & Living' }
-      },
-      {
-        id: 'mock-3',
-        name: 'Beeswax Food Wraps Set',
-        price: 1299,
-        discount: 20,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 96,
-        stock: 80,
-        categories: { name: 'Home & Living' }
-      },
-      {
-        id: 'mock-4',
-        name: 'Natural Jute Area Rug',
-        price: 2999,
-        discount: 20,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 85,
-        stock: 30,
-        categories: { name: 'Home & Living' }
-      },
-      {
-        id: 'mock-5',
-        name: 'Eco-Friendly Dish Soap Refill',
-        price: 349,
-        discount: 5,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 92,
-        stock: 200,
-        categories: { name: 'Home & Living' }
-      },
-      {
-        id: 'mock-6',
-        name: 'Bamboo Water Bottle',
-        price: 1299,
-        discount: 19,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 95,
-        stock: 50,
-        categories: { name: 'Home & Living' }
-      },
-      {
-        id: 'mock-7',
-        name: 'Organic Cotton T-Shirt',
-        price: 899,
-        discount: 31,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 89,
-        stock: 120,
-        categories: { name: 'Sustainable Fashion' }
-      },
-      {
-        id: 'mock-8',
-        name: 'Linen Trousers - Earth Dye',
-        price: 1899,
-        discount: 24,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 89,
-        stock: 60,
-        categories: { name: 'Sustainable Fashion' }
-      }
-    ];
-
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedProducts = mockProducts.slice(startIndex, endIndex);
-
+    
+    // Don't return mock data - return empty array instead
+    console.log('⚠️ No products available from backend or Supabase');
     return {
-      data: paginatedProducts,
-      count: mockProducts.length,
-      totalPages: Math.ceil(mockProducts.length / limit)
+      data: [],
+      count: 0,
+      totalPages: 0
     };
   },
 
-  getMockEcoProducts(limit: number = 12) {
-    const mockEcoProducts = [
-      {
-        id: 'eco-1',
-        name: 'Solar-Powered Bluetooth Speaker',
-        price: 4299,
-        discount: 28,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 96,
-        stock: 45,
-        categories: { name: 'Electronics' },
-        badges: ['Solar Powered', 'Recycled Materials'],
-        carbonSaved: '2.3kg',
-        ecoScore: '96%'
-      },
-      {
-        id: 'eco-2',
-        name: 'Organic Bamboo Bed Sheets',
-        price: 3499,
-        discount: 30,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 94,
-        stock: 60,
-        categories: { name: 'Home & Living' },
-        badges: ['GOTS Certified', 'Bamboo Fiber'],
-        carbonSaved: '1.8kg',
-        ecoScore: '94%'
-      },
-      {
-        id: 'eco-3',
-        name: 'Refillable Glass Water Bottle',
-        price: 1899,
-        discount: 24,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 98,
-        stock: 80,
-        categories: { name: 'Home & Living' },
-        badges: ['Zero Plastic', 'Lifetime Refills'],
-        carbonSaved: '0.9kg',
-        ecoScore: '98%'
-      },
-      {
-        id: 'eco-4',
-        name: 'Compostable Phone Case',
-        price: 1299,
-        discount: 28,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 92,
-        stock: 70,
-        categories: { name: 'Electronics' },
-        badges: ['Compostable', 'Plant-Based'],
-        carbonSaved: '0.3kg',
-        ecoScore: '92%'
-      },
-      {
-        id: 'eco-5',
-        name: 'Hemp Yoga Mat',
-        price: 2499,
-        discount: 20,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 95,
-        stock: 40,
-        categories: { name: 'Fitness' },
-        badges: ['Hemp Fiber', 'Non-Toxic'],
-        carbonSaved: '1.2kg',
-        ecoScore: '95%'
-      },
-      {
-        id: 'eco-6',
-        name: 'Bamboo Toothbrush Set',
-        price: 599,
-        discount: 25,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 97,
-        stock: 150,
-        categories: { name: 'Personal Care' },
-        badges: ['Biodegradable', 'BPA-Free'],
-        carbonSaved: '0.1kg',
-        ecoScore: '97%'
-      },
-      {
-        id: 'eco-7',
-        name: 'Organic Cotton Tote Bag',
-        price: 799,
-        discount: 15,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 91,
-        stock: 100,
-        categories: { name: 'Accessories' },
-        badges: ['Organic Cotton', 'Fair Trade'],
-        carbonSaved: '0.5kg',
-        ecoScore: '91%'
-      },
-      {
-        id: 'eco-8',
-        name: 'Recycled Plastic Sunglasses',
-        price: 1999,
-        discount: 33,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 88,
-        stock: 55,
-        categories: { name: 'Accessories' },
-        badges: ['Recycled Ocean Plastic', 'UV Protection'],
-        carbonSaved: '0.8kg',
-        ecoScore: '88%'
-      },
-      {
-        id: 'eco-9',
-        name: 'Natural Loofah Sponge',
-        price: 399,
-        discount: 20,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 99,
-        stock: 200,
-        categories: { name: 'Personal Care' },
-        badges: ['100% Natural', 'Compostable'],
-        carbonSaved: '0.2kg',
-        ecoScore: '99%'
-      },
-      {
-        id: 'eco-10',
-        name: 'Bamboo Cutlery Set',
-        price: 899,
-        discount: 22,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 93,
-        stock: 90,
-        categories: { name: 'Home & Living' },
-        badges: ['Bamboo', 'Travel Friendly'],
-        carbonSaved: '0.4kg',
-        ecoScore: '93%'
-      },
-      {
-        id: 'eco-11',
-        name: 'Organic Tea Infuser',
-        price: 699,
-        discount: 18,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 90,
-        stock: 75,
-        categories: { name: 'Home & Living' },
-        badges: ['Stainless Steel', 'Organic'],
-        carbonSaved: '0.3kg',
-        ecoScore: '90%'
-      },
-      {
-        id: 'eco-12',
-        name: 'Cork Yoga Block',
-        price: 1299,
-        discount: 26,
-        image_url: '/api/placeholder/400/400',
-        sustainability_score: 89,
-        stock: 65,
-        categories: { name: 'Fitness' },
-        badges: ['Cork', 'Sustainable Harvest'],
-        carbonSaved: '0.6kg',
-        ecoScore: '89%'
-      }
-    ];
+  // NO MOCK PRODUCTS - All removed
+  // Products should come from backend or Supabase only
 
-    return mockEcoProducts.slice(0, limit);
-  },
-
-  // Get single product
+  // Get single product - tries backend first, then Supabase
   async getById(id: string) {
-    console.log('🔍 Fetching single product from database:', id);
+    console.log('🔍 Fetching single product:', id);
     
+    // Try backend API first
     try {
-      // Use direct fetch API for single product
-      const response = await fetch(`https://ylhvdwizcsoelpreftpy.supabase.co/rest/v1/products?select=*&id=eq.${id}`, {
+      const backendProduct = await backendApi.getProduct(id);
+      if (backendProduct) {
+        console.log('✅ Found product from backend API:', backendProduct.name);
+        return {
+          ...backendProduct,
+          categories: backendProduct.categories || { name: 'Uncategorized' },
+          badges: ['Eco-Friendly', 'Sustainable', 'Organic'],
+        };
+      }
+    } catch (backendError) {
+      console.log('⚠️ Backend product fetch failed, trying Supabase...', backendError);
+    }
+    
+    // Fallback to Supabase
+    try {
+      const url = `${supabaseUrl}/rest/v1/products?id=eq.${encodeURIComponent(id)}&select=*`;
+      
+      const response = await fetch(url, {
         headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsaHZkd2l6Y3NvZWxwcmVmdHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzI0NTgsImV4cCI6MjA3NTQwODQ1OH0.HXGPUBXQQJb5Ae7RF3kPG2HCmnSbz1orLrbjZlMeb9g',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
           'Content-Type': 'application/json'
-        },
-        // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
-
-      if (!response.ok) {
-        console.error('❌ Single product fetch failed:', response.status, response.statusText);
-        console.log('📦 Falling back to mock product');
-        return this.getMockProductById(id);
-      }
-
-      const data = await response.json();
-      console.log('🔍 Single product fetch result:', { dataLength: data?.length, sampleData: data?.[0] });
-
-      if (!data || data.length === 0) {
-        console.log('📦 No product found, using mock product');
-        return this.getMockProductById(id);
-      }
-
-      const product = data[0];
-      console.log('✅ Found product in database:', product?.name);
-      
-      // Add missing fields with defaults
-      const productWithDefaults = {
-        ...product,
-        discount: product.discount || 0,
-        sustainability_score: product.sustainability_score || 85,
-        stock: product.stock || 100,
-        category_id: product.category_id || '1',
-        categories: { name: 'Sustainable Living', description: 'Eco-friendly products' },
-        badges: ['Eco-Friendly', 'Sustainable', 'Organic']
-      };
-      
-      return productWithDefaults;
-    } catch (error) {
-      console.error('❌ Single product fetch error:', error);
-      console.log('📦 Falling back to mock product');
-      return this.getMockProductById(id);
-    }
-  },
-
-  // Mock single product for fallback
-  getMockProductById(id: string) {
-    const mockProducts = this.getMockProducts(1, 100).data;
-    const product = mockProducts.find(p => p.id === id);
-    
-    if (product) {
-      return {
-        ...product,
-        description: `This is a sustainable ${product.name.toLowerCase()} that helps reduce environmental impact. Made from eco-friendly materials and designed for long-lasting use.`,
-        badges: ['Eco-Friendly', 'Sustainable', 'Organic'],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        categories: {
-          name: product.categories.name,
-          description: `Sustainable ${product.categories.name.toLowerCase()} products`
         }
-      };
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Supabase query failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const product = data[0];
+        console.log('✅ Found product in Supabase:', product.name);
+        return {
+          ...product,
+          discount: product.discount || 0,
+          sustainability_score: product.sustainability_score || 85,
+          stock: product.stock || 100,
+          categories: product.categories || { name: 'Sustainable Living' },
+          badges: ['Eco-Friendly', 'Sustainable', 'Organic']
+        };
+      }
+      throw new Error('Product not found');
+    } catch (supabaseError) {
+      console.log('⚠️ Supabase product fetch failed:', supabaseError);
     }
     
-    // Default mock product if not found
-    return {
-      id: id,
-      name: 'Sustainable Product',
-      description: 'An eco-friendly product designed for sustainability.',
-      price: 999,
-      discount: 10,
-      image_url: '/api/placeholder/600/600',
-      sustainability_score: 85,
-      stock: 50,
-      badges: ['Eco-Friendly', 'Sustainable'],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      categories: {
-        name: 'Sustainable Living',
-        description: 'Products for sustainable living'
-      }
-    };
+    // Don't return mock product - throw error instead
+    console.log('⚠️ Product not available from backend or Supabase');
+    throw new Error(`Product ${id} not found`);
   },
 
   // Search products
   async search(query: string, categoryId?: string) {
-    console.log('🔍 Searching products in Supabase:', { query, categoryId });
+    console.log('🔍 Searching products...', { query, categoryId });
     
+    // Try backend first
     try {
-      let queryBuilder = supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          price,
-          image_url,
-          discount,
-          sustainability_score,
-          stock,
-          category_id,
-          categories(name),
-          brand,
-          short_description,
-          status,
-          approval_status
-        `)
-        .eq('status', 'active')
-        .eq('approval_status', 'approved')
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%,short_description.ilike.%${query}%`);
-
+      const response = await backendApi.searchProducts(query, { category_id: categoryId });
+      if (response && response.data && response.data.length > 0) {
+        console.log('✅ Search results from backend:', response.data.length);
+        return response.data;
+      }
+    } catch (backendError) {
+      console.log('⚠️ Backend search failed, trying Supabase...', backendError);
+    }
+    
+    // Fallback to Supabase
+    try {
+      let url = `${supabaseUrl}/rest/v1/products?select=id,name,price,image_url,discount,sustainability_score,stock,category_id,brand,short_description,status,approval_status&status=eq.active&approval_status=eq.approved`;
+      
+      // Add search filter
+      const searchTerm = encodeURIComponent(query);
+      url += `&or=(name.ilike.*${searchTerm}*,description.ilike.*${searchTerm}*,short_description.ilike.*${searchTerm}*)`;
+      
       if (categoryId) {
-        queryBuilder = queryBuilder.eq('category_id', categoryId);
+        url += `&category_id=eq.${encodeURIComponent(categoryId)}`;
       }
-
-      const { data, error } = await queryBuilder
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) {
-        console.error('❌ Search query error:', error);
-        throw error;
+      
+      url += `&order=created_at.desc&limit=50`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Supabase search failed: ${response.status}`);
       }
-
-      console.log('✅ Search results:', { dataLength: data?.length || 0, query });
+      
+      const data = await response.json();
+      console.log('✅ Search results from Supabase:', data.length);
       return data || [];
     } catch (error) {
       console.error('❌ Search error:', error);
@@ -510,86 +251,101 @@ export const productsApi = {
     if (error) throw error
   },
 
-  // Get featured products
+  // Get featured products - tries backend first, then Supabase, then mock
   async getFeatured(limit: number = 16) {
-    console.log('🔍 Fetching featured products from Supabase:', limit);
+    console.log('🔍 Fetching featured products...', limit);
     
+    // Try backend API first
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          price,
-          image_url,
-          discount,
-          sustainability_score,
-          stock,
-          category_id,
-          categories(name),
-          brand,
-          short_description,
-          status,
-          approval_status
-        `)
-        .eq('status', 'active')
-        .eq('approval_status', 'approved')
-        .eq('is_featured', true)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('❌ Featured products query error:', error);
-        throw error;
-      }
-
-      console.log('✅ Found', data?.length || 0, 'featured products from Supabase');
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error fetching featured products:', error);
-      return [];
+      const backendProducts = await backendApi.getFeaturedProducts(limit);
+      // Backend returns array or {products: []}
+      const products = Array.isArray(backendProducts) ? backendProducts : (backendProducts.products || []);
+      
+      console.log('✅ Backend featured products response:', { productsCount: products.length });
+      
+      // Return even if empty - backend worked correctly
+      return products.map((p: any) => ({
+        ...p,
+        categories: p.categories || p.category || { name: 'Uncategorized' },
+      }));
+    } catch (backendError) {
+      console.log('⚠️ Backend featured products failed, trying Supabase...', backendError);
     }
+    
+    // Fallback to Supabase
+    try {
+      let url = `${supabaseUrl}/rest/v1/products?select=id,name,price,image_url,discount,sustainability_score,stock,category_id,brand,short_description,status,approval_status&status=eq.active&approval_status=eq.approved&is_featured=eq.true&order=created_at.desc&limit=${limit}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Supabase query failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Found', data.length, 'featured products from Supabase');
+      return data;
+    } catch (supabaseError) {
+      console.log('⚠️ Supabase featured products failed:', supabaseError);
+    }
+    
+    // Don't return mock data
+    console.log('⚠️ No featured products available from backend or Supabase');
+    return [];
   },
 
-  // Get eco-friendly products (high sustainability score)
+  // Get eco-friendly products (high sustainability score) - tries backend first, then Supabase
   async getEcoFriendly(limit: number = 12) {
-    console.log('🌱 Fetching eco-friendly products from Supabase:', limit);
+    console.log('🌱 Fetching eco-friendly products...', limit);
     
+    // Try backend API first
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          price,
-          image_url,
-          discount,
-          sustainability_score,
-          stock,
-          category_id,
-          categories(name),
-          brand,
-          short_description,
-          status,
-          approval_status
-        `)
-        .eq('status', 'active')
-        .eq('approval_status', 'approved')
-        .gte('sustainability_score', 80)
-        .order('sustainability_score', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('❌ Eco-friendly products query error:', error);
-        throw error;
-      }
-
-      console.log('✅ Found', data?.length || 0, 'eco-friendly products from Supabase');
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error fetching eco-friendly products:', error);
-      return [];
+      const backendProducts = await backendApi.getEcoFriendlyProducts(limit);
+      // Backend returns array or PaginatedResponse
+      const products = Array.isArray(backendProducts) ? backendProducts : (backendProducts.items || backendProducts.data || []);
+      console.log('✅ Backend eco-friendly response:', { productsCount: products.length });
+      
+      // Return even if empty - backend worked correctly
+      return products.map((p: any) => ({
+        ...p,
+        categories: p.categories || p.category || { name: 'Uncategorized' },
+      }));
+    } catch (backendError) {
+      console.log('⚠️ Backend eco-friendly products failed, trying Supabase...', backendError);
     }
+    
+    // Fallback to Supabase
+    try {
+      let url = `${supabaseUrl}/rest/v1/products?select=id,name,price,image_url,discount,sustainability_score,stock,category_id,brand,short_description,status,approval_status&status=eq.active&approval_status=eq.approved&sustainability_score=gte.80&order=sustainability_score.desc&limit=${limit}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Supabase query failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Found', data.length, 'eco-friendly products from Supabase');
+      return data;
+    } catch (supabaseError) {
+      console.log('⚠️ Supabase eco-friendly products failed:', supabaseError);
+    }
+    
+    // Don't return mock data
+    console.log('⚠️ No eco-friendly products available from backend or Supabase');
+    return [];
   }
 }
 
@@ -745,13 +501,12 @@ export const wishlistApi = {
       console.log('🔄 Fetching wishlist for user:', userId)
       
       const { data, error } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .select(`
           *,
           products(*)
         `)
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('❌ Error fetching wishlist:', error)
@@ -772,7 +527,7 @@ export const wishlistApi = {
       
       // First check if item already exists in wishlist
       const { data: existingItem, error: checkError } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .select('id')
         .eq('user_id', userId)
         .eq('product_id', productId)
@@ -789,7 +544,7 @@ export const wishlistApi = {
       }
       
       const { data, error } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .insert({ user_id: userId, product_id: productId })
         .select()
         .single()
@@ -812,7 +567,7 @@ export const wishlistApi = {
       console.log('🔄 Removing from wishlist:', { userId, productId })
       
       const { error } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .delete()
         .eq('user_id', userId)
         .eq('product_id', productId)
@@ -834,7 +589,7 @@ export const wishlistApi = {
       console.log('🔄 Checking if in wishlist:', { userId, productId })
       
       const { data, error } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .select('id')
         .eq('user_id', userId)
         .eq('product_id', productId)

@@ -298,22 +298,30 @@ class ProductSearchCRUD(BaseCrud[Product]):
             "tags": list(all_tags)
         }
     
-    async def get_product_recommendations(self, db: AsyncSession, product_id: Optional[UUID] = None, 
+    async def get_product_recommendations(self, db: Optional[AsyncSession], product_id: Optional[UUID] = None, 
                                         user_id: Optional[UUID] = None, 
                                         recommendation_type: str = "similar", 
                                         limit: int = 10) -> List[Product]:
-        if recommendation_type == "similar" and product_id:
-            return await self._get_similar_products(db, product_id, limit)
-        elif recommendation_type == "viewed_together" and product_id:
-            return await self._get_frequently_viewed_together(db, product_id, limit)
-        elif recommendation_type == "trending":
-            return await self._get_trending_products(db, limit)
-        elif recommendation_type == "top_rated":
-            return await self._get_top_rated_products(db, limit)
-        elif recommendation_type == "user_based" and user_id:
-            return await self._get_user_based_recommendations(db, user_id, limit)
-        else:
-            return await self._get_trending_products(db, limit)
+        # Return empty if no database
+        if db is None:
+            return []
+        
+        try:
+            if recommendation_type == "similar" and product_id:
+                return await self._get_similar_products(db, product_id, limit)
+            elif recommendation_type == "viewed_together" and product_id:
+                return await self._get_frequently_viewed_together(db, product_id, limit)
+            elif recommendation_type == "trending":
+                return await self._get_trending_products(db, limit)
+            elif recommendation_type == "top_rated":
+                return await self._get_top_rated_products(db, limit)
+            elif recommendation_type == "user_based" and user_id:
+                return await self._get_user_based_recommendations(db, user_id, limit)
+            else:
+                return await self._get_trending_products(db, limit)
+        except Exception as e:
+            logger.error(f"Error getting product recommendations: {str(e)}")
+            return []  # Return empty list on error
 
     async def _get_similar_products(self, db: AsyncSession, product_id: UUID, limit: int) -> List[Product]:
         product_query = select(Product).where(Product.id == product_id)
@@ -409,25 +417,34 @@ class ProductSearchCRUD(BaseCrud[Product]):
         return products
     
     async def _get_trending_products(self, db: AsyncSession, limit: int) -> List[Product]:
-        trending_query = select(Product).outerjoin(ProductView).where(
-            and_(
-                Product.status == "active",
-                Product.approval_status == "approved",
-                Product.visibility == "visible"
-            )
-        ).group_by(Product.id).order_by(
-            desc(func.coalesce(func.count(ProductView.id), 0)),
-            desc(Product.created_at)
-        ).options(
-            selectinload(Product.brand),
-            selectinload(Product.category),
-            selectinload(Product.images)
-        ).limit(limit)
-        
-        result = await db.execute(trending_query)
-        products = result.scalars().all()
-        
-        if not products:
+        try:
+            # Try with ProductView join first
+            try:
+                trending_query = select(Product).outerjoin(ProductView).where(
+                    and_(
+                        Product.status == "active",
+                        Product.approval_status == "approved",
+                        Product.visibility == "visible"
+                    )
+                ).group_by(Product.id).order_by(
+                    desc(func.coalesce(func.count(ProductView.id), 0)),
+                    desc(Product.created_at)
+                ).options(
+                    selectinload(Product.brand),
+                    selectinload(Product.category),
+                    selectinload(Product.images)
+                ).limit(limit)
+                
+                result = await db.execute(trending_query)
+                products = result.scalars().all()
+                
+                if products:
+                    return products
+            except Exception:
+                # If ProductView join fails, use simple query
+                pass
+            
+            # Fallback: simple query without ProductView join
             fallback_query = select(Product).where(
                 and_(
                     Product.status == "active",
@@ -442,8 +459,10 @@ class ProductSearchCRUD(BaseCrud[Product]):
             
             fallback_result = await db.execute(fallback_query)
             products = fallback_result.scalars().all()
-        
-        return products
+            return products
+        except Exception as e:
+            logger.error(f"Error getting trending products: {str(e)}")
+            return []  # Return empty list on error
     
     async def _get_top_rated_products(self, db: AsyncSession, limit: int) -> List[Product]:
         top_rated_query = select(Product).outerjoin(ProductReview).where(

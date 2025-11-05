@@ -87,25 +87,26 @@ const LoginPage = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await signUp(formData.email, formData.password, formData.name);
+      // Phone is optional - backend will use default if not provided
+      const { error } = await signUp(formData.email, formData.password, formData.name, 'buyer', formData.phone || undefined);
       
       if (error) {
         toast({
           title: "Signup Failed",
-          description: error.message,
+          description: error.message || "Failed to create account. Please try again.",
           variant: "destructive"
         });
       } else {
         toast({
           title: "Account Created!",
-          description: "Please check your email to verify your account.",
+          description: "Your account has been created successfully.",
         });
         navigate('/');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: error?.message || "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
     } finally {

@@ -2,7 +2,6 @@ import React from 'react';
 import HeroSection from '@/components/HeroSection';
 import CategoryBubbles from '@/components/CategoryBubbles';
 import GoGreenSection from '@/components/GoGreenSection';
-import ChatBot from '@/components/ChatBot';
 import DatabaseStatus from '@/components/DatabaseStatus'
 import DatabaseTest from '@/components/DatabaseTest';
 
@@ -18,7 +17,6 @@ const Index = () => {
           <DatabaseTest />
         </div>
       </main>
-      <ChatBot />
     </div>
   );
 };

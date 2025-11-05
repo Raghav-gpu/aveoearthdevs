@@ -209,7 +209,7 @@ async function testCompleteProductWorkflow() {
       formData.append('vendor_id', MOCK_VENDOR.id);
       formData.append('product_id', 'bulk-upload-test');
       
-      const csvResponse = await fetch(`${TEST_CONFIG.backend_url}/supplier/products/bulk-upload`, {
+      const csvResponse = await fetch(`${TEST_CONFIG.backend_url}/supplier/products/bulk-import-csv`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer mock-token-${MOCK_VENDOR.id}`

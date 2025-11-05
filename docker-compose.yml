@@ -1,32 +1,37 @@
+version: '3.8'
+
 services:
-  backend:
-    build: ./backend
+  postgres:
+    image: postgres:15
+    container_name: aveoearth_postgres
+    environment:
+      POSTGRES_DB: aveoearth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
     ports:
-      - "8000:8000"
-    env_file:
-      - ./backend/.env
-    networks:
-      - aveoearth-network
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  product-verification:
-    build: ./product_verification
+  redis:
+    image: redis:7-alpine
+    container_name: aveoearth_redis
     ports:
-      - "8001:8001"
-    networks:
-      - aveoearth-network
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-networks:
-  aveoearth-network:
-    driver: bridge
+volumes:
+  postgres_data:
+  redis_data:

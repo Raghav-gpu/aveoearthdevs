@@ -3,8 +3,36 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 from dotenv import load_dotenv
 import json
+from pathlib import Path
 
-load_dotenv()
+# Load .env file from backend directory
+env_path = Path(__file__).parent.parent.parent / ".env"
+if not env_path.exists():
+    # Try .env.new as fallback
+    env_new_path = Path(__file__).parent.parent.parent / ".env.new"
+    if env_new_path.exists():
+        env_path = env_new_path
+
+# Load .env with encoding handling for Budapest-BOM files
+if env_path.exists():
+    try:
+        # Try UTF-8 first, then try with BOM removal
+        load_dotenv(dotenv_path=env_path, encoding='utf-8-sig')  # utf-8-sig handles BOM automatically
+    except Exception:
+        # Fallback: read file manually and remove BOM
+        try:
+            with open(env_path, 'rb') as f:
+                content = f.read()
+                if content.startswith(b'\xef\xbb\xbf'):
+                    content = content[3:]  # Remove BOM
+                with open(env_path, 'wb') as f2:
+                    f2.write(content)
+                load_dotenv(dotenv_path=env_path, encoding='utf-8')
+        except Exception as e:
+            # Last resort: try without specifying path (uses current dir)
+            load_dotenv()
+else:
+    load_dotenv()  # Try default location
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "AveoEarth"
@@ -54,7 +82,7 @@ class Settings(BaseSettings):
             return {}
     
     model_config = {
-        "env_file": ".env",
+        "env_file": str(env_path) if env_path.exists() else ".env",
         "case_sensitive": True,
         "extra": "ignore"
     }

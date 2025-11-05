@@ -241,7 +241,7 @@ const EnhancedChatBot = () => {
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-[25px] right-[25px] z-50">
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
@@ -265,7 +265,7 @@ const EnhancedChatBot = () => {
   }
 
   return (
-    <div ref={chatRef} className="fixed bottom-6 right-6 z-50 w-96 max-h-[600px]">
+    <div ref={chatRef} className="fixed bottom-[25px] right-[25px] z-50 w-96 max-h-[600px]">
       <Card className="bg-white shadow-2xl border-0 rounded-2xl overflow-hidden transform transition-all duration-300">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 text-white">

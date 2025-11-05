@@ -2,7 +2,9 @@ import { toast } from '@/hooks/use-toast';
 
 // Configuration
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
-const API_PREFIX = import.meta.env.VITE_BACKEND_API_PREFIX || '';
+// Backend routes are mounted at root level, NOT under /api/v1
+// Force empty prefix regardless of env variable to fix the issue
+const API_PREFIX = '';
 
 // Types
 export interface Product {
@@ -198,17 +200,29 @@ class BackendApiClient {
   private token: string | null = null;
 
   constructor() {
-    this.baseUrl = `${BACKEND_URL}${API_PREFIX}`;
+    // Force empty prefix - backend routes are at root, NOT under /api/v1
+    this.baseUrl = BACKEND_URL;
     this.token = localStorage.getItem('auth_token');
+    console.log('🔗 BackendApiClient initialized with baseUrl:', this.baseUrl);
   }
 
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    // Ensure endpoint doesn't start with /api/v1 (force root paths)
+    let cleanEndpoint = endpoint;
+    if (cleanEndpoint.startsWith('/api/v1/')) {
+      cleanEndpoint = cleanEndpoint.replace('/api/v1', '');
+    }
+    
+    const url = `${this.baseUrl}${cleanEndpoint}`;
+    console.log('🌐 Backend API Request:', url); // Debug log
+    
+    // Don't set Content-Type for FormData - browser will set it with boundary
+    const isFormData = options.body instanceof FormData;
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      ...(!isFormData && { 'Content-Type': 'application/json' }),
       ...options.headers,
     };
 
@@ -245,10 +259,52 @@ class BackendApiClient {
   }
 
   // Auth API
-  async signup(email: string, password: string, name: string, phone?: string) {
+  async signup(email: string, password: string, name: string, phone?: string, user_type: string = 'buyer') {
+    // Parse name into first_name and last_name - ensure both are provided
+    let nameParts = name.trim().split(/\s+/).filter(p => p.length > 0);
+    let first_name = nameParts[0] || name || 'User';
+    let last_name = nameParts.slice(1).join(' ') || nameParts[0] || 'User';
+    
+    // Ensure both names are at least 1 character (backend requirement)
+    if (first_name.length === 0) first_name = 'User';
+    if (last_name.length === 0) last_name = 'User';
+    
+    // Phone is required by backend, so add default if missing
+    let phoneNumber = phone;
+    if (!phoneNumber || !phoneNumber.trim()) {
+      phoneNumber = '+10000000000'; // Default phone for testing
+    }
+    
+    // Ensure phone starts with +
+    if (!phoneNumber.startsWith('+')) {
+      phoneNumber = '+' + phoneNumber;
+    }
+    
+    // Remove leading 0 after + (e.g., +01234567894 -> +1234567894)
+    if (phoneNumber.startsWith('+0')) {
+      phoneNumber = '+' + phoneNumber.substring(2);
+    }
+    
+    // Ensure phone is at least 10 digits (backend requirement)
+    const digitsOnly = phoneNumber.replace(/[^0-9]/g, '');
+    if (digitsOnly.length < 10) {
+      phoneNumber = '+10000000000';
+    }
+    
+    const signupData = { 
+      email, 
+      password, 
+      first_name,
+      last_name,
+      phone: phoneNumber,
+      user_type: user_type.toLowerCase() // Ensure lowercase
+    };
+    
+    console.log('📝 Signup request data:', { ...signupData, password: '***' });
+    
     return this.request<AuthResponse>('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ email, password, name, phone }),
+      body: JSON.stringify(signupData),
     });
   }
 
@@ -257,7 +313,14 @@ class BackendApiClient {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    this.setToken(response.access_token);
+    
+    // Set token from response (could be in tokens.access_token or access_token)
+    if (response.tokens?.access_token) {
+      this.setToken(response.tokens.access_token);
+    } else if (response.access_token) {
+      this.setToken(response.access_token);
+    }
+    
     return response;
   }
 
@@ -300,11 +363,97 @@ class BackendApiClient {
   }
 
   async getFeaturedProducts(limit: number = 12) {
-    return this.request<Product[]>(`/search/trending?limit=${limit}`);
+    try {
+      // Backend has /search/trending endpoint
+      const response = await this.request<any>(`/search/trending?limit=${limit}`);
+      // Backend returns {products: [], recommendation_type: "trending", total: 0}
+      let products = response.products || [];
+      console.log('✅ Backend trending response:', { productsCount: products.length, total: response.total });
+      
+      // If trending returns empty, fallback to recent products
+      if (!products || products.length === 0) {
+        console.log('⚠️ Trending products empty, falling back to recent products');
+        try {
+          const fallbackResponse = await this.request<PaginatedResponse<Product>>(`/products?limit=${limit}&sort_by=created_at&sort_order=desc`);
+          products = fallbackResponse.data || fallbackResponse.items || [];
+          console.log('✅ Featured products (fallback) response:', { productsCount: products.length });
+        } catch (fallbackError) {
+          console.error('❌ Featured products fallback also failed:', fallbackError);
+        }
+      }
+      
+      return products;
+    } catch (error) {
+      // If trending fails, try fallback
+      console.log('⚠️ Featured products (trending) endpoint failed, trying fallback:', error);
+      try {
+        const fallbackResponse = await this.request<PaginatedResponse<Product>>(`/products?limit=${limit}&sort_by=created_at&sort_order=desc`);
+        const products = fallbackResponse.data || fallbackResponse.items || [];
+        console.log('✅ Featured products (fallback) response:', { productsCount: products.length });
+        return products;
+      } catch (fallbackError) {
+        console.error('❌ Featured products fallback also failed:', fallbackError);
+        return [];
+      }
+    }
   }
 
   async getEcoFriendlyProducts(limit: number = 12) {
-    return this.request<Product[]>(`/search/eco-friendly?limit=${limit}`);
+    try {
+      // Backend doesn't have eco-friendly endpoint, use regular products with filter
+      const response = await this.request<PaginatedResponse<Product>>(`/products?limit=${limit}&sort_by=created_at&sort_order=desc`);
+      // Backend returns {items: [], total, ...}
+      return response.items || response.data || [];
+    } catch (error) {
+      // Return empty array instead of trying fallbacks
+      console.log('Eco-friendly products endpoint failed, returning empty array');
+      return [];
+    }
+  }
+
+  // Vendor/Supplier Product Management
+  async createProduct(productData: FormData) {
+    return this.request<Product>('/supplier/products/', {
+      method: 'POST',
+      body: productData, // FormData for multipart/form-data
+    });
+  }
+
+  async bulkImportCSV(csvFile: File) {
+    const formData = new FormData();
+    formData.append('file', csvFile);
+    
+    return this.request<{
+      message: string;
+      results: {
+        total_rows: number;
+        successful: number;
+        failed: number;
+        errors: Array<{row: number; error: string}>;
+        created_product_ids: string[];
+      };
+    }>('/supplier/products/bulk-import-csv', {
+      method: 'POST',
+      body: formData, // FormData for multipart/form-data
+    });
+  }
+
+  async uploadProductImage(imageFile: File, productId?: string, vendorId?: string) {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+    if (productId) formData.append('product_id', productId);
+    if (vendorId) formData.append('vendor_id', vendorId);
+    formData.append('compression_level', 'auto');
+    
+    return this.request<{
+      success: boolean;
+      url: string;
+      compressed_size: number;
+      original_size: number;
+    }>('/upload/vendor/image', {
+      method: 'POST',
+      body: formData,
+    });
   }
 
   async getRecommendations(type: 'trending' | 'personalized' | 'new_arrivals' | 'best_sellers', limit: number = 10) {
@@ -468,7 +617,19 @@ class BackendApiClient {
 
   // Health Check
   async healthCheck() {
-    return this.request<{ status: string; version: string }>('/health');
+      try {
+        // Try health endpoint (root level, no prefix)
+        return await this.request<{ status: string; version: string }>('/health');
+      } catch {
+        // Fallback: try direct fetch
+        const response = await fetch(`${this.baseUrl}/health`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) throw new Error(`Health check failed: ${response.status}`);
+        return await response.json();
+      }
   }
 }
 

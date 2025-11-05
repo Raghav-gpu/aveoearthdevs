@@ -40,9 +40,14 @@ const Header = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('Logout button clicked');
       await signOut();
+      // Redirect to home page after logout
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
+      // Force redirect even if there's an error
+      window.location.href = '/';
     }
   };
 
@@ -154,11 +159,6 @@ const Header = () => {
                   <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-forest">
                     <Link to="/profile">
                       <User className="w-5 h-5" />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-forest" title="Admin Dashboard">
-                    <Link to="/admin/dashboard">
-                      <TreePine className="w-5 h-5" />
                     </Link>
                   </Button>
                   <Button 

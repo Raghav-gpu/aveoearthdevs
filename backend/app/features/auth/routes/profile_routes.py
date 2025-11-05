@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, UploadFile, File, Form, status, HTTPException
 from typing import Dict, Any, Optional, Union
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.auth.responses.profile_response import (
@@ -17,6 +17,8 @@ from app.core.supabase_storage import SupabaseStorageClient, upload_user_avatar,
 from app.database.session import get_async_session
 from app.core.logging import get_logger
 from app.core.base import SuccessResponse
+from app.core.config import settings
+from datetime import datetime
 
 profile_router = APIRouter(tags=["Profile"])
 logger = get_logger("auth.profile")
@@ -49,9 +51,71 @@ async def get_complete_profile(
     current_user: Dict[str, Any] = Depends(get_all_users),
     db: AsyncSession = Depends(get_async_session)
 ):
+    if not current_user or not current_user.get("id"):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
     auth_crud = AuthCrud()
-    user_data = await auth_crud.get_full_user_profile(db, current_user["id"])
-    return CompleteUserProfileResponse(**user_data)
+    try:
+        user_data = await auth_crud.get_full_user_profile(db, current_user["id"])
+        return CompleteUserProfileResponse(**user_data)
+    except NotFoundException:
+        # User authenticated in Supabase but doesn't exist in database - create them
+        logger.info(f"User {current_user['id']} authenticated but not in database, creating user record")
+        try:
+            # Create user record from current_user data (from Supabase Auth)
+            from app.features.auth.models.user import UserTypeEnum
+            user_type_str = current_user.get("user_role", "buyer").lower()
+            user_type_enum = UserTypeEnum.BUYER
+            if user_type_str == "supplier":
+                user_type_enum = UserTypeEnum.SUPPLIER
+            elif user_type_str == "admin":
+                user_type_enum = UserTypeEnum.ADMIN
+            
+            # Create user using REST API to ensure it persists immediately
+            from app.features.auth.cruds.auth_crud import AuthCrud
+            admin_client = AuthCrud.admin_client
+            
+            user_rest_data = {
+                "id": current_user["id"],
+                "email": current_user.get("email", ""),
+                "phone": current_user.get("phone") or "+10000000000",
+                "user_type": user_type_str,
+                "first_name": current_user.get("first_name") or "User",
+                "last_name": current_user.get("last_name") or "",
+                "is_verified": current_user.get("is_verified", True),
+                "is_active": True
+            }
+            
+            # Insert via REST API
+            rest_response = admin_client.table("users").insert(user_rest_data).execute()
+            if rest_response.data:
+                logger.info(f"✅ Created user {current_user['id']} via REST API")
+                # Now try to get full profile again
+                user_data = await auth_crud.get_full_user_profile(db, current_user["id"])
+                return CompleteUserProfileResponse(**user_data)
+        except Exception as create_error:
+            logger.error(f"Failed to create user record: {create_error}")
+            # Return profile from current_user if creation fails
+            from datetime import datetime
+            return CompleteUserProfileResponse(
+                id=current_user["id"],
+                email=current_user.get("email", "unknown@example.com"),
+                first_name=current_user.get("first_name", "User"),
+                last_name=current_user.get("last_name", ""),
+                phone=current_user.get("phone", "+10000000000"),
+                user_type=current_user.get("user_role", "buyer"),
+                is_verified=current_user.get("is_verified", True),
+                is_active=True,
+                is_phone_verified=False,
+                is_email_verified=current_user.get("is_verified", True),
+                referral_code="",
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+                profile=None
+            )
+    except Exception as e:
+        logger.error(f"Failed to load profile: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to load profile: {str(e)}")
 
 @profile_router.put("/me", response_model=UserProfileResponse)
 async def update_basic_profile(

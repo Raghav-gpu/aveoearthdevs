@@ -5,6 +5,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
+import uuid
 from pydantic import BaseModel
 from app.core.logging import get_logger
 from app.core.exceptions import NotFoundException, ValidationException
@@ -37,7 +38,14 @@ class BaseCrud(Generic[M]):
 
     async def get_by_id(self, db: AsyncSession, id: str) -> Optional[M]:
         try:
-            result = await db.execute(select(self.model_class).where(self.model_class.id == id))
+            from app.core.config import settings
+            query = select(self.model_class).where(self.model_class.id == id)
+            # Use execution options to avoid prepared statements for pgbouncer compatibility
+            if "supabase.co" in (settings.DATABASE_URL or ""):
+                # Bind execution options to the statement before execution
+                result = await db.execute(query.execution_options(prepared_statement_cache_size=0))
+            else:
+                result = await db.execute(query)
             return result.scalar_one_or_none()
         except Exception as e:
             self.logger.error(f"Error getting {self.model_class.__tablename__} by id {id}: {str(e)}")
@@ -45,7 +53,13 @@ class BaseCrud(Generic[M]):
 
     async def get_by_field(self, db: AsyncSession, field: str, value: Any) -> Optional[M]:
         try:
-            result = await db.execute(select(self.model_class).where(getattr(self.model_class, field) == value))
+            from app.core.config import settings
+            query = select(self.model_class).where(getattr(self.model_class, field) == value)
+            # Use execution options to avoid prepared statements for pgbouncer compatibility
+            if "supabase.co" in (settings.DATABASE_URL or ""):
+                result = await db.execute(query.execution_options(prepared_statement_cache_size=0))
+            else:
+                result = await db.execute(query)
             return result.scalar_one_or_none()
         except Exception as e:
             self.logger.error(f"Error getting {self.model_class.__tablename__} by {field}={value}: {str(e)}")
@@ -53,8 +67,43 @@ class BaseCrud(Generic[M]):
 
     async def create(self, db: AsyncSession, data: Dict[str, Any], commit: bool = True) -> M:
         try:
+            from app.core.config import settings
             if "id" not in data or data["id"] is None:
-                data["id"] = str(uuid4())
+                data["id"] = uuid4()  # UUID object, not string
+            elif isinstance(data.get("id"), str):
+                # Convert string UUID to UUID object if needed
+                try:
+                    data["id"] = uuid.UUID(data["id"])
+                except (ValueError, TypeError):
+                    pass  # Keep as string if conversion fails
+            
+            # CRITICAL: Handle user_type enum conversion for User model
+            # SQLAlchemy Enum with native_enum=False stores the VALUE as a string
+            # We MUST pass the string VALUE directly, NOT the enum object
+            # SQLAlchemy will convert it to enum internally, but we need to ensure lowercase string
+            if "user_type" in data:
+                # Import UserTypeEnum if creating User model
+                if self.model_class.__name__ == "User":
+                    from app.features.auth.models.user import UserTypeEnum
+                    # CRITICAL: Always pass the string VALUE, not the enum object
+                    if isinstance(data["user_type"], str):
+                        # Already a string - ensure lowercase
+                        data["user_type"] = data["user_type"].lower()
+                    elif isinstance(data["user_type"], UserTypeEnum):
+                        # It's an enum object - extract the .value (string)
+                        data["user_type"] = data["user_type"].value
+                    else:
+                        # Unknown type - default to "buyer" string
+                        data["user_type"] = "buyer"
+                    
+                    # Validate it's one of the allowed lowercase values
+                    valid_types = ["buyer", "supplier", "admin"]
+                    if data["user_type"] not in valid_types:
+                        data["user_type"] = "buyer"  # Default fallback
+                    
+                    # Log the value being passed (for debugging)
+                    self.logger.info(f"User user_type being set to: '{data['user_type']}' (type: {type(data['user_type']).__name__})")
+            
             data["created_at"] = datetime.utcnow()
             data["updated_at"] = datetime.utcnow()
             
@@ -62,8 +111,33 @@ class BaseCrud(Generic[M]):
             db.add(db_obj)
             
             if commit:
-                await db.commit()
-                await db.refresh(db_obj)
+                # Use flush first to catch any errors before commit
+                try:
+                    await db.flush()
+                    await db.commit()
+                    # Refresh the object - use execution options if needed
+                    if "supabase.co" in (settings.DATABASE_URL or ""):
+                        # For pgbouncer, we may need to re-query instead of refresh
+                        # Try refresh first, but catch errors
+                        try:
+                            await db.refresh(db_obj)
+                        except Exception as refresh_err:
+                            # If refresh fails, re-query the object
+                            self.logger.warning(f"Refresh failed, re-querying object: {refresh_err}")
+                            try:
+                                select_query = select(self.model_class).where(self.model_class.id == db_obj.id)
+                                result = await db.execute(select_query.execution_options(prepared_statement_cache_size=0))
+                                refreshed_obj = result.scalar_one_or_none()
+                                if refreshed_obj:
+                                    db_obj = refreshed_obj
+                            except Exception:
+                                # If re-query also fails, continue with the object we have
+                                pass
+                    else:
+                        await db.refresh(db_obj)
+                except Exception as commit_err:
+                    await db.rollback()
+                    raise
             else:
                 await db.flush()
             
@@ -106,7 +180,15 @@ class BaseCrud(Generic[M]):
 
     async def delete(self, db: AsyncSession, id: str) -> bool:
         try:
-            result = await db.execute(delete(self.model_class).where(self.model_class.id == id))
+            from app.core.config import settings
+            query = delete(self.model_class).where(self.model_class.id == id)
+            
+            # Use execution options to avoid prepared statements for pgbouncer compatibility
+            if "supabase.co" in (settings.DATABASE_URL or ""):
+                result = await db.execute(query.execution_options(prepared_statement_cache_size=0))
+            else:
+                result = await db.execute(query)
+            
             if result.rowcount == 0:
                 raise NotFoundException(f"{self.model_class.__tablename__.title()} not found")
             

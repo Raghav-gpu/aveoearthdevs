@@ -15,11 +15,10 @@ export const useWishlistNew = () => {
       console.log('🔄 Fetching wishlist for user:', user.id)
       
       const { data, error } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .select(`
           id,
           product_id,
-          created_at,
           products (
             id,
             name,
@@ -30,7 +29,6 @@ export const useWishlistNew = () => {
           )
         `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('❌ Error fetching wishlist:', error)
@@ -58,7 +56,7 @@ export const useAddToWishlistNew = () => {
       
       // Check if already in wishlist
       const { data: existing } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .select('id')
         .eq('user_id', user.id)
         .eq('product_id', productId)
@@ -70,7 +68,7 @@ export const useAddToWishlistNew = () => {
       }
       
       const { data, error } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .insert({ 
           user_id: user.id, 
           product_id: productId 
@@ -117,7 +115,7 @@ export const useRemoveFromWishlistNew = () => {
       console.log('🔄 Removing from wishlist:', { userId: user.id, productId })
       
       const { error } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .delete()
         .eq('user_id', user.id)
         .eq('product_id', productId)
@@ -157,7 +155,7 @@ export const useIsInWishlistNew = (productId: string) => {
       if (!user || !productId) return false
       
       const { data, error } = await supabase
-        .from('wishlist')
+        .from('wishlists')
         .select('id')
         .eq('user_id', user.id)
         .eq('product_id', productId)

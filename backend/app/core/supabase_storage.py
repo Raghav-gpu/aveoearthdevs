@@ -17,10 +17,27 @@ class SupabaseStorageClient:
     @property
     def client(self) -> Client:
         if self._client is None:
-            self._client = create_client(
-                settings.SUPABASE_URL,
-                settings.SUPABASE_SERVICE_ROLE_KEY
-            )
+            if not settings.SUPABASE_URL:
+                raise ValidationException("SUPABASE_URL must be set in environment variables")
+            if not settings.SUPABASE_SERVICE_ROLE_KEY:
+                raise ValidationException("SUPABASE_SERVICE_ROLE_KEY must be set in environment variables for storage operations")
+            
+            try:
+                self._client = create_client(
+                    settings.SUPABASE_URL,
+                    settings.SUPABASE_SERVICE_ROLE_KEY
+                )
+                # Test connection by attempting to list buckets
+                try:
+                    self._client.storage.list_buckets()
+                except Exception as e:
+                    logger.error(f"Supabase storage authentication failed. Please verify SUPABASE_SERVICE_ROLE_KEY is correct: {str(e)}")
+                    raise ValidationException(f"Supabase storage authentication failed. Please check your SUPABASE_SERVICE_ROLE_KEY: {str(e)}")
+            except ValidationException:
+                raise
+            except Exception as e:
+                logger.error(f"Failed to initialize Supabase storage client: {str(e)}")
+                raise ValidationException(f"Failed to initialize Supabase storage: {str(e)}")
         return self._client
     
     def upload_file(
@@ -88,14 +105,23 @@ class SupabaseStorageClient:
         try:
             # List buckets to check if it exists
             buckets = self.client.storage.list_buckets()
-            bucket_names = [bucket.name for bucket in buckets]
+            bucket_names = [bucket.name for bucket in buckets] if buckets else []
             
             if bucket_name not in bucket_names:
                 # Create bucket if it doesn't exist
-                self.client.storage.create_bucket(bucket_name)
-                logger.info(f"Created bucket: {bucket_name}")
+                try:
+                    self.client.storage.create_bucket(bucket_name)
+                    logger.info(f"Created bucket: {bucket_name}")
+                except Exception as create_error:
+                    # If bucket creation fails, it might already exist or we don't have permissions
+                    logger.warning(f"Could not create bucket {bucket_name}: {str(create_error)}")
+                    # Try to continue - bucket might exist but not be listed
         except Exception as e:
-            logger.warning(f"Could not ensure bucket exists: {str(e)}")
+            error_msg = str(e)
+            if "signature verification failed" in error_msg or "Unauthorized" in error_msg or "403" in error_msg:
+                logger.error(f"Supabase storage authentication failed for bucket '{bucket_name}'. Please verify SUPABASE_SERVICE_ROLE_KEY is correct and has storage permissions.")
+            else:
+                logger.warning(f"Could not ensure bucket exists: {str(e)}")
     
     def upload_image(
         self,

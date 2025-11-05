@@ -75,6 +75,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [])
 
   useEffect(() => {
+    // Handle Google OAuth callback - check for tokens in URL hash
+    const handleOAuthCallback = async () => {
+      const hash = window.location.hash
+      if (hash && hash.includes('access_token')) {
+        console.log('🔗 Detected OAuth callback in URL hash')
+        try {
+          // Extract tokens from hash
+          const hashParams = new URLSearchParams(hash.substring(1))
+          const accessToken = hashParams.get('access_token')
+          const refreshToken = hashParams.get('refresh_token')
+          
+          if (accessToken) {
+            console.log('✅ Found OAuth tokens, setting session...')
+            // Set session with the tokens
+            const { data: { session }, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || ''
+            })
+            
+            if (session) {
+              console.log('✅ OAuth session set successfully')
+              setSession(session)
+              setUser(session.user)
+              
+              // Clear hash from URL
+              window.history.replaceState(null, '', window.location.pathname + window.location.search)
+              
+              // Create/update user profile
+              await createOrUpdateUserProfile(session.user)
+            } else if (error) {
+              console.error('❌ Error setting OAuth session:', error)
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error handling OAuth callback:', error)
+        }
+      }
+    }
+    
+    // Check for OAuth callback on mount
+    handleOAuthCallback()
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -96,11 +138,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await createOrUpdateUserProfile(session.user)
       }
       
-      // If user signs out, clear profile
+      // If user signs out, clear everything
       if (event === 'SIGNED_OUT') {
         setUserProfile(null)
         setProfileLoading(false)
         backendApi.setToken(null)
+        setUser(null)
+        setSession(null)
+        // Clear any cached auth data
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('supabase.auth.token')
       }
     })
 
@@ -188,93 +235,70 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('🔄 Creating/updating user profile for:', user.email, 'ID:', user.id)
       
-      // Try backend API first if connected
-      if (isBackendConnected) {
+      // ALWAYS try backend API first (it has proper permissions and handles user creation)
+      try {
+        // Try to get profile from backend
         try {
-          // Check if user exists in backend
           const existingProfile = await backendApi.getProfile()
           console.log('✅ User profile exists in backend:', existingProfile)
           setUserProfile(existingProfile as UserProfile)
           setProfileLoading(false)
+          setIsBackendConnected(true)
           return
-        } catch (error) {
-          console.log('⚠️ User not found in backend, creating new profile...')
-          
-          // Create new user in backend
-          const userData = {
-            name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-            email: user.email!,
-            phone: user.user_metadata?.phone || user.phone,
-            role: 'buyer' as const
-          }
-          
-          const newProfile = await backendApi.signup(userData.email, 'temp_password', userData.name, userData.phone)
-          console.log('✅ User profile created in backend:', newProfile)
-          setUserProfile(newProfile.user as UserProfile)
-          setProfileLoading(false)
-          return
+        } catch (getError: any) {
+          // Profile not found - this is OK for new users
+          console.log('📝 User profile not found in backend, will be created via backend login endpoint')
         }
-      }
-
-      // Fallback to Supabase
-      const { data: existingUser, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('❌ Error fetching existing user:', fetchError)
-      }
-
-      if (!existingUser) {
-        console.log('📝 Creating new user profile in Supabase...')
         
-        const userData = {
+        // For Google OAuth users or new users, backend will create profile during login
+        // Just set a temporary profile from Supabase user metadata
+        const tempProfile: UserProfile = {
           id: user.id,
           name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
           email: user.email!,
-          role: 'buyer'
+          role: user.user_metadata?.role || 'buyer',
+          phone: user.user_metadata?.phone || user.phone,
+          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+          created_at: user.created_at || new Date().toISOString(),
+          updated_at: user.updated_at || new Date().toISOString()
         }
         
-        const { data: newProfile, error: insertError } = await supabase
-          .from('users')
-          .insert(userData)
-          .select()
-          .single()
-
-        if (insertError) {
-          console.error('❌ Error creating user profile:', insertError)
-          return
-        }
-
-        if (newProfile) {
-          console.log('✅ User profile created successfully in Supabase:', newProfile)
-          setUserProfile(newProfile)
-        }
-      } else {
-        console.log('✅ Existing user profile found in Supabase:', existingUser)
-        setUserProfile(existingUser)
+        setUserProfile(tempProfile)
+        setProfileLoading(false)
+        setIsBackendConnected(true)
+        
+        // Backend will create the actual profile when user accesses protected endpoints
+        console.log('✅ Temporary profile set, backend will create full profile on first use')
+        return
+      } catch (error) {
+        console.error('❌ Error with backend profile creation:', error)
       }
+
+      // If backend fails completely, we can't create profile (RLS blocks direct Supabase access)
+      console.warn('⚠️ Could not create/update user profile - backend API required')
+      setProfileLoading(false)
     } catch (error) {
       console.error('❌ Error creating/updating user profile:', error)
-    } finally {
       setProfileLoading(false)
     }
   }
 
   const signUp = async (email: string, password: string, name: string, role: string = 'buyer', phone?: string) => {
     try {
-      // Try backend API first if connected
-      if (isBackendConnected) {
-        try {
-          const response = await backendApi.signup(email, password, name, phone)
-          console.log('✅ User signed up via backend:', response)
+      // Always try backend API first (it will fallback if not available)
+      try {
+        const response = await backendApi.signup(email, password, name, phone, role)
+        console.log('✅ User signed up via backend:', response)
+        if (response.tokens?.access_token) {
+          backendApi.setToken(response.tokens.access_token)
+        } else if (response.access_token) {
           backendApi.setToken(response.access_token)
-          return { error: null }
-        } catch (error) {
-          console.log('⚠️ Backend signup failed, falling back to Supabase:', error)
         }
+        setIsBackendConnected(true)
+        return { error: null }
+      } catch (error: any) {
+        console.log('⚠️ Backend signup failed, falling back to Supabase:', error?.message || error)
+        setIsBackendConnected(false)
       }
 
       // Fallback to Supabase
@@ -297,24 +321,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Try backend API first if connected
-      if (isBackendConnected) {
-        try {
-          const response = await backendApi.login(email, password)
-          console.log('✅ User signed in via backend:', response)
-          setUserProfile(response.user as UserProfile)
-          return { error: null }
-        } catch (error) {
-          console.log('⚠️ Backend signin failed, falling back to Supabase:', error)
+      // ALWAYS try backend API first (it handles Supabase auth internally)
+      try {
+        const response = await backendApi.login(email, password)
+        console.log('✅ User signed in via backend:', response)
+        
+        // Set backend token
+        if (response.tokens?.access_token) {
+          backendApi.setToken(response.tokens.access_token)
+        } else if (response.access_token) {
+          backendApi.setToken(response.access_token)
         }
+        
+        // Also get Supabase session for frontend compatibility
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            setSession(session)
+            setUser(session.user)
+          }
+        } catch (sessionError) {
+          console.log('⚠️ Could not get Supabase session, continuing with backend auth')
+        }
+        
+        setUserProfile(response.user as UserProfile)
+        setIsBackendConnected(true)
+        return { error: null }
+      } catch (error: any) {
+        console.error('❌ Backend login failed:', error)
+        // Don't fallback to Supabase directly - backend should handle all auth
+        return { error: { message: error?.message || 'Invalid email or password' } as AuthError }
       }
-
-      // Fallback to Supabase
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-      return { error }
     } catch (error) {
       return { error: error as AuthError }
     }
@@ -349,10 +386,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   const signOut = async () => {
-    if (isBackendConnected) {
-      await backendApi.logout()
+    try {
+      console.log('🔄 Signing out...')
+      
+      // Clear token from backend API
+      if (isBackendConnected) {
+        try {
+          await backendApi.logout()
+          console.log('✅ Logged out from backend')
+        } catch (error) {
+          console.log('⚠️ Backend logout failed:', error)
+        }
+      }
+      
+      // Clear Supabase session
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('❌ Supabase signOut error:', error)
+        throw error
+      }
+      
+      // Clear local state
+      setUser(null)
+      setUserProfile(null)
+      setSession(null)
+      backendApi.setToken(null)
+      
+      console.log('✅ Successfully signed out')
+    } catch (error) {
+      console.error('❌ Error during sign out:', error)
+      // Force clear local state even if sign out fails
+      setUser(null)
+      setUserProfile(null)
+      setSession(null)
+      backendApi.setToken(null)
     }
-    await supabase.auth.signOut()
   }
 
   const updateProfile = async (updates: Partial<UserProfile>) => {

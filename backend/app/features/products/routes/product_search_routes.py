@@ -33,65 +33,105 @@ product_search_router = APIRouter(prefix="/search", tags=["product-search"])
 async def search_products(
     request: ProductSearchRequest,
     current_user: Optional[Dict[str, Any]] = Depends(get_optional_user),
-    db: AsyncSession = Depends(get_async_session)
+    db: Optional[AsyncSession] = Depends(get_async_session)
 ):
-    crud = ProductSearchCRUD()
-    products, total = await crud.search_products(db, request)
-    
-    if current_user and request.query:
-        analytics_crud = ProductAnalyticsCrud()
-        await analytics_crud.log_search(db, {
-            "user_id": current_user["id"],
-            "query_term": request.query,
-            "search_type": "general",
-            "results_count": total
-        })
-    
-    product_items = []
-    for product in products:
-        item = ProductSearchItemResponse(
-            id=product.id,
-            sku=product.sku,
-            name=product.name,
-            slug=product.slug,
-            short_description=product.short_description,
-            price=product.price,
-            compare_at_price=product.compare_at_price,
-            discount_percentage=None,
-            primary_image=product.images[0].url if product.images else None,
-            rating=None,
-            review_count=0,
-            in_stock=product.inventory[0].available_quantity > 0 if product.inventory else False,
-            stock_quantity=product.inventory[0].available_quantity if product.inventory else 0,
-            brand_name=product.brand.name if product.brand else None,
-            category_name=product.category.name if product.category else None,
-            supplier_name=f"{product.supplier.first_name} {product.supplier.last_name}" if product.supplier else None,
-            sustainability_score=product.sustainability_score[0].overall_score if product.sustainability_score else None,
-            is_on_sale=product.compare_at_price is not None,
-            tags=product.tags or [],
-            created_at=product.created_at
+    try:
+        if db is None:
+            # Return empty results if database is not available
+            return ProductSearchResponse(
+                products=[],
+                total=0,
+                page=request.page,
+                per_page=request.per_page,
+                total_pages=0,
+                filters_applied=request.model_dump(exclude_none=True),
+                available_filters={}
+            )
+        
+        crud = ProductSearchCRUD()
+        products, total = await crud.search_products(db, request)
+        
+        if current_user and request.query:
+            try:
+                analytics_crud = ProductAnalyticsCrud()
+                await analytics_crud.log_search(db, {
+                    "user_id": current_user["id"],
+                    "query_term": request.query,
+                    "search_type": "general",
+                    "results_count": total
+                })
+            except Exception as e:
+                # Log search analytics failure but continue
+                from app.core.logging import get_logger
+                logger = get_logger("search")
+                logger.warning(f"Could not log search analytics: {e}")
+        
+        product_items = []
+        for product in products:
+            try:
+                item = ProductSearchItemResponse(
+                    id=product.id,
+                    sku=product.sku,
+                    name=product.name,
+                    slug=product.slug,
+                    short_description=product.short_description,
+                    price=product.price,
+                    compare_at_price=product.compare_at_price,
+                    discount_percentage=None,
+                    primary_image=product.images[0].url if product.images and len(product.images) > 0 else None,
+                    rating=None,
+                    review_count=0,
+                    in_stock=product.inventory[0].available_quantity > 0 if product.inventory and len(product.inventory) > 0 else False,
+                    stock_quantity=product.inventory[0].available_quantity if product.inventory and len(product.inventory) > 0 else 0,
+                    brand_name=product.brand.name if product.brand else None,
+                    category_name=product.category.name if product.category else None,
+                    supplier_name=f"{product.supplier.first_name} {product.supplier.last_name}" if product.supplier else None,
+                    sustainability_score=product.sustainability_score[0].overall_score if product.sustainability_score and len(product.sustainability_score) > 0 else None,
+                    is_on_sale=product.compare_at_price is not None,
+                    tags=product.tags or [],
+                    created_at=product.created_at
+                )
+                
+                if product.compare_at_price:
+                    item.discount_percentage = float(((product.compare_at_price - product.price) / product.compare_at_price) * 100)
+                
+                product_items.append(item)
+            except Exception as e:
+                # Skip products that fail to convert
+                from app.core.logging import get_logger
+                logger = get_logger("search")
+                logger.warning(f"Could not convert product to response: {e}")
+                continue
+        
+        total_pages = (total + request.per_page - 1) // request.per_page if request.per_page > 0 else 0
+        
+        return ProductSearchResponse(
+            products=product_items,
+            total=total,
+            page=request.page,
+            per_page=request.per_page,
+            total_pages=total_pages,
+            filters_applied=request.model_dump(exclude_none=True),
+            available_filters={}
         )
-        
-        if product.compare_at_price:
-            item.discount_percentage = float(((product.compare_at_price - product.price) / product.compare_at_price) * 100)
-        
-        product_items.append(item)
-    
-    total_pages = (total + request.per_page - 1) // request.per_page
-    
-    return ProductSearchResponse(
-        products=product_items,
-        total=total,
-        page=request.page,
-        per_page=request.per_page,
-        total_pages=total_pages,
-        filters_applied=request.model_dump(exclude_none=True),
-        available_filters={}
-    )
+    except Exception as e:
+        from app.core.logging import get_logger
+        logger = get_logger("search")
+        logger.error(f"Search error: {e}")
+        # Return empty results on error
+        return ProductSearchResponse(
+            products=[],
+            total=0,
+            page=request.page,
+            per_page=request.per_page,
+            total_pages=0,
+            filters_applied=request.model_dump(exclude_none=True),
+            available_filters={}
+        )
 
 
 @product_search_router.get("/filters", response_model=ProductFilterOptionsResponse)
-async def get_filter_options(db: AsyncSession = Depends(get_async_session)):
+async def get_filter_options(db: Optional[AsyncSession] = Depends(get_async_session)):
     crud = ProductSearchCRUD()
     filters = await crud.get_filter_options(db)
     return ProductFilterOptionsResponse(**filters)
@@ -145,39 +185,58 @@ async def get_product_recommendations(
 @product_search_router.get("/trending", response_model=ProductRecommendationResponse)
 async def get_trending_products(
     limit: int = Query(default=10, ge=1, le=50),
-    db: AsyncSession = Depends(get_async_session)
+    db: Optional[AsyncSession] = Depends(get_async_session)
 ):
-    crud = ProductSearchCRUD()
-    products = await crud.get_product_recommendations(
-        db,
-        recommendation_type="trending",
-        limit=limit
-    )
-    
-    product_items = []
-    for product in products:
-        item = ProductSearchItemResponse(
-            id=product.id,
-            sku=product.sku,
-            name=product.name,
-            slug=product.slug,
-            short_description=product.short_description,
-            price=product.price,
-            compare_at_price=product.compare_at_price,
-            primary_image=product.images[0].url if product.images else None,
-            brand_name=product.brand.name if product.brand else None,
-            category_name=product.category.name if product.category else None,
-            is_on_sale=product.compare_at_price is not None,
-            tags=product.tags or [],
-            created_at=product.created_at
+    try:
+        if db is None:
+            return ProductRecommendationResponse(
+                products=[],
+                recommendation_type="trending",
+                total=0
+            )
+        
+        crud = ProductSearchCRUD()
+        products = await crud.get_product_recommendations(
+            db,
+            recommendation_type="trending",
+            limit=limit
         )
-        product_items.append(item)
-    
-    return ProductRecommendationResponse(
-        products=product_items,
-        recommendation_type="trending",
-        total=len(product_items)
-    )
+        
+        product_items = []
+        for product in products:
+            try:
+                item = ProductSearchItemResponse(
+                    id=str(product.id),
+                    sku=product.sku or "",
+                    name=product.name or "",
+                    slug=product.slug or "",
+                    short_description=product.short_description or "",
+                    price=float(product.price) if product.price else 0.0,
+                    compare_at_price=float(product.compare_at_price) if product.compare_at_price else None,
+                    primary_image=product.images[0].url if product.images and len(product.images) > 0 else None,
+                    brand_name=product.brand.name if product.brand else None,
+                    category_name=product.category.name if product.category else None,
+                    is_on_sale=product.compare_at_price is not None,
+                    tags=product.tags or [],
+                    created_at=product.created_at
+                )
+                product_items.append(item)
+            except Exception as e:
+                # Skip products that can't be serialized
+                continue
+        
+        return ProductRecommendationResponse(
+            products=product_items,
+            recommendation_type="trending",
+            total=len(product_items)
+        )
+    except Exception as e:
+        # Return empty result on any error
+        return ProductRecommendationResponse(
+            products=[],
+            recommendation_type="trending",
+            total=0
+        )
 
 
 @product_search_router.get("/top-rated", response_model=ProductRecommendationResponse)

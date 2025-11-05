@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Text, Enum, UUID
+from sqlalchemy import Column, String, Boolean, DateTime, Text, Enum, UUID, TypeDecorator
 from sqlalchemy.orm import relationship
 from enum import Enum as PyEnum
 from app.core.base import Base, BaseTimeStamp, BaseUUID
@@ -8,12 +8,47 @@ class UserTypeEnum(str, PyEnum):
     SUPPLIER = "supplier"
     ADMIN = "admin"
 
+class UserTypeEnumType(TypeDecorator):
+    """Custom type that ensures enum values (lowercase strings) are used, not names"""
+    impl = String
+    cache_ok = True
+    
+    def __init__(self):
+        super().__init__(length=20)
+    
+    def process_bind_param(self, value, dialect):
+        """Convert enum to lowercase string value when binding to database"""
+        if value is None:
+            return None
+        if isinstance(value, UserTypeEnum):
+            return value.value  # Return the lowercase string value ("buyer")
+        if isinstance(value, str):
+            return value.lower()  # Ensure lowercase
+        return str(value).lower()
+    
+    def process_result_value(self, value, dialect):
+        """Convert string from database to enum object"""
+        if value is None:
+            return None
+        if isinstance(value, UserTypeEnum):
+            return value
+        # Convert string to enum by value (not name)
+        value_lower = value.lower() if isinstance(value, str) else str(value).lower()
+        for enum_member in UserTypeEnum:
+            if enum_member.value == value_lower:
+                return enum_member
+        return UserTypeEnum.BUYER  # Default fallback
+    
+    def load_dialect_impl(self, dialect):
+        """Tell SQLAlchemy to use String type at database level"""
+        return dialect.type_descriptor(String(20))
+
 class User(BaseUUID, BaseTimeStamp, Base):
     __tablename__ = "users"
     
     email = Column(String(255), unique=True, nullable=False, index=True)
     phone = Column(String(25), unique=True, nullable=True)
-    user_type = Column(Enum(UserTypeEnum, native_enum=False), nullable=False, default=UserTypeEnum.BUYER.value)
+    user_type = Column(UserTypeEnumType(), nullable=False, default=UserTypeEnum.BUYER.value)
     first_name = Column(String(100))
     last_name = Column(String(100))
     avatar_url = Column(Text)

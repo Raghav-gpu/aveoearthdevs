@@ -17,6 +17,7 @@ from app.features.orders.responses import (
     PaymentResponse, ReturnResponse
 )
 from app.features.orders.models.order import OrderStatusEnum
+from app.core.role_auth import get_all_users
 
 orders_buyer_router = APIRouter(prefix="/buyer/orders", tags=["Buyer Orders"])
 
@@ -25,8 +26,8 @@ logger = get_logger("routes.buyer_orders")
 @orders_buyer_router.get("/cart", response_model=CartWithItemsResponse)
 async def get_cart(
     session_id: Optional[str] = Query(None),
-    current_user: Dict[str, Any] = Depends(require_buyer()),
-    db: AsyncSession = Depends(get_async_session)
+    current_user: Optional[Dict[str, Any]] = Depends(get_all_users),
+    db: Optional[AsyncSession] = Depends(get_async_session)
 ):
     cart_crud = CartCrud()
     
@@ -37,7 +38,7 @@ async def get_cart(
             raise ValidationException("Session ID is required for guest users")
         cart = await cart_crud.get_or_create_cart(db, session_id=session_id)
     
-    cart_with_items = await cart_crud.get_cart_with_items(db, cart.id)
+    cart_with_items = await cart_crud.get_cart_with_items(db, str(cart.id))
     return cart_with_items
 
 @orders_buyer_router.post("/cart/items", response_model=SuccessResponse)
@@ -47,20 +48,55 @@ async def add_to_cart(
     current_user: Dict[str, Any] = Depends(require_buyer()),
     db: AsyncSession = Depends(get_async_session)
 ):
-    cart_crud = CartCrud()
-    
-    if current_user:
-        cart = await cart_crud.get_or_create_cart(db, user_id=current_user["id"])
-    else:
-        if not session_id:
-            raise ValidationException("Session ID is required for guest users")
-        cart = await cart_crud.get_or_create_cart(db, session_id=session_id)
-    
-    await cart_crud.add_item_to_cart(
-        db, cart.id, request.product_id, request.quantity, request.variant_id
-    )
-    
-    return SuccessResponse(message="Item added to cart successfully")
+    try:
+        cart_crud = CartCrud()
+        
+        # CRITICAL: Ensure user exists before attempting cart operations
+        # This prevents ForeignKeyViolationError when creating cart
+        if current_user:
+            user_id = current_user["id"]
+            logger.info(f"Ensuring user {user_id} exists before cart operations")
+            
+            # Quick check via REST API to ensure user exists (bypasses transaction isolation)
+            try:
+                # Use admin_client (service role) for reliable access
+                from app.features.auth.cruds.auth_crud import AuthCrud
+                auth_crud = AuthCrud()
+                supabase = auth_crud.admin_client
+                user_check = supabase.table("users").select("id").eq("id", user_id).limit(1).execute()
+                
+                if not user_check.data or len(user_check.data) == 0:
+                    logger.warning(f"User {user_id} not found in Supabase, get_or_create_cart will create it")
+                else:
+                    logger.info(f"✅ User {user_id} verified in Supabase before cart operations")
+            except Exception as user_check_err:
+                logger.warning(f"User verification check failed (will proceed): {user_check_err}")
+            
+            logger.info(f"🔍 Getting or creating cart for user_id: {user_id}")
+            cart = await cart_crud.get_or_create_cart(db, user_id=user_id)
+            logger.info(f"✅ Cart retrieved/created: {cart.id}")
+        else:
+            if not session_id:
+                raise ValidationException("Session ID is required for guest users")
+            cart = await cart_crud.get_or_create_cart(db, session_id=session_id)
+        
+        logger.info(f"🛒 Adding item to cart: Cart={cart.id}, Product={request.product_id}, Qty={request.quantity}, Variant={request.variant_id}")
+        cart_item = await cart_crud.add_item_to_cart(
+            db, str(cart.id), request.product_id, request.quantity, request.variant_id
+        )
+        logger.info(f"✅✅ Route: Item successfully added, CartItem ID: {cart_item.id}")
+        
+        return SuccessResponse(message="Item added to cart successfully")
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error adding item to cart: {str(e)}\n{error_details}", exc_info=True)
+        # Convert to HTTPException with detailed error message for debugging
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to add item to cart: {str(e)}"
+        )
 
 
 @orders_buyer_router.put("/cart/items/{cart_item_id}", response_model=SuccessResponse)

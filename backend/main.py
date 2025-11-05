@@ -1,6 +1,7 @@
 import uvicorn
 from datetime import datetime
 from fastapi import FastAPI, Request, status
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
@@ -26,6 +27,7 @@ from app.features.orders.routes.orders_admin_routes import orders_admin_router
 from app.features.analytics.routes.analytics_routes import analytics_router
 from app.features.analytics.routes.dashboard_routes import dashboard_router
 from app.features.products.routes.optimized_upload_routes import router as optimized_upload_router
+from app.features.products.routes.bulk_import_routes import router as bulk_import_router
 
 app_logger = get_logger("main")
 
@@ -72,18 +74,40 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# CORS Configuration - Always allow localhost for development
+allowed_origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:5176",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5176",
+]
+
+# If settings has specific origins and it's not wildcard, use those
+if settings.CORS_ORIGINS and settings.CORS_ORIGINS != ["*"]:
+    allowed_origins = list(set(allowed_origins + settings.CORS_ORIGINS))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
+
+# Serve local media when Supabase isn't available
+try:
+    app.mount("/media", StaticFiles(directory="media"), name="media")
+except Exception:
+    pass
 
 @app.exception_handler(AveoException)
 async def aveo_exception_handler(request: Request, exc: AveoException):
     app_logger.error(f"AveoException: {exc.message} - {request.url}")
-    return JSONResponse(
+    response = JSONResponse(
         status_code=exc.status_code,
         content={
             "detail": exc.message,
@@ -91,11 +115,18 @@ async def aveo_exception_handler(request: Request, exc: AveoException):
             "path": str(request.url.path)
         }
     )
+    # Add CORS headers to error responses
+    origin = request.headers.get("origin", "http://localhost:5173")
+    response.headers["Access-Control-Allow-Origin"] = origin
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     app_logger.error(f"Unhandled exception: {str(exc)} - {request.url}", exc_info=True)
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "detail": "Internal server error",
@@ -103,6 +134,12 @@ async def global_exception_handler(request: Request, exc: Exception):
             "path": str(request.url.path)
         }
     )
+    # Add CORS headers to error responses
+    response.headers["Access-Control-Allow-Origin"] = request.headers.get("origin", "http://localhost:5173")
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 app.include_router(auth_router)
 app.include_router(profile_router)
@@ -123,6 +160,7 @@ app.include_router(orders_admin_router)
 app.include_router(analytics_router)
 app.include_router(dashboard_router)
 app.include_router(optimized_upload_router)
+app.include_router(bulk_import_router)
 
 @app.get("/")
 async def root():

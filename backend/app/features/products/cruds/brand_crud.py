@@ -57,7 +57,11 @@ class BrandCrud(BaseCrud[Brand]):
             logger.error(f"Error updating brand {brand_id}: {str(e)}")
             raise
 
-    async def get_active_brands(self, db: AsyncSession) -> List[Dict[str, Any]]:
+    async def get_active_brands(self, db: Optional[AsyncSession]) -> List[Dict[str, Any]]:
+        # Handle case when database is not available
+        if db is None:
+            logger.warning("Database not available, returning empty brands list")
+            return []
         try:
             result = await db.execute(
                 select(Brand)

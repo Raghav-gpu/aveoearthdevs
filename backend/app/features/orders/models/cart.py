@@ -82,7 +82,7 @@ class CartItem(BaseUUID, BaseTimeStamp, Base):
         self.total_price = self.quantity * self.unit_price
     
     def to_dict(self):
-        return {
+        result = {
             "id": str(self.id),
             "cart_id": str(self.cart_id),
             "product_id": str(self.product_id),
@@ -90,6 +90,16 @@ class CartItem(BaseUUID, BaseTimeStamp, Base):
             "quantity": self.quantity,
             "unit_price": float(self.unit_price) if self.unit_price else 0,
             "total_price": float(self.total_price) if self.total_price else 0,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else "",
+            "updated_at": self.updated_at.isoformat() if self.updated_at else ""
         }
+        # Add optional product/variant info if available
+        if hasattr(self, 'product') and self.product:
+            result["product_name"] = getattr(self.product, 'name', None)
+            result["product_slug"] = getattr(self.product, 'slug', None)
+            result["sku"] = getattr(self.product, 'sku', None)
+        if hasattr(self, 'variant') and self.variant:
+            result["variant_title"] = getattr(self.variant, 'title', None)
+            if getattr(self.variant, 'sku', None):
+                result["sku"] = getattr(self.variant, 'sku', None)
+        return result

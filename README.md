@@ -2,6 +2,30 @@
 
 A comprehensive eco-conscious marketplace platform built with Next.js, FastAPI, and Supabase.
 
+## 📁 Project Structure
+
+```
+aveoearthdevs/
+├── backend/              # FastAPI backend application
+├── frontend/             # Next.js frontend (legacy)
+├── frontend1/            # React frontend (current)
+├── ai/                   # AI service microservice
+├── tests/                # All test files (JS, Python)
+├── docs/                 # Documentation and guides
+├── scripts/              # Utility scripts and SQL files
+│   └── sql/             # Database setup and migration scripts
+├── test-data/            # Test data files (CSV, images)
+├── test-results/         # Test output files and reports
+└── README.md            # This file
+```
+
+## 📚 Quick Links
+
+- **Tests**: See `tests/README.md` for test documentation
+- **Documentation**: See `docs/README.md` for all guides
+- **Scripts**: See `scripts/README.md` for utility scripts
+- **Test Results**: See `test-results/README.md` for test reports
+
 ## 🚀 Features
 
 - **Eco-Conscious Design**: Beautiful green and brown earth-tone gradient theme
@@ -62,7 +86,7 @@ python simple_main.py
 ```
 Verification API will be available at `http://localhost:8001`
 
-## 📁 Project Structure
+## 📁 Detailed Project Structure
 
 ```
 aveo-earth-mvp/
@@ -72,12 +96,19 @@ aveo-earth-mvp/
 │   │   ├── components/      # Reusable components
 │   │   ├── hooks/          # Custom React hooks
 │   │   └── lib/            # Utilities and API client
+├── frontend1/               # React frontend (current)
 ├── backend/                 # FastAPI backend
 │   ├── app/
 │   │   ├── features/       # Feature-based modules
 │   │   ├── core/          # Core utilities
 │   │   └── database/      # Database models
+├── ai/                      # AI service microservice
 ├── product_verification/    # AI verification service
+├── tests/                   # All test files
+├── docs/                    # Documentation
+├── scripts/                 # Utility scripts
+├── test-data/               # Test data files
+├── test-results/            # Test results and reports
 └── docker-compose.yml      # Docker configuration
 ```
 

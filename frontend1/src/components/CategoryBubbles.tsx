@@ -21,7 +21,7 @@ const customColors = {
     'default': { text: 'text-green-700', bgLight: 'bg-green-100', border: 'border-green-300' }, 
 };
 
-// --- Category Data (Using imported variables) ---
+// --- Category Data (Using imported variables) - TOP 6 CATEGORIES ONLY ---
 const categories = [
     {
         id: "home-living",
@@ -34,84 +34,6 @@ const categories = [
             { name: "Bamboo Kitchen Set", price: "₹1,299", eco: "Biodegradable" },
             { name: "Organic Cotton Towels", price: "₹899", eco: "Organic" },
             { name: "Beeswax Food Wraps", price: "₹549", eco: "Compostable" }
-        ]
-    },
-    {
-        id: "zero-waste",
-        name: "Zero Waste",
-        description: "Reusable, refillable and compostable everyday essentials",
-        icon: Home,
-        image: homeLivingImage,
-        colorKey: "clay-accent",
-        products: [
-            { name: "Steel Straw Set", price: "₹299", eco: "Reusable" },
-            { name: "Compost Bin", price: "₹1,299", eco: "Compostable" },
-            { name: "Refill Soap", price: "₹399", eco: "Low Waste" }
-        ]
-    },
-    {
-        id: "eco-tech",
-        name: "Eco Tech",
-        description: "Energy-saving gadgets and sustainably-made accessories",
-        icon: Sparkles,
-        image: upcycledImage,
-        colorKey: "forest-deep",
-        products: [
-            { name: "Solar Power Bank", price: "₹1,999", eco: "Solar" },
-            { name: "Bamboo Keyboard", price: "₹2,499", eco: "Natural" },
-            { name: "Recycled Cable", price: "₹399", eco: "Recycled" }
-        ]
-    },
-    {
-        id: "kids-baby",
-        name: "Kids & Baby",
-        description: "Gentle, organic and safe for little ones",
-        icon: Heart,
-        image: beautyImage,
-        colorKey: "sage",
-        products: [
-            { name: "Organic Swaddle", price: "₹1,299", eco: "Organic" },
-            { name: "Wooden Toy Set", price: "₹1,499", eco: "Plastic-free" },
-            { name: "Natural Lotion", price: "₹599", eco: "Gentle" }
-        ]
-    },
-    {
-        id: "outdoor-travel",
-        name: "Outdoor & Travel",
-        description: "Durable gear made with sustainable materials",
-        icon: Dumbbell,
-        image: fitnessImage,
-        colorKey: "moss-accent",
-        products: [
-            { name: "Steel Flask", price: "₹899", eco: "Reusable" },
-            { name: "Recycled Backpack", price: "₹2,999", eco: "Recycled" },
-            { name: "Bamboo Cutlery Kit", price: "₹399", eco: "Zero Waste" }
-        ]
-    },
-    {
-        id: "office-stationery",
-        name: "Office & Stationery",
-        description: "Recycled paper goods and plastic-free desk tools",
-        icon: Palette,
-        image: upcycledImage,
-        colorKey: "clay-accent",
-        products: [
-            { name: "Recycled Notebook", price: "₹249", eco: "Recycled" },
-            { name: "Bamboo Pen Set", price: "₹349", eco: "Plastic-free" },
-            { name: "Cork Mousepad", price: "₹499", eco: "Natural" }
-        ]
-    },
-    {
-        id: "groceries-pantry",
-        name: "Groceries & Pantry",
-        description: "Organic staples and plastic-free kitchen refills",
-        icon: Home,
-        image: homeLivingImage,
-        colorKey: "forest-deep",
-        products: [
-            { name: "Organic Quinoa", price: "₹399", eco: "Organic" },
-            { name: "Bulk Spices", price: "₹199", eco: "Low Waste" },
-            { name: "Coconut Sugar", price: "₹249", eco: "Natural" }
         ]
     },
     {
