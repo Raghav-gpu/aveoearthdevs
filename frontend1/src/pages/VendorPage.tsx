@@ -21,6 +21,9 @@ import {
 const VendorPage = () => {
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const navigate = useNavigate();
+
+  // Show onboarding form by default (register mode)
+  // User can switch to login mode
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -172,7 +175,7 @@ const VendorPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Mode Toggle - Sign In and Register */}
+            {/* Mode Toggle - Only Sign In, Register shows onboarding form */}
             <div className="flex bg-gradient-to-r from-forest/10 to-moss/10 rounded-2xl p-1 mb-6 shadow-lg">
               <button
                 onClick={() => setMode('login')}
@@ -184,7 +187,7 @@ const VendorPage = () => {
                 onClick={() => setMode('register')}
                 className="flex-1 py-3 px-4 text-sm font-semibold rounded-xl transition-all duration-300 text-forest hover:text-moss hover:bg-forest/5 hover:scale-105"
               >
-                Register
+                New Registration
               </button>
             </div>
 
