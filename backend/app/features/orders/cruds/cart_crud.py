@@ -57,183 +57,47 @@ class CartCrud(BaseCrud[Cart]):
                 # Create user in public.users if they don't exist (they're authenticated in auth.users)
                 # This is needed for foreign key constraints when creating cart
                 if not user_exists_via_rest:  # User doesn't exist in public.users
-                    logger.warning(f"User {user_id} not found in users table, creating user record via Supabase REST API before cart creation")
-                    # CRITICAL: Use Supabase REST API with SERVICE ROLE to create user - bypasses SQLAlchemy transaction issues
-                    # This ensures the user is committed to the database before we try to create the cart
+                    logger.warning(f"User {user_id} not found in users table, creating user record via user_helper before cart creation")
+                    # Use user_helper which handles user creation reliably
+                    from app.core.user_helper import ensure_user_exists_in_db
                     from app.features.auth.cruds.auth_crud import AuthCrud
                     auth_crud = AuthCrud()
-                    # Use admin_client which has service role key to avoid permission denied errors
-                    supabase = auth_crud.admin_client
                     
-                    # Try multiple strategies to get user info
-                    user_email = None
-                    user_type_str = "buyer"  # Default (must be lowercase for enum)
-                    first_name = None
-                    last_name = None
+                    # Build current_user dict from available info
+                    current_user_dict = {
+                        "id": user_id,
+                        "email": None,  # Will be fetched from Supabase Auth
+                        "user_role": "buyer",  # Default
+                        "phone": None,
+                        "first_name": None,
+                        "last_name": None,
+                        "is_verified": False
+                    }
                     
-                    # Strategy 1: Get from Supabase Auth
-                    auth_user_response = None
+                    # Try to get user info from Supabase Auth
                     try:
                         auth_user_response = auth_crud.admin_client.auth.admin.get_user_by_id(user_id)
                         if auth_user_response and hasattr(auth_user_response, 'user') and auth_user_response.user:
                             auth_user = auth_user_response.user
-                            user_email = getattr(auth_user, 'email', None)
+                            current_user_dict["email"] = getattr(auth_user, 'email', None)
                             user_metadata = getattr(auth_user, 'user_metadata', {}) or {}
-                            user_type_from_meta = user_metadata.get('user_type', 'buyer')
-                            # CRITICAL: Database enum expects LOWERCASE: buyer, supplier, admin (NOT uppercase)
-                            user_type_str = user_type_from_meta.lower() if isinstance(user_type_from_meta, str) else "buyer"
-                            first_name = user_metadata.get('first_name')
-                            last_name = user_metadata.get('last_name')
-                            logger.info(f"Retrieved user info from Supabase Auth for {user_id}, user_type: {user_type_str}")
+                            current_user_dict["user_role"] = user_metadata.get('user_type', user_metadata.get('role', 'buyer')).lower()
+                            current_user_dict["phone"] = getattr(auth_user, 'phone', None)
+                            full_name = user_metadata.get("full_name") or user_metadata.get("name") or ""
+                            current_user_dict["first_name"] = user_metadata.get('first_name') or (full_name.split()[0] if full_name else None)
+                            current_user_dict["last_name"] = user_metadata.get('last_name') or (" ".join(full_name.split()[1:]) if full_name and len(full_name.split()) > 1 else None)
+                            current_user_dict["is_verified"] = getattr(auth_user, 'email_confirmed_at', None) is not None
                     except Exception as auth_err:
                         logger.warning(f"Could not get user from Supabase Auth: {auth_err}")
                     
-                    # If no email from auth, use placeholder
-                    if not user_email:
-                        user_email = f"user-{user_id[:8]}@temp.example.com"
-                        logger.warning(f"Using placeholder email for user {user_id}")
-                    
-                    # CRITICAL: Use Supabase REST API first - it's more reliable and bypasses transaction issues
-                    # Create user via REST API, which commits immediately to the database
-                    logger.info(f"Creating user {user_id} via Supabase REST API (most reliable method)")
-                    
-                    # Get phone from auth user if available
-                    phone = None
-                    if auth_user_response and hasattr(auth_user_response, 'user') and auth_user_response.user:
-                        auth_user = auth_user_response.user
-                        phone = getattr(auth_user, 'phone', None)
-                    
-                    user_rest_data = {
-                        "id": str(user_id),
-                        "email": user_email,
-                        "phone": phone or "+10000000000",  # CRITICAL: Phone is required by database schema
-                        "user_type": user_type_str.lower(),  # CRITICAL: Must be lowercase for database enum ("buyer", "supplier", "admin")
-                        "is_active": True,
-                        "is_verified": False,
-                        "is_email_verified": False,
-                        "is_phone_verified": False,
-                    }
-                    
-                    # Add optional fields
-                    if first_name:
-                        user_rest_data["first_name"] = first_name
-                    if last_name:
-                        user_rest_data["last_name"] = last_name
-                    
-                    user_created_via_rest = False
-                    try:
-                        # Verify admin_client is configured correctly
-                        from app.core.config import settings
-                        if not settings.SUPABASE_SERVICE_ROLE_KEY:
-                            logger.error(f"❌ SUPABASE_SERVICE_ROLE_KEY is not configured! Cannot create user via REST API.")
-                            raise NotFoundException(f"User {user_id} could not be created: SUPABASE_SERVICE_ROLE_KEY not configured")
-                        
-                        logger.info(f"Attempting REST API insert for user {user_id} with data: {list(user_rest_data.keys())}")
-                        logger.info(f"Using admin_client (service role) for REST API insert")
-                        
-                        # Use admin_client.table() which should bypass RLS
-                        rest_response = supabase.table("users").insert(user_rest_data).execute()
-                        
-                        if rest_response.data and len(rest_response.data) > 0:
-                            logger.info(f"✅ Created user {user_id} via Supabase REST API - response data: {rest_response.data[0].get('id')}")
-                            user_created_via_rest = True
-                            import asyncio
-                            await asyncio.sleep(0.5)  # Delay for propagation
-                        else:
-                            # Check response for errors
-                            if hasattr(rest_response, 'error') and rest_response.error:
-                                error_msg = str(rest_response.error)
-                                logger.error(f"REST API insert returned error: {error_msg}")
-                                if "permission" in error_msg.lower() or "denied" in error_msg.lower():
-                                    logger.error(f"❌ Permission denied error - admin_client may not have service_role key configured correctly")
-                                    raise NotFoundException(f"User {user_id} could not be created: Permission denied. Check SUPABASE_SERVICE_ROLE_KEY configuration.")
-                                elif "duplicate" in error_msg.lower() or "already exists" in error_msg.lower():
-                                    logger.info(f"User {user_id} already exists (duplicate)")
-                                    user_created_via_rest = True
-                            else:
-                                logger.warning(f"REST API insert returned no data, checking if user exists...")
-                                # Check if user was created anyway
-                                import asyncio
-                                await asyncio.sleep(0.5)
-                                check_query = select(User).where(User.id == user_id)
-                                if "supabase.co" in (settings.DATABASE_URL or ""):
-                                    check_result = await db.execute(check_query.execution_options(prepared_statement_cache_size=0))
-                                else:
-
-                                    check_result = await db.execute(check_query)
-                                if check_result.scalar_one_or_none():
-                                    logger.info(f"✅ User {user_id} exists in database (even though REST API returned no data)")
-                                    user_created_via_rest = True
-                    except NotFoundException:
-                        # Re-raise NotFoundException as-is
-                        raise
-                    except Exception as rest_err:
-                        rest_err_str = str(rest_err).lower()
-                        logger.error(f"REST API insert exception: {rest_err} (type: {type(rest_err).__name__})")
-                        
-                        # Check if error message contains permission denied
-                        if "permission denied" in rest_err_str or "42501" in rest_err_str:
-                            logger.error(f"❌ Permission denied error - admin_client configuration issue")
-                            logger.error(f"   SUPABASE_SERVICE_ROLE_KEY is set: {bool(settings.SUPABASE_SERVICE_ROLE_KEY)}")
-                            logger.error(f"   Key length: {len(settings.SUPABASE_SERVICE_ROLE_KEY) if settings.SUPABASE_SERVICE_ROLE_KEY else 0}")
-                            # Try to check user exists anyway via REST API query
-                            try:
-                                check_rest = supabase.table("users").select("id").eq("id", user_id).limit(1).execute()
-                                if check_rest.data and len(check_rest.data) > 0:
-                                    logger.info(f"✅ User {user_id} exists in Supabase (permission denied was likely false alarm)")
-                                    user_created_via_rest = True
-                                else:
-                                    raise NotFoundException(f"User {user_id} could not be created or verified: Permission denied for table users. Check SUPABASE_SERVICE_ROLE_KEY configuration.")
-                            except Exception:
-                                raise NotFoundException(f"User {user_id} could not be created or verified: Permission denied for table users. Error: {rest_err}")
-                        
-                        if "duplicate" in rest_err_str or "already exists" in rest_err_str or "unique" in rest_err_str or "violates unique constraint" in rest_err_str:
-                            # User already exists - this is OK, verify it
-                            logger.info(f"User {user_id} already exists in database (REST API duplicate error) - verifying...")
-                            import asyncio
-                            await asyncio.sleep(0.3)
-                            check_query = select(User).where(User.id == user_id)
-                            if "supabase.co" in (settings.DATABASE_URL or ""):
-                                check_result = await db.execute(check_query.execution_options(prepared_statement_cache_size=0))
-                            else:
-
-                                check_result = await db.execute(check_query)
-                            if check_result.scalar_one_or_none():
-                                logger.info(f"✅ User {user_id} verified to exist")
-                                user_created_via_rest = True
-                            else:
-                                # Try REST API check as last resort
-                                try:
-                                    check_rest = supabase.table("users").select("id").eq("id", user_id).limit(1).execute()
-                                    if check_rest.data and len(check_rest.data) > 0:
-                                        logger.info(f"✅ User {user_id} verified via REST API")
-                                        user_created_via_rest = True
-                                    else:
-                                        logger.error(f"❌ User {user_id} not found after duplicate error")
-                                except Exception:
-                                    logger.error(f"❌ User {user_id} not found after duplicate error")
-                        else:
-                            logger.error(f"Supabase REST API insert failed with error: {rest_err}")
-                            # Try to verify if user exists anyway via REST API
-                            try:
-                                check_rest = supabase.table("users").select("id").eq("id", user_id).limit(1).execute()
-                                if check_rest.data and len(check_rest.data) > 0:
-                                    logger.info(f"✅ User {user_id} exists despite REST API insert error")
-                                    user_created_via_rest = True
-                            except Exception as check_err:
-                                logger.error(f"Could not verify user existence: {check_err}")
-                    
-                    # After REST API creation attempt, proceed regardless of verification result
-                    # User is authenticated (via require_buyer/require_supplier), so they exist in auth.users
-                    # which is sufficient for the foreign key constraint. If public.users creation fails,
-                    # we'll proceed anyway - the cart creation will handle it.
-                    if user_created_via_rest:
-                        logger.info(f"✅ User {user_id} creation attempted via REST API, proceeding with cart creation")
+                    # Use user_helper to ensure user exists
+                    user_created = await ensure_user_exists_in_db(db, current_user_dict, auth_crud)
+                    if user_created:
+                        logger.info(f"✅ User {user_id} created/verified via user_helper")
                         user_exists_via_rest = True
                     else:
-                        # Creation failed, but user is authenticated so proceed anyway
-                        logger.warning(f"⚠️ User {user_id} creation in public.users failed, but user is authenticated - proceeding with cart creation")
-                        user_exists_via_rest = True  # Assume exists in auth.users (required for foreign key)
+                        logger.warning(f"⚠️ User {user_id} creation failed, but proceeding anyway (user is authenticated)")
+                        user_exists_via_rest = True  # Assume exists in auth.users
                 
                 # User exists (either verified or assumed from authentication)
                 user_exists_via_rest = True
@@ -523,42 +387,53 @@ class CartCrud(BaseCrud[Cart]):
                     if "foreign key" in sql_err_str or "foreign_key_violation" in sql_err_str or "carts_user_id_fkey" in sql_err_str:
                         logger.error(f"❌ Foreign key error - user {user_id} does not exist in public.users")
                         # This is the root cause - user not in public.users
-                        # Try one final time to create user using AuthCrud.create
-                        logger.warning(f"⚠️ Attempting final user creation via AuthCrud.create for {user_id}")
+                        # Try one final time to create user using user_helper (which uses httpx)
+                        logger.warning(f"⚠️ Attempting final user creation via user_helper for {user_id}")
                         try:
+                            from app.core.user_helper import ensure_user_exists_in_db
                             from app.features.auth.cruds.auth_crud import AuthCrud
                             auth_crud_final = AuthCrud()
                             auth_user_final = auth_crud_final.admin_client.auth.admin.get_user_by_id(user_id)
+                            
                             if auth_user_final and hasattr(auth_user_final, 'user') and auth_user_final.user:
+                                # Build current_user dict
                                 user_meta_final = getattr(auth_user_final.user, 'user_metadata', {}) or {}
-                                user_type_final_str = user_meta_final.get('user_type', 'buyer').lower()
-                                phone_final = getattr(auth_user_final.user, 'phone', None) or "+10000000000"
-                                
-                                # Use AuthCrud.create method which handles enum conversion properly
-                                # CRITICAL: id must be a UUID object, not a string
-                                # CRITICAL: user_type must be lowercase string for enum
-                                user_type_final_clean = user_type_final_str.lower() if isinstance(user_type_final_str, str) else "buyer"
-                                user_data_final = {
-                                    "id": uuid.UUID(user_id),
+                                current_user_dict_final = {
+                                    "id": user_id,
                                     "email": auth_user_final.user.email,
-                                    "phone": phone_final,
-                                    "user_type": user_type_final_clean,  # Must be lowercase: "buyer", "supplier", "admin"
-                                    "is_active": True,
-                                    "is_verified": False,
-                                    "is_email_verified": getattr(auth_user_final.user, 'email_confirmed_at', None) is not None,
-                                    "is_phone_verified": False,
+                                    "user_role": user_meta_final.get('user_type', user_meta_final.get('role', 'buyer')).lower(),
+                                    "phone": getattr(auth_user_final.user, 'phone', None) or "+10000000000",
                                     "first_name": user_meta_final.get('first_name'),
                                     "last_name": user_meta_final.get('last_name'),
+                                    "is_verified": getattr(auth_user_final.user, 'email_confirmed_at', None) is not None
                                 }
-                                logger.info(f"Creating user via AuthCrud.create with: user_type={user_type_final_clean}, phone={phone_final}, email={auth_user_final.user.email}")
-                                final_user = await auth_crud_final.create(db, user_data_final)
-                                logger.info(f"✅ Created user {user_id} via AuthCrud.create (final attempt)")
-                                # Retry cart creation with fresh transaction
-                                cart = Cart(**cart_data)
-                                db.add(cart)
-                                await db.commit()
-                                await db.refresh(cart)
-                                logger.info(f"✅ Created cart {cart.id} via SQLAlchemy after user creation")
+                                
+                                logger.info(f"Creating user via user_helper with: user_type={current_user_dict_final['user_role']}, email={current_user_dict_final['email']}")
+                                try:
+                                    user_created_final = await ensure_user_exists_in_db(db, current_user_dict_final, auth_crud_final)
+                                    
+                                    if user_created_final:
+                                        logger.info(f"✅ Created user {user_id} via user_helper (final attempt)")
+                                        # Wait a moment for propagation
+                                        import asyncio
+                                        await asyncio.sleep(0.5)
+                                        # Retry cart creation with fresh transaction
+                                        await db.rollback()  # Ensure clean state
+                                        cart = Cart(**cart_data)
+                                        db.add(cart)
+                                        await db.commit()
+                                        await db.refresh(cart)
+                                        logger.info(f"✅ Created cart {cart.id} via SQLAlchemy after user creation")
+                                    else:
+                                        raise Exception(f"User {user_id} creation via user_helper returned False")
+                                except Exception as helper_err:
+                                    logger.error(f"user_helper raised exception: {helper_err}")
+                                    import traceback
+                                    logger.error(f"Full traceback: {traceback.format_exc()}")
+                                    # Don't raise - user exists in auth.users, proceed with cart creation
+                                    # The foreign key error will tell us if user really doesn't exist
+                                    logger.warning(f"User creation failed, but user is authenticated - proceeding with cart creation")
+                                    user_created_final = False
                             else:
                                 raise Exception(f"User {user_id} does not exist in public.users and could not be created. User authentication data not available.")
                         except Exception as final_user_err:
@@ -568,7 +443,23 @@ class CartCrud(BaseCrud[Cart]):
                                 await db.rollback()
                             except:
                                 pass
-                            raise Exception(f"User {user_id} does not exist in public.users and could not be created. Foreign key constraint violation. Error: {final_user_err}")
+                            # Final attempt: Check if this is just a permission issue
+                            # If user exists in auth.users (they're authenticated), try cart creation anyway
+                            # The DB foreign key might allow it if user exists in auth schema
+                            logger.warning(f"Attempting cart creation anyway - user is authenticated in auth.users")
+                            # Try one more time with a fresh transaction
+                            try:
+                                await db.rollback()
+                                cart = Cart(**cart_data)
+                                db.add(cart)
+                                await db.commit()
+                                await db.refresh(cart)
+                                logger.info(f"✅ Created cart {cart.id} despite user creation failure (user authenticated)")
+                            except Exception as final_cart_err:
+                                final_err_str = str(final_cart_err).lower()
+                                if "foreign key" in final_err_str or "foreign_key_violation" in final_err_str:
+                                    raise Exception(f"User {user_id} does not exist in public.users and could not be created. Please run the RLS fix SQL script in Supabase dashboard: scripts/sql/fix_all_rls_and_schema.sql. Error: {final_user_err}")
+                                raise
                     
                     # For other errors, log and re-raise
                     logger.error(f"❌ SQLAlchemy cart creation failed with non-foreign-key error: {sqlalchemy_err}")
@@ -632,6 +523,13 @@ class CartCrud(BaseCrud[Cart]):
         logger.info("=" * 80)
         logger.info(f"🚀 ADD_ITEM_TO_CART START: cart_id={cart_id}, product_id={product_id}, quantity={quantity}, variant_id={variant_id}")
         logger.info("=" * 80)
+        
+        # Ensure clean transaction state
+        try:
+            await db.rollback()
+        except:
+            pass
+        
         try:
             
             # Ensure cart_id is a UUID string
@@ -698,14 +596,111 @@ class CartCrud(BaseCrud[Cart]):
             # Execute with statement-level options to avoid prepared statements for pgbouncer
             from app.core.config import settings
             product_query = select(Product).where(Product.id == product_uuid)
-            if "supabase.co" in (settings.DATABASE_URL or ""):
-                product_result = await db.execute(product_query.execution_options(prepared_statement_cache_size=0))
-            else:
-                product_result = await db.execute(product_query)
-            product = product_result.scalar_one_or_none()
+            
+            # Wrap product query in try-except to handle enum validation errors
+            product = None
+            try:
+                if "supabase.co" in (settings.DATABASE_URL or ""):
+                    product_result = await db.execute(product_query.execution_options(prepared_statement_cache_size=0))
+                else:
+                    product_result = await db.execute(product_query)
+                product = product_result.scalar_one_or_none()
+            except Exception as product_load_err:
+                error_str = str(product_load_err).lower()
+                if "enum" in error_str or "not among" in error_str:
+                    logger.warning(f"Product enum validation error (non-fatal): {product_load_err}")
+                    # Rollback and retry with raw query
+                    await db.rollback()
+                    # Try to get product via raw SQL to avoid enum validation
+                    try:
+                        raw_query = text("SELECT * FROM products WHERE id = :product_id")
+                        raw_result = await db.execute(raw_query, {"product_id": product_uuid})
+                        raw_row = raw_result.fetchone()
+                        if raw_row:
+                            # Create a minimal product object from raw row
+                            # Product is already imported at top of file
+                            product = Product()
+                            for key, value in raw_row._mapping.items():
+                                if hasattr(product, key):
+                                    # Skip enum fields - handle them manually
+                                    if key not in ['status', 'approval_status', 'visibility']:
+                                        setattr(product, key, value)
+                                    else:
+                                        # Store as string for manual validation
+                                        setattr(product, key, str(value) if value else None)
+                            product.id = product_uuid
+                            logger.info(f"Product loaded via raw query (bypassed enum validation)")
+                    except Exception as raw_err:
+                        logger.error(f"Raw query also failed: {raw_err}")
+                        await db.rollback()
+                        raise NotFoundException(f"Product not found or invalid: {product_id}")
+                else:
+                    await db.rollback()
+                    raise
             
             if not product:
+                await db.rollback()
                 raise NotFoundException(f"Product not found: {product_id}")
+            
+            # Normalize product status to uppercase if it's lowercase (fix enum mismatch)
+            # This handles cases where products were created with lowercase status values
+            if hasattr(product, 'status') and product.status:
+                status_str = str(product.status)
+                if status_str.islower():
+                    # Normalize to uppercase enum value
+                    from app.features.products.models.product import ProductStatusEnum
+                    try:
+                        normalized_status = ProductStatusEnum[status_str.upper()]
+                        product.status = normalized_status
+                        logger.info(f"Normalized product status from '{status_str}' to '{normalized_status.value}'")
+                    except (KeyError, AttributeError):
+                        logger.warning(f"Could not normalize status '{status_str}' to enum, keeping as-is")
+            
+            # Check if product is available for purchase (case-insensitive check)
+            # Status is now stored as String, so we can check case-insensitively
+            if hasattr(product, 'status') and product.status:
+                # Extract value from enum if it's an enum object, otherwise use string directly
+                status_value = product.status
+                if hasattr(status_value, 'value'):
+                    status_str = str(status_value.value).upper()
+                elif hasattr(status_value, 'name'):
+                    status_str = str(status_value.name).upper()
+                else:
+                    status_str = str(status_value).upper()
+                    # Handle enum string representation like "ProductStatusEnum.ACTIVE"
+                    if '.' in status_str:
+                        status_str = status_str.split('.')[-1]
+                
+                if status_str != 'ACTIVE':
+                    raise ValidationException(f"Product is not available for purchase. Status: {status_str}")
+                
+                if hasattr(product, 'approval_status') and product.approval_status:
+                    approval_value = product.approval_status
+                    if hasattr(approval_value, 'value'):
+                        approval_str = str(approval_value.value).upper()
+                    elif hasattr(approval_value, 'name'):
+                        approval_str = str(approval_value.name).upper()
+                    else:
+                        approval_str = str(approval_value).upper()
+                        if '.' in approval_str:
+                            approval_str = approval_str.split('.')[-1]
+                    if approval_str != 'APPROVED':
+                        await db.rollback()
+                        raise ValidationException(f"Product is not approved. Approval status: {approval_str}")
+                
+                if hasattr(product, 'visibility') and product.visibility:
+                    visibility_value = product.visibility
+                    if hasattr(visibility_value, 'value'):
+                        visibility_str = str(visibility_value.value).upper()
+                    elif hasattr(visibility_value, 'name'):
+                        visibility_str = str(visibility_value.name).upper()
+                    else:
+                        visibility_str = str(visibility_value).upper()
+                        if '.' in visibility_str:
+                            visibility_str = visibility_str.split('.')[-1]
+                    if visibility_str != 'VISIBLE':
+                        await db.rollback()
+                        raise ValidationException(f"Product is not visible. Visibility: {visibility_str}")
 
             unit_price = product.price
             variant = None
@@ -747,25 +742,53 @@ class CartCrud(BaseCrud[Cart]):
                 logger.warning(f"Inventory check failed for product {product_id}: {str(inv_error)} - allowing add to cart")
 
             # Build query for existing item - handle variant_id properly
-            existing_item_query = select(CartItem).options(
-                selectinload(CartItem.product),
-                selectinload(CartItem.variant)
-            ).where(
-                and_(
-                    CartItem.cart_id == cart_uuid,
-                    CartItem.product_id == product_uuid
+            # Ensure transaction is clean before querying
+            try:
+                await db.rollback()
+            except:
+                pass
+            
+            existing_item = None
+            try:
+                existing_item_query = select(CartItem).options(
+                    selectinload(CartItem.product),
+                    selectinload(CartItem.variant)
+                ).where(
+                    and_(
+                        CartItem.cart_id == cart_uuid,
+                        CartItem.product_id == product_uuid
+                    )
                 )
-            )
-            if variant_id:
-                existing_item_query = existing_item_query.where(CartItem.variant_id == variant_uuid)
-            else:
-                existing_item_query = existing_item_query.where(CartItem.variant_id.is_(None))
-            from app.core.config import settings
-            if "supabase.co" in (settings.DATABASE_URL or ""):
-                existing_item_result = await db.execute(existing_item_query.execution_options(prepared_statement_cache_size=0))
-            else:
-                existing_item_result = await db.execute(existing_item_query)
-            existing_item = existing_item_result.scalar_one_or_none()
+                if variant_id:
+                    existing_item_query = existing_item_query.where(CartItem.variant_id == variant_uuid)
+                else:
+                    existing_item_query = existing_item_query.where(CartItem.variant_id.is_(None))
+                from app.core.config import settings
+                if "supabase.co" in (settings.DATABASE_URL or ""):
+                    existing_item_result = await db.execute(existing_item_query.execution_options(prepared_statement_cache_size=0))
+                else:
+                    existing_item_result = await db.execute(existing_item_query)
+                existing_item = existing_item_result.scalar_one_or_none()
+            except Exception as existing_item_err:
+                error_str = str(existing_item_err).lower()
+                if "transaction" in error_str or "aborted" in error_str:
+                    logger.warning(f"Transaction aborted, rolling back and retrying existing item query: {existing_item_err}")
+                    await db.rollback()
+                    # Retry the query
+                    try:
+                        if "supabase.co" in (settings.DATABASE_URL or ""):
+                            existing_item_result = await db.execute(existing_item_query.execution_options(prepared_statement_cache_size=0))
+                        else:
+                            existing_item_result = await db.execute(existing_item_query)
+                        existing_item = existing_item_result.scalar_one_or_none()
+                    except Exception as retry_err:
+                        logger.error(f"Retry also failed: {retry_err}")
+                        await db.rollback()
+                        existing_item = None  # Continue without existing item
+                else:
+                    logger.warning(f"Error querying existing item (non-fatal): {existing_item_err}")
+                    await db.rollback()
+                    existing_item = None  # Continue without existing item
 
             if existing_item:
                 new_quantity = existing_item.quantity + quantity

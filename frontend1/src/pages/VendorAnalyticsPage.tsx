@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 const VendorAnalyticsPage = () => {
-  const { vendor, isAuthenticated } = useVendorAuth();
+  const { vendor, isAuthenticated, loading: vendorLoading } = useVendorAuth();
   const [stats, setStats] = useState<OrderStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('month');
@@ -53,12 +53,19 @@ const VendorAnalyticsPage = () => {
   });
 
   useEffect(() => {
+    // Wait for vendor auth to finish loading
+    if (vendorLoading) {
+      return;
+    }
+
     // Load data immediately if vendor session exists (for mock version)
     const session = localStorage.getItem('vendorSession');
     if (session || vendor?.id) {
       loadAnalytics();
+    } else {
+      setIsLoading(false);
     }
-  }, [vendor, timeRange]);
+  }, [vendor, vendorLoading, timeRange]);
 
   const loadAnalytics = async () => {
     // Use mock vendor ID if no vendor from auth

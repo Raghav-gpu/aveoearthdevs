@@ -1,6 +1,6 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Integer, DECIMAL, ForeignKey, Text
+from sqlalchemy import Column, String, Boolean, DateTime, Integer, DECIMAL, ForeignKey, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ENUM
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, text
 from sqlalchemy.orm import relationship
 from app.core.base import Base, BaseTimeStamp, BaseUUID
 import uuid
@@ -47,9 +47,11 @@ class Order(BaseUUID, BaseTimeStamp, Base):
     
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=False)
     order_number = Column(String(50), unique=True, nullable=False)
-    status = Column(ENUM(OrderStatusEnum), default=OrderStatusEnum.PENDING)
-    payment_status = Column(ENUM(PaymentStatusEnum), default=PaymentStatusEnum.PENDING)
-    fulfillment_status = Column(ENUM(FulfillmentStatusEnum), default=FulfillmentStatusEnum.UNFULFILLED)
+    # Use String columns and cast to enum type in SQL
+    # The database has enum types, so we need to cast strings to enum on insert
+    status = Column(String(50), default='pending')
+    payment_status = Column(String(50), default='pending')
+    fulfillment_status = Column(String(50), default='unfulfilled')
     currency = Column(String(3), default="INR")
     subtotal = Column(DECIMAL(12, 2), nullable=False)
     tax_amount = Column(DECIMAL(12, 2), default=0)
@@ -82,9 +84,9 @@ class Order(BaseUUID, BaseTimeStamp, Base):
             "id": str(self.id),
             "user_id": str(self.user_id),
             "order_number": self.order_number,
-            "status": self.status.value if self.status else None,
-            "payment_status": self.payment_status.value if self.payment_status else None,
-            "fulfillment_status": self.fulfillment_status.value if self.fulfillment_status else None,
+            "status": self.status if isinstance(self.status, str) else (self.status.value if self.status else None),
+            "payment_status": self.payment_status if isinstance(self.payment_status, str) else (self.payment_status.value if self.payment_status else None),
+            "fulfillment_status": self.fulfillment_status if isinstance(self.fulfillment_status, str) else (self.fulfillment_status.value if self.fulfillment_status else None),
             "currency": self.currency,
             "subtotal": float(self.subtotal) if self.subtotal else 0,
             "tax_amount": float(self.tax_amount) if self.tax_amount else 0,
@@ -119,7 +121,7 @@ class OrderItem(BaseUUID, BaseTimeStamp, Base):
     quantity = Column(Integer, nullable=False)
     unit_price = Column(DECIMAL(12, 2), nullable=False)
     total_price = Column(DECIMAL(12, 2), nullable=False)
-    fulfillment_status = Column(ENUM(OrderItemFulfillmentStatusEnum), default=OrderItemFulfillmentStatusEnum.UNFULFILLED)
+    fulfillment_status = Column(String(50), default='unfulfilled')
     tracking_number = Column(String(100))
     shipped_at = Column(DateTime(timezone=True))
     delivered_at = Column(DateTime(timezone=True))

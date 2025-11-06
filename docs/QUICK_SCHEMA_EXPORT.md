@@ -88,3 +88,5 @@ supabase db dump --schema-only -f schema.sql
 
 For detailed documentation, see: [COPY_SUPABASE_SCHEMA_GUIDE.md](./COPY_SUPABASE_SCHEMA_GUIDE.md)
 
+
+

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, field_serializer, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from decimal import Decimal
@@ -20,6 +20,34 @@ class ProductVisibilityEnum(str, Enum):
     VISIBLE = "visible"
     HIDDEN = "hidden"
     SCHEDULED = "scheduled"
+
+# Helper function to normalize enum values (handle both uppercase and lowercase)
+def _normalize_enum_value(value, enum_class):
+    """Convert uppercase enum strings to lowercase enum values"""
+    if value is None:
+        return None
+    if isinstance(value, enum_class):
+        return value
+    value_str = str(value).lower()
+    try:
+        return enum_class[value_str.upper()]
+    except (KeyError, AttributeError):
+        # Try to find by value
+        for enum_value in enum_class:
+            if enum_value.value.lower() == value_str:
+                return enum_value
+        # Default fallback
+        if 'draft' in value_str:
+            return ProductStatusEnum.DRAFT
+        elif 'pending' in value_str:
+            return ProductStatusEnum.PENDING
+        elif 'active' in value_str:
+            return ProductStatusEnum.ACTIVE
+        elif 'inactive' in value_str:
+            return ProductStatusEnum.INACTIVE
+        elif 'rejected' in value_str:
+            return ProductStatusEnum.REJECTED
+        return ProductStatusEnum.DRAFT  # Default
 
 class ProductImageResponse(BaseModel):
     id: str
@@ -100,6 +128,39 @@ class ProductResponse(BaseModel):
     approved_at: Optional[datetime] = None
     approved_by: Optional[str] = None
     visibility: ProductVisibilityEnum
+    
+    @field_validator("status", mode="before")
+    @classmethod
+    def normalize_status(cls, v):
+        return _normalize_enum_value(v, ProductStatusEnum)
+    
+    @field_validator("approval_status", mode="before")
+    @classmethod
+    def normalize_approval_status(cls, v):
+        if v is None:
+            return ProductApprovalEnum.PENDING
+        if isinstance(v, ProductApprovalEnum):
+            return v
+        v_str = str(v).lower()
+        if 'approved' in v_str:
+            return ProductApprovalEnum.APPROVED
+        elif 'rejected' in v_str:
+            return ProductApprovalEnum.REJECTED
+        return ProductApprovalEnum.PENDING
+    
+    @field_validator("visibility", mode="before")
+    @classmethod
+    def normalize_visibility(cls, v):
+        if v is None:
+            return ProductVisibilityEnum.VISIBLE
+        if isinstance(v, ProductVisibilityEnum):
+            return v
+        v_str = str(v).lower()
+        if 'hidden' in v_str:
+            return ProductVisibilityEnum.HIDDEN
+        elif 'scheduled' in v_str:
+            return ProductVisibilityEnum.SCHEDULED
+        return ProductVisibilityEnum.VISIBLE
     published_at: Optional[datetime] = None
     tags: List[str] = []
     seo_meta: Dict[str, Any] = {}
@@ -138,6 +199,39 @@ class ProductDetailResponse(BaseModel):
     category: Optional[Dict[str, Any]] = None
     brand: Optional[Dict[str, Any]] = None
     images: List[ProductImageResponse] = []
+    
+    @field_validator("status", mode="before")
+    @classmethod
+    def normalize_status_short(cls, v):
+        return _normalize_enum_value(v, ProductStatusEnum)
+    
+    @field_validator("approval_status", mode="before")
+    @classmethod
+    def normalize_approval_status_short(cls, v):
+        if v is None:
+            return ProductApprovalEnum.PENDING
+        if isinstance(v, ProductApprovalEnum):
+            return v
+        v_str = str(v).lower()
+        if 'approved' in v_str:
+            return ProductApprovalEnum.APPROVED
+        elif 'rejected' in v_str:
+            return ProductApprovalEnum.REJECTED
+        return ProductApprovalEnum.PENDING
+    
+    @field_validator("visibility", mode="before")
+    @classmethod
+    def normalize_visibility_short(cls, v):
+        if v is None:
+            return ProductVisibilityEnum.VISIBLE
+        if isinstance(v, ProductVisibilityEnum):
+            return v
+        v_str = str(v).lower()
+        if 'hidden' in v_str:
+            return ProductVisibilityEnum.HIDDEN
+        elif 'scheduled' in v_str:
+            return ProductVisibilityEnum.SCHEDULED
+        return ProductVisibilityEnum.VISIBLE
     variants: List[ProductVariantResponse] = []
     inventory: List[ProductInventoryResponse] = []
     sustainability_scores: List[ProductSustainabilityScoreResponse] = []
@@ -168,6 +262,39 @@ class ProductListResponse(BaseModel):
     category: Optional[Dict[str, Any]] = None
     brand: Optional[Dict[str, Any]] = None
     images: List[ProductImageResponse] = []
+    
+    @field_validator("status", mode="before")
+    @classmethod
+    def normalize_status_list(cls, v):
+        return _normalize_enum_value(v, ProductStatusEnum)
+    
+    @field_validator("approval_status", mode="before")
+    @classmethod
+    def normalize_approval_status_list(cls, v):
+        if v is None:
+            return ProductApprovalEnum.PENDING
+        if isinstance(v, ProductApprovalEnum):
+            return v
+        v_str = str(v).lower()
+        if 'approved' in v_str:
+            return ProductApprovalEnum.APPROVED
+        elif 'rejected' in v_str:
+            return ProductApprovalEnum.REJECTED
+        return ProductApprovalEnum.PENDING
+    
+    @field_validator("visibility", mode="before")
+    @classmethod
+    def normalize_visibility_list(cls, v):
+        if v is None:
+            return ProductVisibilityEnum.VISIBLE
+        if isinstance(v, ProductVisibilityEnum):
+            return v
+        v_str = str(v).lower()
+        if 'hidden' in v_str:
+            return ProductVisibilityEnum.HIDDEN
+        elif 'scheduled' in v_str:
+            return ProductVisibilityEnum.SCHEDULED
+        return ProductVisibilityEnum.VISIBLE
     sustainability_scores: List[ProductSustainabilityScoreResponse] = []
     created_at: datetime
 

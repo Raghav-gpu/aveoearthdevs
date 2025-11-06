@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 
 const VendorProductsPage = () => {
-  const { vendor, isAuthenticated } = useVendorAuth();
+  const { vendor, isAuthenticated, loading: vendorLoading } = useVendorAuth();
   const [products, setProducts] = useState<VendorProduct[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,16 +80,7 @@ const VendorProductsPage = () => {
     variants: []
   });
 
-  useEffect(() => {
-    // Load data immediately if vendor session exists (for mock version)
-    const session = localStorage.getItem('vendorSession');
-    if (session || vendor?.id) {
-      loadProducts();
-      loadCategories();
-    }
-  }, [vendor, currentPage, searchTerm, statusFilter, categoryFilter]);
-
-  const loadProducts = async () => {
+  const loadProducts = React.useCallback(async () => {
     // Use mock vendor ID if no vendor from auth
     const vendorId = vendor?.id || 'mock-vendor-1';
     
@@ -109,19 +100,38 @@ const VendorProductsPage = () => {
       setTotalProducts(total);
     } catch (error) {
       console.error('Error loading products:', error);
+      // Even on error, stop loading
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [vendor?.id, searchTerm, statusFilter, categoryFilter, currentPage]);
 
-  const loadCategories = async () => {
+  const loadCategories = React.useCallback(async () => {
     try {
       const categoriesList = await vendorProductService.getCategories();
       setCategories(categoriesList);
     } catch (error) {
       console.error('Error loading categories:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Wait for vendor auth to finish loading
+    if (vendorLoading) {
+      return;
+    }
+
+    // Load data immediately if vendor session exists (for mock version)
+    const session = localStorage.getItem('vendorSession');
+    if (session || vendor?.id) {
+      loadProducts();
+      loadCategories();
+    } else {
+      // If no vendor and no session, stop loading
+      setIsLoading(false);
+    }
+  }, [vendor, vendorLoading, loadProducts, loadCategories]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -194,15 +204,26 @@ const VendorProductsPage = () => {
   };
 
   const handleBulkUpload = async () => {
-    if (!bulkFile) return;
+    if (!bulkFile) {
+      alert('Please select a CSV file to upload');
+      return;
+    }
     
     setBulkUploading(true);
+    console.log('Starting bulk upload with file:', bulkFile.name, 'Size:', bulkFile.size);
+    
     try {
       // Use backend API for bulk CSV upload
       const { backendApi } = await import('@/services/backendApi');
+      console.log('Backend API imported, calling bulkImportCSV...');
+      
       const result = await backendApi.bulkImportCSV(bulkFile);
       
       console.log('Bulk upload result:', result);
+      
+      if (!result || !result.results) {
+        throw new Error('Invalid response from server');
+      }
       
       // Refresh products list
       await loadProducts();
@@ -213,9 +234,16 @@ const VendorProductsPage = () => {
       alert(`Bulk upload completed: ${result.results.successful} successful, ${result.results.failed} failed`);
     } catch (error: any) {
       console.error('Bulk upload failed:', error);
-      alert(`Bulk upload failed: ${error.message || 'Unknown error'}`);
+      console.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        response: error?.response,
+        status: error?.status
+      });
+      alert(`Bulk upload failed: ${error?.message || error?.response?.data?.detail || 'Unknown error'}. Please check the console for details.`);
     } finally {
       setBulkUploading(false);
+      console.log('Bulk upload finished, loading state reset');
     }
   };
 
@@ -781,7 +809,69 @@ const VendorProductsPage = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="bulk-file">CSV File</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="bulk-file">CSV File</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Create sample CSV content
+                    const csvHeaders = [
+                      'name',
+                      'description',
+                      'short_description',
+                      'price',
+                      'compare_price',
+                      'cost_price',
+                      'stock_quantity',
+                      'min_stock_quantity',
+                      'category_id',
+                      'brand',
+                      'sku',
+                      'weight',
+                      'dimensions',
+                      'materials',
+                      'care_instructions',
+                      'sustainability_notes',
+                      'tags',
+                      'is_active',
+                      'is_featured',
+                      'is_digital',
+                      'requires_shipping',
+                      'taxable',
+                      'tax_rate',
+                      'return_policy_days',
+                      'warranty_period_days',
+                      'handling_time_days'
+                    ];
+                    
+                    // Use first available category ID, or placeholder if none
+                    const sampleCategoryId = categories.length > 0 ? categories[0].id : '<category_id>';
+                    
+                    const csvSample = [
+                      csvHeaders.join(','),
+                      `Sample Product 1,"This is a detailed description of the product","Short description",99.99,129.99,50.00,100,10,${sampleCategoryId},"Brand Name","SKU-001",0.5,"10x10x5 cm","Bamboo, Cotton","Hand wash only","Eco-friendly materials",tag1|tag2|tag3,true,false,false,true,true,18,30,0,1`,
+                      `Sample Product 2,"Another product description","Another short description",149.99,199.99,75.00,50,5,${sampleCategoryId},"Another Brand","SKU-002",1.0,"15x15x8 cm","Recycled Plastic","Machine wash","100% recycled",tag4|tag5,true,true,false,true,true,18,30,0,2`
+                    ].join('\n');
+                    
+                    // Create blob and download
+                    const blob = new Blob([csvSample], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', 'product_bulk_upload_sample.csv');
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="text-xs"
+                >
+                  <Upload className="w-3 h-3 mr-1" />
+                  Download Sample CSV
+                </Button>
+              </div>
               <Input
                 id="bulk-file"
                 type="file"
@@ -791,6 +881,9 @@ const VendorProductsPage = () => {
               />
               <p className="text-sm text-gray-500 mt-2">
                 Upload a CSV file with columns: name, description, short_description, price, stock_quantity, category_id, is_active, is_featured, weight, dimensions, materials, care_instructions, sustainability_notes, tags
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Note: Replace &lt;category_id&gt; in the sample CSV with actual category IDs from your categories list.
               </p>
             </div>
             {bulkFile && (

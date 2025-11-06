@@ -191,7 +191,91 @@ async def get_active_brands(
         # Return empty brands when database is not available
         return []
 
- 
+# WISHLIST ROUTES - Must be defined BEFORE dynamic routes like /{product_slug}
+# to prevent route conflicts
+@products_buyer_router.get("/wishlist", response_model=PaginatedResponse[WishlistItemResponse])
+async def get_wishlist(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    current_user: Dict[str, Any] = Depends(require_buyer()),
+    db: AsyncSession = Depends(get_async_session)
+):
+    try:
+        # Ensure user exists in database
+        from app.core.user_helper import ensure_user_exists_in_db
+        from app.features.auth.cruds.auth_crud import AuthCrud
+        auth_crud = AuthCrud()
+        await ensure_user_exists_in_db(db, current_user, auth_crud)
+        
+        pagination = PaginationParams(page=page, limit=limit)
+        wishlist_crud = WishlistCrud()
+        result = await wishlist_crud.get_user_wishlist(db, current_user["id"], pagination)
+        return result
+    except Exception as e:
+        logger.error(f"Error in get_wishlist: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        # Return empty wishlist instead of raising error
+        from app.core.pagination import PaginatedResponse
+        return PaginatedResponse.create(
+            items=[],
+            total=0,
+            page=page,
+            limit=limit
+        )
+
+@products_buyer_router.post("/wishlist", response_model=SuccessResponse, status_code=status.HTTP_201_CREATED)
+async def add_to_wishlist(
+    request: WishlistAddRequest,
+    current_user: Dict[str, Any] = Depends(require_buyer()),
+    db: AsyncSession = Depends(get_async_session)
+):
+    try:
+        # Ensure user exists in public.users before adding to wishlist
+        from app.core.user_helper import ensure_user_exists_in_db
+        from app.features.auth.cruds.auth_crud import AuthCrud
+        auth_crud = AuthCrud()
+        user_exists = await ensure_user_exists_in_db(db, current_user, auth_crud)
+        
+        if not user_exists:
+            # If user creation failed, try one more time with a small delay
+            import asyncio
+            await asyncio.sleep(0.5)
+            user_exists = await ensure_user_exists_in_db(db, current_user, auth_crud)
+            if not user_exists:
+                logger.error(f"Failed to create user {current_user['id']} in public.users table")
+                from app.core.exceptions import ValidationException
+                raise ValidationException(f"User account not properly set up. Please try logging out and back in.")
+        
+        wishlist_crud = WishlistCrud()
+        await wishlist_crud.add_to_wishlist(db, current_user["id"], request.product_id)
+        return SuccessResponse(message="Product added to wishlist")
+    except ConflictException:
+        return SuccessResponse(message="Product already in wishlist")
+    except Exception as e:
+        logger.error(f"Error adding to wishlist: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
+@products_buyer_router.delete("/wishlist/{product_id}")
+async def remove_from_wishlist(
+    product_id: str,
+    current_user: Dict[str, Any] = Depends(require_buyer()),
+    db: AsyncSession = Depends(get_async_session)
+):
+    wishlist_crud = WishlistCrud()
+    await wishlist_crud.remove_from_wishlist(db, current_user["id"], product_id)
+    return SuccessResponse(message="Product removed from wishlist")
+
+@products_buyer_router.delete("/wishlist/clear")
+async def clear_wishlist(
+    current_user: Dict[str, Any] = Depends(require_buyer()),
+    db: AsyncSession = Depends(get_async_session)
+):
+    wishlist_crud = WishlistCrud()
+    await wishlist_crud.clear_wishlist(db, current_user["id"])
+    return SuccessResponse(message="Wishlist cleared successfully")
 
 @products_buyer_router.post("/{product_id}/reviews", response_model=ProductReviewResponse, status_code=status.HTTP_201_CREATED)
 async def create_product_review(
@@ -262,67 +346,6 @@ async def get_my_reviews(
     review_crud = ProductReviewCrud()
     return await review_crud.get_user_reviews(db, current_user["id"], pagination)
 
-@products_buyer_router.post("/wishlist", response_model=SuccessResponse, status_code=status.HTTP_201_CREATED)
-async def add_to_wishlist(
-    request: WishlistAddRequest,
-    current_user: Dict[str, Any] = Depends(require_buyer()),
-    db: AsyncSession = Depends(get_async_session)
-):
-    try:
-        wishlist_crud = WishlistCrud()
-        await wishlist_crud.add_to_wishlist(db, current_user["id"], request.product_id)
-        return SuccessResponse(message="Product added to wishlist")
-    except ConflictException:
-        return SuccessResponse(message="Product already in wishlist")
-    except Exception as e:
-        logger.error(f"Error adding to wishlist: {e}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        raise
-
-@products_buyer_router.delete("/wishlist/{product_id}")
-async def remove_from_wishlist(
-    product_id: str,
-    current_user: Dict[str, Any] = Depends(require_buyer()),
-    db: AsyncSession = Depends(get_async_session)
-):
-    wishlist_crud = WishlistCrud()
-    await wishlist_crud.remove_from_wishlist(db, current_user["id"], product_id)
-    return SuccessResponse(message="Product removed from wishlist")
-
-@products_buyer_router.get("/wishlist", response_model=PaginatedResponse[WishlistItemResponse])
-async def get_wishlist(
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
-    current_user: Dict[str, Any] = Depends(require_buyer()),
-    db: AsyncSession = Depends(get_async_session)
-):
-    try:
-        pagination = PaginationParams(page=page, limit=limit)
-        wishlist_crud = WishlistCrud()
-        result = await wishlist_crud.get_user_wishlist(db, current_user["id"], pagination)
-        return result
-    except Exception as e:
-        logger.error(f"Error in get_wishlist: {e}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        # Return empty wishlist instead of raising error
-        from app.core.pagination import PaginatedResponse
-        return PaginatedResponse.create(
-            items=[],
-            total=0,
-            page=page,
-            limit=limit
-        )
-
-@products_buyer_router.delete("/wishlist/clear")
-async def clear_wishlist(
-    current_user: Dict[str, Any] = Depends(require_buyer()),
-    db: AsyncSession = Depends(get_async_session)
-):
-    wishlist_crud = WishlistCrud()
-    await wishlist_crud.clear_wishlist(db, current_user["id"])
-    return SuccessResponse(message="Wishlist cleared successfully")
 
 @products_buyer_router.put("/reviews/{review_id}", response_model=ProductReviewResponse)
 async def update_review(

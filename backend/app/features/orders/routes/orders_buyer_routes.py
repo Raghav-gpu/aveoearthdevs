@@ -30,6 +30,23 @@ async def get_cart(
     db: Optional[AsyncSession] = Depends(get_async_session)
 ):
     try:
+        # Ensure user exists in database if authenticated
+        if current_user and current_user.get("id"):
+            from app.core.user_helper import ensure_user_exists_in_db
+            from app.features.auth.cruds.auth_crud import AuthCrud
+            auth_crud = AuthCrud()
+            user_exists = await ensure_user_exists_in_db(db, current_user, auth_crud)
+            
+            if not user_exists:
+                # Retry once with delay
+                import asyncio
+                await asyncio.sleep(0.5)
+                user_exists = await ensure_user_exists_in_db(db, current_user, auth_crud)
+                if not user_exists:
+                    logger.error(f"Failed to create user {current_user['id']} in public.users table")
+                    from app.core.exceptions import ValidationException
+                    raise ValidationException(f"User account not properly set up. Please try logging out and back in.")
+        
         cart_crud = CartCrud()
         
         if current_user and current_user.get("id"):
@@ -63,20 +80,21 @@ async def add_to_cart(
             user_id = current_user["id"]
             logger.info(f"Ensuring user {user_id} exists before cart operations")
             
-            # Quick check via REST API to ensure user exists (bypasses transaction isolation)
-            try:
-                # Use admin_client (service role) for reliable access
-                from app.features.auth.cruds.auth_crud import AuthCrud
-                auth_crud = AuthCrud()
-                supabase = auth_crud.admin_client
-                user_check = supabase.table("users").select("id").eq("id", user_id).limit(1).execute()
-                
-                if not user_check.data or len(user_check.data) == 0:
-                    logger.warning(f"User {user_id} not found in Supabase, get_or_create_cart will create it")
-                else:
-                    logger.info(f"✅ User {user_id} verified in Supabase before cart operations")
-            except Exception as user_check_err:
-                logger.warning(f"User verification check failed (will proceed): {user_check_err}")
+            # Ensure user exists in database
+            from app.core.user_helper import ensure_user_exists_in_db
+            from app.features.auth.cruds.auth_crud import AuthCrud
+            auth_crud = AuthCrud()
+            user_exists = await ensure_user_exists_in_db(db, current_user, auth_crud)
+            
+            if not user_exists:
+                # Retry once with delay
+                import asyncio
+                await asyncio.sleep(0.5)
+                user_exists = await ensure_user_exists_in_db(db, current_user, auth_crud)
+                if not user_exists:
+                    logger.error(f"Failed to create user {user_id} in public.users table")
+                    from app.core.exceptions import ValidationException
+                    raise ValidationException(f"User account not properly set up. Please try logging out and back in.")
             
             logger.info(f"🔍 Getting or creating cart for user_id: {user_id}")
             cart = await cart_crud.get_or_create_cart(db, user_id=user_id)

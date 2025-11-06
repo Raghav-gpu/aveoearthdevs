@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Boolean, DateTime, Text, Enum, UUID, TypeDecorator
+from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 from sqlalchemy.orm import relationship
 from enum import Enum as PyEnum
 from app.core.base import Base, BaseTimeStamp, BaseUUID

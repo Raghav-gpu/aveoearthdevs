@@ -1,5 +1,5 @@
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import Column, String, Text, DECIMAL, Boolean, DateTime, UUID, ForeignKey, Enum
+from sqlalchemy import Column, String, Text, DECIMAL, Boolean, DateTime, UUID, ForeignKey, Enum, TypeDecorator
 from sqlalchemy.orm import relationship
 from enum import Enum as PyEnum
 from app.core.base import Base, BaseTimeStamp, BaseUUID
@@ -10,6 +10,26 @@ class ProductStatusEnum(str, PyEnum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
     REJECTED = "REJECTED"
+    
+    @classmethod
+    def from_string(cls, value):
+        """Convert string to enum, handling case-insensitive matching"""
+        if value is None:
+            return None
+        if isinstance(value, cls):
+            return value
+        value_str = str(value).upper()
+        try:
+            return cls[value_str]
+        except (KeyError, AttributeError):
+            # Fallback: try to find by value
+            for status in cls:
+                if status.value.upper() == value_str:
+                    return status
+            # Last resort: return ACTIVE if it looks like it could be active
+            if 'active' in value_str.lower():
+                return cls.ACTIVE
+            raise ValueError(f"Invalid ProductStatusEnum value: {value}")
 
 class ProductApprovalEnum(str, PyEnum):
     PENDING = "PENDING"  # Database expects uppercase
@@ -43,12 +63,12 @@ class Product(BaseUUID, BaseTimeStamp, Base):
     care_instructions = Column(Text)
     origin_country = Column(String(100))
     manufacturing_details = Column(JSONB)
-    status = Column(Enum(ProductStatusEnum, native_enum=False), default=ProductStatusEnum.DRAFT.value, index=True)
-    approval_status = Column(Enum(ProductApprovalEnum, native_enum=False), default=ProductApprovalEnum.PENDING.value, index=True)
+    status = Column(String(50), default=ProductStatusEnum.DRAFT.value, index=True)  # Use String instead of Enum to handle case-insensitive values
+    approval_status = Column(String(50), default=ProductApprovalEnum.PENDING.value, index=True)  # Use String instead of Enum
     approval_notes = Column(Text)
     approved_at = Column(DateTime)
     approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"))
-    visibility = Column(Enum(ProductVisibilityEnum, native_enum=False), default=ProductVisibilityEnum.VISIBLE.value, index=True)
+    visibility = Column(String(50), default=ProductVisibilityEnum.VISIBLE.value, index=True)  # Use String instead of Enum
     published_at = Column(DateTime)
     tags = Column(JSONB, default=[])
     seo_meta = Column(JSONB, default={})

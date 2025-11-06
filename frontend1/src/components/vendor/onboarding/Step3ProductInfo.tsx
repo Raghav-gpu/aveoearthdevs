@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PRODUCT_CATEGORIES, BRANDS } from '@/lib/constants';
+import { BRANDS } from '@/lib/constants';
 import { CheckCircle, Loader2 } from 'lucide-react';
+import { backendApi } from '@/services/backendApi';
 
 interface Step3ProductInfoProps {
   formData: any;
@@ -23,6 +24,75 @@ const Step3ProductInfo: React.FC<Step3ProductInfoProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showAIVerification, setShowAIVerification] = useState(false);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        console.log('Fetching categories from API...');
+        const categoriesData = await backendApi.getCategories();
+        console.log('Categories API response:', categoriesData);
+        
+        // Handle both array and object responses
+        let categoriesArray = Array.isArray(categoriesData) ? categoriesData : [];
+        
+        // Flatten the category tree if it's nested
+        const flatCategories: Array<{ id: string; name: string }> = [];
+        const flattenCategories = (cats: any[]) => {
+          if (!Array.isArray(cats)) return;
+          cats.forEach(cat => {
+            if (cat && cat.id && cat.name) {
+              flatCategories.push({ id: cat.id, name: cat.name });
+            }
+            if (cat.children && Array.isArray(cat.children) && cat.children.length > 0) {
+              flattenCategories(cat.children);
+            }
+          });
+        };
+        flattenCategories(categoriesArray);
+        
+        console.log('Flattened categories:', flatCategories);
+        
+        // If no categories from API, use fallback categories
+        if (flatCategories.length === 0) {
+          console.warn('No categories found from API, using fallback categories');
+          // Fallback categories with placeholder IDs
+          const fallbackCategories = [
+            { id: '1', name: 'Water Bottles' },
+            { id: '2', name: 'Bags & Accessories' },
+            { id: '3', name: 'Solar Products' },
+            { id: '4', name: 'Skincare & Beauty' },
+            { id: '5', name: 'Kitchen & Dining' },
+            { id: '6', name: 'Stationery' },
+            { id: '7', name: 'Clothing' },
+            { id: '8', name: 'Zero Waste' }
+          ];
+          setCategories(fallbackCategories);
+        } else {
+          setCategories(flatCategories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback categories on error
+        const fallbackCategories = [
+          { id: '1', name: 'Water Bottles' },
+          { id: '2', name: 'Bags & Accessories' },
+          { id: '3', name: 'Solar Products' },
+          { id: '4', name: 'Skincare & Beauty' },
+          { id: '5', name: 'Kitchen & Dining' },
+          { id: '6', name: 'Stationery' },
+          { id: '7', name: 'Clothing' },
+          { id: '8', name: 'Zero Waste' }
+        ];
+        setCategories(fallbackCategories);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -170,22 +240,34 @@ const Step3ProductInfo: React.FC<Step3ProductInfoProps> = ({
             <Select
               value={formData.category_id}
               onValueChange={(value) => handleChange('category_id', value)}
+              disabled={loadingCategories}
             >
               <SelectTrigger className={`bg-[#f9fbe7] border-[#858c94] focus:border-[#1a4032] ${
                 errors.category_id ? 'border-red-500' : ''
               }`}>
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={loadingCategories ? "Loading categories..." : "Select category"} />
               </SelectTrigger>
               <SelectContent>
-                {PRODUCT_CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category.toLowerCase().replace(/\s+/g, '-')}>
-                    {category}
-                  </SelectItem>
-                ))}
+                {categories.length > 0 ? (
+                  categories.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  !loadingCategories && (
+                    <SelectItem value="no-categories" disabled>
+                      No categories available
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
             {errors.category_id && (
               <p className="text-sm text-red-500">{errors.category_id}</p>
+            )}
+            {!loadingCategories && categories.length === 0 && (
+              <p className="text-xs text-yellow-600">No categories found. Please contact support.</p>
             )}
           </div>
 

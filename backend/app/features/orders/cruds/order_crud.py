@@ -61,10 +61,20 @@ class OrderCRUD(BaseCrud[Order]):
             if not shipping_address:
                 raise NotFoundException("Shipping address not found")
             
+            # Use raw SQL INSERT with proper enum casting to avoid type mismatch
+            from sqlalchemy import text
+            import json
+            order_number = self.generate_order_number()
+            billing_addr_json = json.dumps(self.address_to_dict(billing_address))
+            shipping_addr_json = json.dumps(self.address_to_dict(shipping_address))
+            
+            # Columns are now VARCHAR, so we can use SQLAlchemy ORM directly
             order = Order(
                 user_id=user_id,
-                order_number=self.generate_order_number(),
-                status=OrderStatusEnum.PENDING,
+                order_number=order_number,
+                status='pending',
+                payment_status='pending',
+                fulfillment_status='unfulfilled',
                 currency=cart.currency,
                 subtotal=cart.subtotal,
                 tax_amount=cart.tax_amount,
@@ -77,7 +87,7 @@ class OrderCRUD(BaseCrud[Order]):
             )
             
             db.add(order)
-            await db.flush()
+            await db.flush()  # Get the ID without committing
             
             for cart_item in cart.items:
                 product = cart_item.product
@@ -93,7 +103,8 @@ class OrderCRUD(BaseCrud[Order]):
                     sku=variant.sku if variant else product.sku,
                     quantity=cart_item.quantity,
                     unit_price=cart_item.unit_price,
-                    total_price=cart_item.total_price
+                    total_price=cart_item.total_price,
+                    fulfillment_status='unfulfilled'  # String value for String column
                 )
                 db.add(order_item)
             

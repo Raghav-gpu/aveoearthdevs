@@ -31,12 +31,31 @@ const VendorDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Wait for vendor auth to finish loading
+    if (loading) {
+      return;
+    }
+    
     // For mock version, check if vendor exists in localStorage
     const session = localStorage.getItem('vendorSession');
     if (!session && !isAuthenticated()) {
       navigate('/vendor');
     }
-  }, [isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, navigate]);
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-forest rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Package className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-forest text-lg">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   // For mock version, show dashboard if vendor session exists
   const session = localStorage.getItem('vendorSession');

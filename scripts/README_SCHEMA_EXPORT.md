@@ -62,3 +62,5 @@ To import the schema to another Supabase project:
 
 **Need help?** See the detailed guide: `docs/COPY_SUPABASE_SCHEMA_GUIDE.md`
 
+
+

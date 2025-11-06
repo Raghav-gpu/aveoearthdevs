@@ -25,48 +25,76 @@ async function testBuyerSignupAndCart() {
     const phone = '+1234567890';
     
     try {
-        // Step 1: Signup
+        // Step 1: Try Signup, fallback to login if rate limited
         console.log(`\n📝 Step 1: Signing up buyer: ${email}`);
-        const signupResponse = await fetch(`${BASE_URL}/auth/signup`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email,
-                password,
-                first_name: firstName,
-                last_name: lastName,
-                phone,
-                user_type: 'buyer'
-            })
-        });
+        let signupResponse;
+        let signupData;
+        let token = null;
+        let userId = null;
         
-        const signupData = await signupResponse.json();
-        console.log(`   Status: ${signupResponse.status}`);
-        console.log(`   Response: ${JSON.stringify(signupData, null, 2)}`);
-        
-        if (signupResponse.status !== 200 && signupResponse.status !== 201) {
-            throw new Error(`Signup failed: ${signupResponse.status} - ${JSON.stringify(signupData)}`);
-        }
-        
-        let token = signupData.tokens?.access_token || signupData.session?.access_token || signupData.access_token;
-        if (!token) {
-            // If no token, try to login to get token
-            console.log(`   ⚠️ No token from signup, attempting login...`);
-            await wait(1500);
+        try {
+            signupResponse = await fetch(`${BASE_URL}/auth/signup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    first_name: firstName,
+                    last_name: lastName,
+                    phone,
+                    user_type: 'buyer'
+                })
+            });
+            
+            signupData = await signupResponse.json();
+            console.log(`   Status: ${signupResponse.status}`);
+            
+            if (signupResponse.status === 200 || signupResponse.status === 201) {
+                token = signupData.tokens?.access_token || signupData.session?.access_token || signupData.access_token;
+                userId = signupData.user?.id || signupData.id;
+            } else if (signupResponse.status === 422 && (signupData.detail?.includes('rate limit') || signupData.detail?.includes('already exists'))) {
+                console.log(`   ⚠️ Rate limit or user exists, trying login with same credentials...`);
+                // Try to login with the same email/password (user might already exist)
+                await wait(2000);
+                const loginResponse = await fetch(`${BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (loginResponse.status === 200) {
+                    const loginData = await loginResponse.json();
+                    token = loginData.tokens?.access_token || loginData.session?.access_token || loginData.access_token;
+                    userId = loginData.user?.id || loginData.id;
+                    console.log(`   ✅ Login successful with same credentials`);
+                } else {
+                    throw new Error(`Signup failed (rate limit/exists) and login also failed: ${signupResponse.status}`);
+                }
+            } else {
+                throw new Error(`Signup failed: ${signupResponse.status} - ${JSON.stringify(signupData)}`);
+            }
+        } catch (signupErr) {
+            console.log(`   ⚠️ Signup error: ${signupErr.message}, trying login...`);
+            await wait(2000);
             const loginResponse = await fetch(`${BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-            const loginData = await loginResponse.json();
-            const loginToken = loginData.tokens?.access_token || loginData.session?.access_token || loginData.access_token;
-            if (!loginToken) {
-                throw new Error('No token received from signup or login');
+            
+            if (loginResponse.status === 200) {
+                const loginData = await loginResponse.json();
+                token = loginData.tokens?.access_token || loginData.session?.access_token || loginData.access_token;
+                userId = loginData.user?.id || loginData.id;
+                console.log(`   ✅ Login successful after signup attempt`);
+            } else {
+                throw new Error(`Signup and login both failed: ${signupErr.message}`);
             }
-            token = loginToken;
         }
         
-        const userId = signupData.user?.id || signupData.id;
+        if (!token) {
+            throw new Error('No token received from signup or login');
+        }
         console.log(`   ✅ Buyer signed up: ${userId}`);
         console.log(`   ✅ Token received: ${token.substring(0, 20)}...`);
         

@@ -65,10 +65,19 @@ class WishlistCrud(BaseCrud[Wishlist]):
 
     async def remove_from_wishlist(self, db: AsyncSession, user_id: str, product_id: str) -> bool:
         try:
+            # Convert string IDs to UUID objects
+            from uuid import UUID
+            try:
+                user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+                product_uuid = UUID(product_id) if isinstance(product_id, str) else product_id
+            except (ValueError, TypeError) as uuid_err:
+                logger.error(f"Invalid UUID format: user_id={user_id}, product_id={product_id}, error={uuid_err}")
+                raise ValidationException(f"Invalid ID format: {uuid_err}")
+            
             result = await db.execute(
                 delete(Wishlist)
-                .where(Wishlist.user_id == user_id)
-                .where(Wishlist.product_id == product_id)
+                .where(Wishlist.user_id == user_uuid)
+                .where(Wishlist.product_id == product_uuid)
             )
             
             if result.rowcount == 0:
@@ -77,6 +86,8 @@ class WishlistCrud(BaseCrud[Wishlist]):
             await db.commit()
             logger.info(f"Product {product_id} removed from wishlist for user {user_id}")
             return True
+        except (NotFoundException, ValidationException):
+            raise
         except Exception as e:
             logger.error(f"Error removing product {product_id} from wishlist for user {user_id}: {str(e)}")
             raise
@@ -151,10 +162,19 @@ class WishlistCrud(BaseCrud[Wishlist]):
 
     async def is_in_wishlist(self, db: AsyncSession, user_id: str, product_id: str) -> bool:
         try:
+            # Convert string IDs to UUID objects
+            from uuid import UUID
+            try:
+                user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+                product_uuid = UUID(product_id) if isinstance(product_id, str) else product_id
+            except (ValueError, TypeError) as uuid_err:
+                logger.error(f"Invalid UUID format: user_id={user_id}, product_id={product_id}, error={uuid_err}")
+                return False
+            
             result = await db.execute(
                 select(Wishlist)
-                .where(Wishlist.user_id == user_id)
-                .where(Wishlist.product_id == product_id)
+                .where(Wishlist.user_id == user_uuid)
+                .where(Wishlist.product_id == product_uuid)
             )
             return result.scalar_one_or_none() is not None
         except Exception as e:
@@ -163,13 +183,23 @@ class WishlistCrud(BaseCrud[Wishlist]):
 
     async def clear_wishlist(self, db: AsyncSession, user_id: str) -> bool:
         try:
+            # Convert string ID to UUID if needed
+            from uuid import UUID
+            try:
+                user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+            except (ValueError, TypeError) as uuid_err:
+                logger.error(f"Invalid UUID format for user_id: {user_id}, error: {uuid_err}")
+                raise ValidationException(f"Invalid user ID format: {uuid_err}")
+            
             await db.execute(
                 delete(Wishlist)
-                .where(Wishlist.user_id == user_id)
+                .where(Wishlist.user_id == user_uuid)
             )
             await db.commit()
             logger.info(f"Wishlist cleared for user {user_id}")
             return True
+        except ValidationException:
+            raise
         except Exception as e:
             logger.error(f"Error clearing wishlist for user {user_id}: {str(e)}")
             raise

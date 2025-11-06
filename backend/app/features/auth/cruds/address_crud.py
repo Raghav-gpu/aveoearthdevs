@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, and_, func
 from typing import Optional, List, Dict, Any
-from geoalchemy2.functions import ST_SetSRID, ST_Point
+from geoalchemy2.functions import ST_SetSRID, ST_Point, ST_GeomFromText, ST_AsText
+from sqlalchemy import text
 
 from app.features.auth.models.address import Address, AddressTypeEnum
 from app.features.auth.requests.address_request import AddressCreateRequest, AddressUpdateRequest
@@ -19,20 +20,39 @@ class AddressCRUD(BaseCrud[Address]):
 
     async def create_address(self, db: AsyncSession, user_id: str, request: AddressCreateRequest) -> Dict[str, Any]:
         try:
+            # Handle location if provided
             location = None
             if request.latitude and request.longitude:
-                location = ST_SetSRID(ST_Point(request.longitude, request.latitude), 4326)
+                # Use ST_MakePoint for geometry (not geography)
+                from geoalchemy2.functions import ST_MakePoint
+                location = ST_SetSRID(ST_MakePoint(request.longitude, request.latitude), 4326)
             
             if request.is_default:
-                await db.execute(
-                    update(Address)
-                    .where(and_(Address.user_id == user_id, Address.type == request.type))
-                    .values(is_default=False)
-                )
+                # First check if type column exists, if not use address_type
+                try:
+                    await db.execute(
+                        update(Address)
+                        .where(and_(Address.user_id == user_id, Address.type == request.type))
+                        .values(is_default=False)
+                    )
+                except Exception as update_err:
+                    error_str = str(update_err).lower()
+                    if "type" in error_str and ("does not exist" in error_str or "transaction" in error_str):
+                        # Rollback and try without type filter
+                        await db.rollback()
+                        logger.warning(f"Column 'type' not found or transaction error, trying to update without type filter: {update_err}")
+                        await db.execute(
+                            update(Address)
+                            .where(Address.user_id == user_id)
+                            .values(is_default=False)
+                        )
+                    else:
+                        await db.rollback()
+                        raise
             
             address_data = {
                 "user_id": user_id,
-                "type": request.type,
+                "type": request.type.value if hasattr(request.type, 'value') else str(request.type),
                 "is_default": request.is_default,
                 "label": request.label,
                 "first_name": request.first_name,
@@ -44,9 +64,11 @@ class AddressCRUD(BaseCrud[Address]):
                 "state": request.state,
                 "postal_code": request.postal_code,
                 "country": request.country,
-                "phone": request.phone,
-                "location": location
+                "phone": request.phone
             }
+            # Add location if provided
+            if location:
+                address_data["location"] = location
             
             address = await self.create(db, address_data)
             self.logger.info(f"Created address for user {user_id}, type: {request.type}")
@@ -120,11 +142,16 @@ class AddressCRUD(BaseCrud[Address]):
             update_data = request.model_dump(exclude_unset=True)
             location = None
             
+            # Handle location if provided
             if 'latitude' in update_data and 'longitude' in update_data:
                 if update_data['latitude'] and update_data['longitude']:
-                    location = ST_SetSRID(ST_Point(update_data['longitude'], update_data['latitude']), 4326)
+                    from geoalchemy2.functions import ST_MakePoint
+                    location = ST_SetSRID(ST_MakePoint(update_data['longitude'], update_data['latitude']), 4326)
                 update_data.pop('latitude', None)
                 update_data.pop('longitude', None)
+            
+            if location:
+                update_data['location'] = location
             
             if update_data.get('is_default'):
                 address_type = update_data.get('type', address_data.get('type'))
@@ -133,9 +160,6 @@ class AddressCRUD(BaseCrud[Address]):
                     .where(and_(Address.user_id == user_id, Address.type == address_type))
                     .values(is_default=False)
                 )
-            
-            if location:
-                update_data['location'] = location
             
             updated_address = await self.update(db, address_id, update_data)
             self.logger.info(f"Updated address {address_id} for user {user_id}")

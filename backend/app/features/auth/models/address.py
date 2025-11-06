@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Boolean, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from geoalchemy2 import Geography
+from geoalchemy2 import Geometry
 import enum
 
 from app.core.base import Base, BaseTimeStamp, BaseUUID
@@ -32,7 +32,7 @@ class Address(BaseUUID, BaseTimeStamp, Base):
     postal_code = Column(String(20), nullable=False)
     country = Column(String(100), nullable=False, default="India")
     phone = Column(String(20))
-    location = Column(Geography(geometry_type='POINT', srid=4326))
+    location = Column(Geometry(geometry_type='POINT', srid=4326))
     
     user = relationship("User", back_populates="addresses", passive_deletes=True)
     

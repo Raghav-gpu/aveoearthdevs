@@ -15,6 +15,7 @@ from app.features.auth.routes.referral_routes import referral_router
 from app.features.auth.routes.address_routes import buyer_address_router, admin_address_router
 from app.features.auth.routes.account_routes import account_router
 from app.features.auth.routes.settings_routes import settings_router
+from app.features.auth.routes import password_routes  # Register password reset routes
 from app.features.supplier.onboarding.routes.onboarding_routes import supplier_onboarding_router
 from app.features.supplier.onboarding.routes.supplier_admin_routes import supplier_admin_router
 from app.features.products.routes.products_admin_routes import products_admin_router
@@ -125,13 +126,23 @@ async def aveo_exception_handler(request: Request, exc: AveoException):
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    error_trace = traceback.format_exc()
     app_logger.error(f"Unhandled exception: {str(exc)} - {request.url}", exc_info=True)
+    app_logger.error(f"Full traceback: {error_trace}")
+    
+    # In DEBUG mode, return more detailed error information
+    error_detail = "Internal server error"
+    if settings.DEBUG:
+        error_detail = f"{str(exc)}: {error_trace[-500:]}"  # Last 500 chars of traceback
+    
     response = JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
-            "detail": "Internal server error",
+            "detail": error_detail,
             "type": "InternalServerError",
-            "path": str(request.url.path)
+            "path": str(request.url.path),
+            "error": str(exc) if settings.DEBUG else "Internal server error"
         }
     )
     # Add CORS headers to error responses

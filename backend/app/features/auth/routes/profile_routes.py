@@ -72,7 +72,6 @@ async def get_complete_profile(
                 user_type_enum = UserTypeEnum.ADMIN
             
             # Create user using REST API to ensure it persists immediately
-            from app.features.auth.cruds.auth_crud import AuthCrud
             admin_client = AuthCrud.admin_client
             
             user_rest_data = {

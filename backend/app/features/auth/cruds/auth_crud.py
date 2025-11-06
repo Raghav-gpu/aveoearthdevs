@@ -182,20 +182,59 @@ class AuthCrud(BaseCrud[User]):
             except ConflictException:
                 raise
             except Exception as admin_error:
-                # Fallback to regular signup if admin API fails
+                error_str = str(admin_error).lower()
+                # Check if it's a rate limit error - if so, try to get existing user or raise
+                if "rate limit" in error_str or "too many requests" in error_str:
+                    logger.warning(f"Rate limit hit on admin API, checking if user exists: {str(admin_error)}")
+                    # Check if user already exists
+                    try:
+                        existing_admin_user = self.admin_client.auth.admin.get_user_by_email(signup_data["email"])
+                        if existing_admin_user and existing_admin_user.user:
+                            # User exists, try to sign in instead
+                            logger.info(f"User exists, attempting sign in instead of signup")
+                            try:
+                                session_response = self.auth_client.auth.sign_in_with_password({
+                                    "email": signup_data["email"],
+                                    "password": signup_data["password"]
+                                })
+                                # Create a mock auth_response from existing user
+                                class MockAuthResponse:
+                                    def __init__(self, user, session):
+                                        self.user = user
+                                        self.session = session
+                                auth_response = MockAuthResponse(existing_admin_user.user, session_response.session)
+                                logger.info(f"Successfully signed in existing user")
+                            except Exception as signin_err:
+                                from app.core.exceptions import ValidationException
+                                raise ValidationException(f"Registration failed: email rate limit exceeded. Please try again later or sign in if you already have an account.")
+                        else:
+                            from app.core.exceptions import ValidationException
+                            raise ValidationException(f"Registration failed: email rate limit exceeded. Please try again later.")
+                    except Exception as check_err:
+                        from app.core.exceptions import ValidationException
+                        raise ValidationException(f"Registration failed: email rate limit exceeded. Please try again later.")
+                
+                # Fallback to regular signup if admin API fails (but not rate limit)
                 logger.warning(f"Admin user creation failed, falling back to regular signup: {str(admin_error)}")
-                auth_response = self.auth_client.auth.sign_up({
-                    "email": signup_data["email"],
-                    "password": signup_data["password"],
-                    "options": {
-                        "data": {
-                            "first_name": signup_data.get("first_name"),
-                            "last_name": signup_data.get("last_name"),
-                            "user_type": (signup_data.get("user_type") or "buyer").lower()
-                        },
-                        "email_redirect_to": None  # Let Supabase handle email verification
-                    }
-                })
+                try:
+                    auth_response = self.auth_client.auth.sign_up({
+                        "email": signup_data["email"],
+                        "password": signup_data["password"],
+                        "options": {
+                            "data": {
+                                "first_name": signup_data.get("first_name"),
+                                "last_name": signup_data.get("last_name"),
+                                "user_type": (signup_data.get("user_type") or "buyer").lower()
+                            },
+                            "email_redirect_to": None  # Let Supabase handle email verification
+                        }
+                    })
+                except Exception as signup_err:
+                    error_str = str(signup_err).lower()
+                    if "rate limit" in error_str or "too many requests" in error_str:
+                        from app.core.exceptions import ValidationException
+                        raise ValidationException(f"Registration failed: email rate limit exceeded. Please try again later or sign in if you already have an account.")
+                    raise
                 
                 # Supabase sign_up automatically sends verification email, but we can also explicitly resend
                 if auth_response and hasattr(auth_response, 'user') and auth_response.user:

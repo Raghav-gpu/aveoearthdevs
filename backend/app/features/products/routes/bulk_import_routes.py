@@ -46,7 +46,7 @@ async def bulk_import_products_csv(
         logger.info(f"BULK IMPORT: Starting for user {current_user.get('id')}, file: {file.filename}")
         
         if not file or not file.filename or not file.filename.endswith('.csv'):
-            raise BadRequestException("File must be a CSV file")
+        raise BadRequestException("File must be a CSV file")
     
         # Verify Supabase configuration FIRST - fail early if not configured
         service_role_key = (settings.SUPABASE_SERVICE_ROLE_KEY or "").strip()
@@ -157,14 +157,14 @@ async def bulk_import_products_csv(
             raise BadRequestException("File is empty")
         
         try:
-            text_content = contents.decode('utf-8')
+        text_content = contents.decode('utf-8')
         except UnicodeDecodeError as e:
             logger.error(f"Failed to decode CSV file: {e}")
             raise BadRequestException(f"Invalid file encoding: {e}")
         
         try:
             csv_reader = csv.DictReader(io.StringIO(text_content))
-            products_data = list(csv_reader)
+        products_data = list(csv_reader)
         except Exception as e:
             logger.error(f"Failed to parse CSV: {e}")
             raise BadRequestException(f"Failed to parse CSV file: {str(e)}")
@@ -369,7 +369,7 @@ async def bulk_import_products_csv(
                                         created_data = created_data[0]
                                     
                                     product_id = created_data.get("id", product_data_for_supabase["id"])
-                                    results["successful"] += 1
+                    results["successful"] += 1
                                     results["created_product_ids"].append(str(product_id))
                                     logger.info(f"   OK: Created via REST: {name} (ID: {product_id})")
                                     logger.info(f"   [OK] [{index}] Created via REST: {name}")

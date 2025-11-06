@@ -25,7 +25,7 @@ class Payment(BaseUUID, BaseTimeStamp, Base):
     gateway_transaction_id = Column(String(255))
     amount = Column(DECIMAL(12, 2), nullable=False)
     currency = Column(String(3), default="INR")
-    status = Column(ENUM(PaymentMethodStatusEnum), default=PaymentMethodStatusEnum.PENDING)
+    status = Column(String(50), default='pending')
     gateway_response = Column(JSONB)
     failure_reason = Column(Text)
     refund_amount = Column(DECIMAL(12, 2), default=0)
@@ -42,7 +42,7 @@ class Payment(BaseUUID, BaseTimeStamp, Base):
             "gateway_transaction_id": self.gateway_transaction_id,
             "amount": float(self.amount) if self.amount else 0,
             "currency": self.currency,
-            "status": self.status.value if self.status else None,
+            "status": self.status if isinstance(self.status, str) else (self.status.value if self.status else None),
             "gateway_response": self.gateway_response,
             "failure_reason": self.failure_reason,
             "refund_amount": float(self.refund_amount) if self.refund_amount else 0,

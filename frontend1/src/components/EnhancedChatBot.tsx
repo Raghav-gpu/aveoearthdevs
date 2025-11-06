@@ -356,10 +356,10 @@ const EnhancedChatBot = () => {
                 ))}
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="bg-white rounded-2xl px-4 py-3 border border-gray-200 shadow-sm">
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-green-500" />
-                        <span className="text-sm text-gray-600">AveoBuddy is thinking...</span>
+                      <div className="bg-white rounded-2xl px-4 py-3 border border-gray-200 shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-green-500" />
+                          <span className="text-sm text-gray-600">AveoBuddy is thinking...</span>
                       </div>
                     </div>
                   </div>
@@ -386,35 +386,35 @@ const EnhancedChatBot = () => {
                 ))}
               </div>
 
-            </div>
+              </div>
           </>
         )}
 
           {/* Input Bar - Always Visible (Even when minimized) */}
           <div className="border-t border-gray-200 bg-white p-3">
             <div className="flex items-center gap-2">
-              <Input
+                <Input
                 type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
                 placeholder="Type your message here..."
                 className="flex-1 h-11 text-sm border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-lg px-4 bg-white"
-                disabled={!isAIConnected || isLoading}
-              />
-              <Button
-                onClick={() => handleSendMessage()}
-                disabled={!message.trim() || !isAIConnected || isLoading}
+                  disabled={!isAIConnected || isLoading}
+                />
+                <Button
+                  onClick={() => handleSendMessage()}
+                  disabled={!message.trim() || !isAIConnected || isLoading}
                 size="default"
                 className="h-11 w-11 p-0 bg-green-600 hover:bg-green-700 rounded-lg flex items-center justify-center shadow-md"
-              >
-                {isLoading ? (
+                >
+                  {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin text-white" />
-                ) : (
+                  ) : (
                   <Send className="w-5 h-5 text-white" />
-                )}
-              </Button>
-            </div>
+                  )}
+                </Button>
+              </div>
             {!isMinimized && (
               <div className="flex justify-end mt-2">
                 <Button
@@ -427,7 +427,7 @@ const EnhancedChatBot = () => {
                 </Button>
               </div>
             )}
-          </div>
+            </div>
       </Card>
     </div>
   );

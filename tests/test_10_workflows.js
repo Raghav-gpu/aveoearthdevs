@@ -40,6 +40,7 @@ async function signupVendor() {
     const email = `vendor${timestamp}@test.com`;
     const password = 'TestPass123!';
     
+    // Try signup first
     const res = await makeRequest(`${BACKEND_URL}/auth/signup`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -53,27 +54,49 @@ async function signupVendor() {
         })
     });
     
-    if (!res.ok && res.status !== 0) {
-        console.log(`  ⚠️ Signup failed: ${res.status} - ${JSON.stringify(res.data || res.error).substring(0, 200)}`);
-    }
-    
     let token = res.data?.tokens?.access_token || res.data?.access_token || res.data?.token;
     let userId = res.data?.user?.id;
     
-    if (!token) {
-        if (res.status === 422) {
-            console.log('  ⚠️ Signup returned 422, trying login...');
+    // If signup failed due to rate limit, try login with existing test user
+    if (!token && (res.status === 422 || res.status === 429)) {
+        console.log(`  ⚠️ Signup rate limited, using existing test vendor...`);
+        // Use existing test vendor
+        const testEmail = 'vendor_test@test.com';
+        const testPassword = 'TestPass123!';
+        const loginRes = await makeRequest(`${BACKEND_URL}/auth/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email: testEmail, password: testPassword})
+        });
+        if (loginRes.ok) {
+            token = loginRes.data?.tokens?.access_token || loginRes.data?.access_token || loginRes.data?.token;
+            userId = loginRes.data?.user?.id || loginRes.data?.user_id;
+            console.log(`  ✅ Using existing test vendor: ${testEmail}`);
+            return {token, email: testEmail, password: testPassword, userId};
+        } else {
+            console.log(`  ⚠️ Test vendor login failed: ${loginRes.status}, will try new email`);
         }
+        // If that fails, try login with the new email
+        const loginRes2 = await makeRequest(`${BACKEND_URL}/auth/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, password})
+        });
+        if (loginRes2.ok) {
+            token = loginRes2.data?.tokens?.access_token || loginRes2.data?.access_token || loginRes2.data?.token;
+            userId = loginRes2.data?.user?.id;
+        }
+    } else if (!token && res.status !== 0) {
+        // Try login
         const loginRes = await makeRequest(`${BACKEND_URL}/auth/login`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email, password})
         });
-        if (!loginRes.ok) {
-            console.log(`  ⚠️ Login failed: ${loginRes.status} - ${JSON.stringify(loginRes.data || loginRes.error).substring(0, 200)}`);
+        if (loginRes.ok) {
+            token = loginRes.data?.tokens?.access_token || loginRes.data?.access_token || loginRes.data?.token;
+            userId = loginRes.data?.user?.id;
         }
-        token = loginRes.data?.tokens?.access_token || loginRes.data?.access_token || loginRes.data?.token;
-        userId = loginRes.data?.user?.id;
     }
     
     // Wait a bit for user to be created in database
@@ -105,22 +128,49 @@ async function signupBuyer() {
     }
     
     let token = res.data?.tokens?.access_token || res.data?.access_token || res.data?.token;
-    let userId = res.data?.user?.id;
+    let userId = res.data?.user?.id || res.data?.user_id;
     
-    if (!token) {
-        if (res.status === 422) {
-            console.log('  ⚠️ Signup returned 422, trying login...');
+    // If signup failed due to rate limit, try login with existing test user
+    if (!token && (res.status === 422 || res.status === 429)) {
+        console.log(`  ⚠️ Signup rate limited, using existing test buyer...`);
+        // Use existing test buyer (cart_test_buyer@test.com)
+        const testEmail = 'cart_test_buyer@test.com';
+        const testPassword = 'Test123!@#';
+        const loginRes = await makeRequest(`${BACKEND_URL}/auth/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email: testEmail, password: testPassword})
+        });
+        if (loginRes.ok) {
+            token = loginRes.data?.tokens?.access_token || loginRes.data?.access_token || loginRes.data?.token;
+            userId = loginRes.data?.user?.id || loginRes.data?.user_id;
+            console.log(`  ✅ Using existing test buyer: ${testEmail}`);
+            return {token, email: testEmail, password: testPassword, userId};
+        } else {
+            console.log(`  ⚠️ Test buyer login failed: ${loginRes.status}`);
         }
+        // If that fails, try login with the new email
+        const loginRes2 = await makeRequest(`${BACKEND_URL}/auth/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, password})
+        });
+        if (loginRes2.ok) {
+            token = loginRes2.data?.tokens?.access_token || loginRes2.data?.access_token || loginRes2.data?.token;
+            userId = loginRes2.data?.user?.id || loginRes2.data?.user_id;
+            console.log(`  ✅ Using newly created buyer: ${email}`);
+        }
+    } else if (!token && res.status !== 0) {
+        // Try login
         const loginRes = await makeRequest(`${BACKEND_URL}/auth/login`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email, password})
         });
-        if (!loginRes.ok) {
-            console.log(`  ⚠️ Login failed: ${loginRes.status} - ${JSON.stringify(loginRes.data || loginRes.error).substring(0, 200)}`);
+        if (loginRes.ok) {
+            token = loginRes.data?.tokens?.access_token || loginRes.data?.access_token || loginRes.data?.token;
+            userId = loginRes.data?.user?.id || loginRes.data?.user_id;
         }
-        token = loginRes.data?.tokens?.access_token || loginRes.data?.access_token || loginRes.data?.token;
-        userId = loginRes.data?.user?.id;
     }
     
     // Wait a bit for user to be created in database
@@ -220,7 +270,11 @@ async function normalUpload(token) {
         body: formDataBuffer
     });
     
-    return {ok: res.ok, productId: res.data?.id};
+    if (!res.ok) {
+        console.log(`  ⚠️ Normal upload error: ${res.status} - ${JSON.stringify(res.data || res.error).substring(0, 400)}`);
+    }
+    
+    return {ok: res.ok, productId: res.data?.id, error: res.data || res.error};
 }
 
 async function getProduct() {
@@ -265,34 +319,43 @@ async function placeOrder(token) {
     const cartRes = await addToCart(token, productId);
     if (!cartRes.ok) return cartRes;
     
-    // Create address
-    const addrRes = await makeRequest(`${BACKEND_URL}/auth/profile/addresses`, {
+    // Create address - use /addresses endpoint (not /auth/profile/addresses)
+    const addrRes = await makeRequest(`${BACKEND_URL}/addresses`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-            street: '123 Test St',
+            type: 'billing',
+            first_name: 'Test',
+            last_name: 'User',
+            address_line_1: '123 Test St',
             city: 'Test City',
             state: 'TS',
-            zip: '12345',
+            postal_code: '12345',
             country: 'US',
-            is_default: true,
-            address_type: 'billing'
+            is_default: true
         })
     });
+    
+    if (!addrRes.ok) {
+        console.log(`  ⚠️ Address creation error: ${addrRes.status} - ${JSON.stringify(addrRes.data || addrRes.error).substring(0, 300)}`);
+    }
     
     let addressId = addrRes.data?.id || addrRes.data?.address_id;
     if (!addressId && addrRes.ok) {
         // Try getting existing
-        const getAddr = await makeRequest(`${BACKEND_URL}/auth/profile/addresses`, {
+        const getAddr = await makeRequest(`${BACKEND_URL}/addresses`, {
             headers: {'Authorization': `Bearer ${token}`}
         });
-        addressId = getAddr.data?.[0]?.id || getAddr.data?.items?.[0]?.id;
+        addressId = getAddr.data?.[0]?.id || getAddr.data?.items?.[0]?.id || (getAddr.data?.items && getAddr.data.items[0]?.id);
     }
     
-    if (!addressId) return {ok: false, error: 'Could not create/get address'};
+    if (!addressId) {
+        console.log(`  ⚠️ Could not create/get address: ${JSON.stringify(addrRes.data || addrRes.error).substring(0, 300)}`);
+        return {ok: false, error: 'Could not create/get address'};
+    }
     
     // Place order
     const orderRes = await makeRequest(`${BACKEND_URL}/buyer/orders/`, {
@@ -307,7 +370,11 @@ async function placeOrder(token) {
         })
     });
     
-    return {ok: orderRes.ok, orderId: orderRes.data?.id};
+    if (!orderRes.ok) {
+        console.log(`  ⚠️ Place order error: ${orderRes.status} - ${JSON.stringify(orderRes.data || orderRes.error).substring(0, 400)}`);
+    }
+    
+    return {ok: orderRes.ok, orderId: orderRes.data?.id, error: orderRes.data || orderRes.error};
 }
 
 // ========== 10 DIFFERENT WORKFLOW SCENARIOS ==========

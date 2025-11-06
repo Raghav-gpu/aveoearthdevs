@@ -55,10 +55,10 @@ export const useAddToWishlistNew = () => {
       // Check if already in wishlist
       const { data: existing } = await supabase
         .from('wishlists')
-        .select('id')
+        .select('user_id, product_id')
         .eq('user_id', user.id)
         .eq('product_id', productId)
-        .single()
+        .maybeSingle()
 
       if (existing) {
         console.log('⚠️ Item already in wishlist')
@@ -71,8 +71,8 @@ export const useAddToWishlistNew = () => {
           user_id: user.id, 
           product_id: productId 
         })
-        .select()
-        .single()
+        .select('user_id, product_id, added_at')
+        .maybeSingle()
 
       if (error) {
         console.error('❌ Error adding to wishlist:', error)
@@ -154,10 +154,10 @@ export const useIsInWishlistNew = (productId: string) => {
       
       const { data, error } = await supabase
         .from('wishlists')
-        .select('id')
+        .select('user_id, product_id')
         .eq('user_id', user.id)
         .eq('product_id', productId)
-        .single()
+        .maybeSingle()
 
       if (error && error.code !== 'PGRST116') {
         console.error('❌ Error checking wishlist:', error)

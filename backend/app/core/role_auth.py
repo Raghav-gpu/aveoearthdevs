@@ -45,11 +45,11 @@ async def get_user_from_token(
                 logger.info(f"Attempting real authentication with token (length: {len(token)})")
                 # Use ANON_KEY client for token validation, not SERVICE_ROLE_KEY
                 from supabase import create_client
-                from app.core.config import settings
                 supabase_url = settings.SUPABASE_URL
                 supabase_anon_key = settings.SUPABASE_ANON_KEY
                 
                 if not supabase_url or not supabase_anon_key:
+                    logger.error("Supabase configuration missing - URL or ANON_KEY not set")
                     raise AuthenticationException("Supabase configuration missing")
                 
                 # Create a client with ANON_KEY for token validation
@@ -57,8 +57,9 @@ async def get_user_from_token(
                 
                 try:
                     # Use get_user with the token directly - this validates the JWT token
+                    # The token should be the access_token from Supabase session
                     user_response = auth_client.auth.get_user(token)
-                    logger.info(f"✅ Token validated successfully")
+                    logger.info(f"✅ Token validated successfully via get_user()")
                 except Exception as get_user_err:
                     logger.error(f"supabase.auth.get_user() raised exception: {get_user_err}")
                     # Try alternative method - verify JWT token manually and get user via Admin API
@@ -96,9 +97,11 @@ async def get_user_from_token(
                     logger.info(f"✅ Real user authenticated: {user_response.user.email} ({user_response.user.id})")
                     user_id = user_response.user.id
                     
+                    # Import AuthCrud here to avoid scoping issues
+                    from app.features.auth.cruds.auth_crud import AuthCrud
                     auth_crud = AuthCrud()
                     try:
-                        user_data = await auth_crud.get_by_id(db, user_id)
+                    user_data = await auth_crud.get_by_id(db, user_id)
                     except Exception as db_err:
                         logger.warning(f"Could not get user from database: {db_err}, using Supabase Auth data")
                         user_data = None
@@ -151,14 +154,17 @@ async def get_user_from_token(
             except Exception as e:
                 error_str = str(e).lower()
                 logger.error(f"Real token authentication failed: {e}")
-                # If token is invalid/expired, raise auth error even in DEBUG mode
-                if "invalid" in error_str or "expired" in error_str or "jwt" in error_str:
+                # If we have a real token (length > 20) but validation failed, don't fall back to DEBUG mode
+                # This prevents using fake user IDs when real authentication is attempted
+                if token and len(token) > 20:
+                    # Real token provided but validation failed - this is a real error
+                    logger.error(f"Real token provided (length {len(token)}) but validation failed - not falling back to DEBUG mode")
                     raise AuthenticationException(f"Token verification failed: {str(e)}")
-                # For other errors, log but allow DEBUG fallback
+                # Only allow DEBUG fallback if no real token was provided
                 if not settings.DEBUG:
                     raise AuthenticationException(f"Token verification failed: {str(e)}")
     
-    # Fallback: DEBUG mode bypass (only if no real token or auth failed)
+    # Fallback: DEBUG mode bypass (only if no real token was provided)
     if settings.DEBUG:
         logger.info(f"DEBUG mode: Using bypass auth for {request.url.path if request else 'unknown'}")
         assumed_role = UserRole.SUPPLIER.value if (request and str(request.url.path).startswith("/supplier")) else UserRole.BUYER.value
@@ -170,17 +176,9 @@ async def get_user_from_token(
         
         token = credentials.credentials if credentials and hasattr(credentials, "credentials") else None
         email = "debug@example.com"
-        # Don't hash tokens in DEBUG mode - if we have a real token, it means auth failed
-        # but we should still try to extract user info from the token if possible
-        # Only use default user IDs if no token is provided
-        if not token or token in ["debug-token", "auth-bypass", "dev-bypass"]:
-            # Use default debug user IDs
-            pass
-        else:
-            # Token exists but auth failed - this is a problem
-            # Don't create fake user IDs from tokens - return None and let the endpoint handle it
-            logger.error(f"DEBUG mode: Token provided but auth failed, token length: {len(token)}")
-            # Still use default user ID but log the issue
+        # In DEBUG mode, only use default user IDs if no real token was provided
+        # If a real token was provided, it should have been handled above and would have raised an error
+        # So if we reach here, either no token was provided or it was a debug token
         
         return {
             "id": user_id,
