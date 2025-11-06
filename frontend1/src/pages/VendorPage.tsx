@@ -175,20 +175,20 @@ const VendorPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Mode Toggle - Only Sign In, Register shows onboarding form */}
+            {/* Mode Toggle - Only Sign In option, registration shows onboarding form by default */}
             <div className="flex bg-gradient-to-r from-forest/10 to-moss/10 rounded-2xl p-1 mb-6 shadow-lg">
               <button
                 onClick={() => setMode('login')}
-                className="flex-1 py-3 px-4 text-sm font-semibold rounded-xl transition-all duration-300 bg-gradient-to-r from-forest to-moss text-white shadow-lg scale-105"
+                className="flex-1 py-3 px-4 text-sm font-semibold rounded-xl transition-all duration-300 bg-gradient-to-r from-forest to-moss text-white shadow-lg"
               >
                 Sign In
               </button>
-              <button
-                onClick={() => setMode('register')}
-                className="flex-1 py-3 px-4 text-sm font-semibold rounded-xl transition-all duration-300 text-forest hover:text-moss hover:bg-forest/5 hover:scale-105"
+              <Link 
+                to="/vendor"
+                className="flex-1 py-3 px-4 text-sm font-semibold rounded-xl transition-all duration-300 text-forest hover:text-moss hover:bg-forest/5 hover:scale-105 text-center"
               >
-                New Registration
-              </button>
+                Register
+              </Link>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
